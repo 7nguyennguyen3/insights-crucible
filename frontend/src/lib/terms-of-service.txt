@@ -1,0 +1,66 @@
+&lt;br>
+
+Last Updated: June 24, 2025
+
+Please read these Terms of Service ("Terms") carefully before using the Insight Engine service (the "Service") operated by [Your Company Name] ("we," "us," or "our").
+
+Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service. By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the terms, then you may not access the Service.
+
+1. Description of Service
+Insight Engine is a Software-as-a-Service (SaaS) platform that allows users to upload or paste audio and text content ("User Content") to be analyzed by artificial intelligence models. The Service generates insights, summaries, and other derivative content ("Analyses") based on the User Content provided.
+
+2. User Accounts
+Registration: To use certain features of the Service, you must register for an account. You agree to provide accurate, current, and complete information during the registration process.
+Account Security: You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password. You agree to notify us immediately of any unauthorized use of your account.
+Eligibility: You must be at least 13 years of age to use the Service.
+3. User Content and Responsibility
+Your Content is Yours: You retain all ownership rights to the audio files, text, and other content you submit to the Service.
+Limited License to Us: By using the Service, you grant us a limited, worldwide, non-exclusive, royalty-free license to use, process, store, transcribe, and modify your User Content solely for the purpose of providing and improving the Service to you. This includes processing your content with our third-party AI partners (as detailed in our Privacy Policy) to generate your Analyses.
+Responsibility: You are solely responsible for your User Content. You represent and warrant that you have all the necessary rights to submit the content and that its use does not violate any laws or infringe on the rights of any third party. You agree not to submit any content that is illegal, defamatory, or harmful.
+4. Acceptable Use
+You agree not to misuse the Service. For example, you must not, and must not attempt to, do the following:
+
+Use the Service for any illegal purpose or in violation of any local, state, national, or international law.
+Probe, scan, or test the vulnerability of any system or network.
+Breach or otherwise circumvent any security or authentication measures.
+Reverse-engineer or decompile the Service.
+Upload viruses, malware, or any other malicious code.
+5. Payments, Subscriptions, and Credits
+Paid Services: Certain aspects of the Service may be provided for a fee or other charge. If you elect to use paid aspects of the Service, you agree to the pricing and payment terms.
+Subscriptions: We offer subscription plans that are billed in advance on a recurring, periodic basis (e.g., monthly or annually). Your subscription will automatically renew at the end of each billing cycle unless you cancel it through your account settings.
+Payment Processing: All payments are handled by our third-party payment processor, Stripe. We are not responsible for any errors by the payment processor.
+Credits: Our service operates on a credit system. Subscriptions may include a set number of credits per billing cycle. Unused credits do not roll over to the next cycle unless otherwise stated.
+Refunds: Payments are non-refundable, except as required by law.
+6. Termination
+By You: You may terminate your account at any time through the Settings page. Upon termination, your data will be deleted in accordance with our Privacy Policy.
+By Us: We reserve the right to suspend or terminate your access to the Service at any time, with or without notice, for any reason, including but not limited to, a breach of these Terms.
+7. Intellectual Property
+The Service and its original content (excluding User Content), features, and functionality are and will remain the exclusive property of [Your Company Name] and its licensors. Our trademarks and trade dress may not be used in connection with any product or service without our prior written consent.   
+
+8. Copyright Policy and DMCA Notices
+We respect the intellectual property rights of others and expect our users to do the same. In accordance with the Digital Millennium Copyright Act (DMCA), we will respond to notices of alleged copyright infringement that comply with applicable law and are properly provided to us.
+
+If you are a copyright owner and believe that any Content on the Service infringes upon your copyrights, you may submit a notification pursuant to the DMCA by providing our designated Copyright Agent with the following information in writing:
+
+A physical or electronic signature of a person authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.   
+Identification of the copyrighted work claimed to have been infringed.
+Identification of the material that is claimed to be infringing and that is to be removed, and information reasonably sufficient to permit us to locate the material.
+Your contact information, including your address, telephone number, and an email address.
+A statement that you have a good faith belief that use of the material in the manner complained of is not authorized by the copyright owner, its agent, or the law.
+A statement that the information in the notification is accurate, and under penalty of perjury, that you are authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.
+Our designated Copyright Agent to receive notifications of claimed infringement is: legal@insightengine.com
+
+We reserve the right to remove any Content alleged to be infringing without prior notice and at our sole discretion. We will also terminate a user's account if the user is determined to be a repeat infringer.
+
+9. Disclaimer of Warranties & Limitation of Liability
+"AS IS" Service: The Service is provided on an "AS IS" and "AS AVAILABLE" basis. We make no warranties, express or implied, regarding the operation or availability of the Service.
+AI Content Disclaimer: You acknowledge that the Analyses generated by the Service are created by artificial intelligence. AI can make mistakes and generate inaccurate information. We do not guarantee the accuracy, completeness, or reliability of any Analyses. You are responsible for reviewing and validating the generated content before use.
+Limitation of Liability: To the maximum extent permitted by law, in no event shall [Your Company Name], its directors, employees, or partners, be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service. Our total liability to you for any and all claims related to the Service shall not exceed the amount paid by you to us, if any, in the 12 months preceding the claim.
+10. Governing Law
+These Terms shall be governed and construed in accordance with the laws of the State of California, United States, without regard to its conflict of law provisions.
+
+11. Changes to Terms
+We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.
+
+12. Contact Us
+If you have any questions about these Terms, please contact us at: support@insightengine.com

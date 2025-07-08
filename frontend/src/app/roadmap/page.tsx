@@ -1,0 +1,358 @@
+// /app/roadmap/page.tsx
+
+"use client";
+
+import React, { useState } from "react";
+import {
+  ArrowRight,
+  BrainCircuit,
+  CheckCircle,
+  Layers,
+  FileText,
+  Lightbulb,
+  MessageSquareQuote,
+  Zap,
+  Users,
+  Share2,
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/authStore";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+// A specialized card for roadmap items
+const RoadmapCard = ({
+  icon: Icon,
+  title,
+  description,
+  status,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  status: "Now" | "Next" | "Later";
+}) => {
+  const statusStyles = {
+    Now: {
+      badge:
+        "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+      icon: "text-green-600 dark:text-green-400",
+    },
+    Next: {
+      badge: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
+      icon: "text-blue-600 dark:text-blue-400",
+    },
+    Later: {
+      badge:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+      icon: "text-purple-600 dark:text-purple-400",
+    },
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 h-full flex flex-col">
+      <div className="flex justify-between items-start mb-4">
+        <div
+          className={`flex items-center justify-center w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg`}
+        >
+          <Icon className={`w-6 h-6 ${statusStyles[status].icon}`} />
+        </div>
+        <span
+          className={`px-3 py-1 text-xs font-medium rounded-full ${statusStyles[status].badge}`}
+        >
+          {status}
+        </span>
+      </div>
+      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+        {title}
+      </h3>
+      <p className="text-slate-600 dark:text-slate-400 flex-grow">
+        {description}
+      </p>
+    </div>
+  );
+};
+
+const RoadmapPage = () => {
+  const { user } = useAuthStore();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [priority, setPriority] = useState("Important");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/feature-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Use the email from your auth store
+        body: JSON.stringify({ title, description, email: user?.email }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit feedback.");
+      }
+
+      toast.success("Feedback submitted!", {
+        description: "Thanks for helping us improve.",
+      });
+      setTitle("");
+      setDescription("");
+      setOpen(false); // Close the dialog on success
+    } catch (error) {
+      toast.error("Submission failed.", {
+        description: "Please try again later.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200">
+      {/* --- HERO SECTION --- */}
+      <section className="py-20 md:py-24">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 max-w-4xl mx-auto">
+            The Future of Insight
+          </h1>
+          <p className="mt-6 text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+            We're perfecting single-file analysis today to build a platform that
+            synthesizes your entire project tomorrow. See what's here, what's
+            next, and where we're going.
+          </p>
+        </div>
+      </section>
+
+      {/* --- ROADMAP --- */}
+      <section className="pb-20 md:pb-32">
+        <div className="container mx-auto px-4">
+          {/* === NOW: THE FOUNDATION === */}
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-slate-100 mb-8">
+              What You Can Do Today
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <RoadmapCard
+                icon={BrainCircuit}
+                title="Single-File Deep Dive"
+                description="Our core engine deconstructs any single document or audio file, extracting themes, arguments, and key takeaways with high precision."
+                status="Now"
+              />
+              <RoadmapCard
+                icon={Zap}
+                title="Instant Content Repurposing"
+                description="Turn any analysis into a polished blog post or a compelling Twitter (X) thread with one click, sharing your insights effortlessly."
+                status="Now"
+              />
+              <RoadmapCard
+                icon={FileText}
+                title="Multiple Analysis Personas"
+                description="Choose between a general report for research or a 'Consultant Workbench' for strategic, presentation-ready insights."
+                status="Now"
+              />
+            </div>
+          </div>
+
+          {/* === NEXT: IN ACTIVE DEVELOPMENT === */}
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-slate-100 mb-8">
+              What's Coming Next
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <RoadmapCard
+                icon={Layers}
+                title="Cross-File Thematic Analysis"
+                description="The next big leap. Upload multiple files—a whole folder of interviews—and let our AI discover the overlapping themes, recurring pain points, and group consensus across the entire set."
+                status="Next"
+              />
+              <RoadmapCard
+                icon={Share2}
+                title="Advanced Export & Sharing"
+                description="Export your analysis reports to beautifully formatted PDF and Word documents, or share an editable web link with your colleagues and clients."
+                status="Next"
+              />
+              <RoadmapCard
+                icon={MessageSquareQuote}
+                title="Quote & Source Tracking"
+                description="Easily find and manage all key quotes from your sources. Click any quote in your report to see exactly where it came from in the original transcript."
+                status="Next"
+              />
+            </div>
+          </div>
+
+          {/* === LATER: EXPLORING FOR THE FUTURE === */}
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-center text-slate-900 dark:text-slate-100 mb-8">
+              Future Ambitions
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <RoadmapCard
+                icon={Users}
+                title="Team Workspaces & Collaboration"
+                description="Share projects, co-analyze documents, and leave comments for your team members, turning individual insight into collective intelligence."
+                status="Later"
+              />
+              <RoadmapCard
+                icon={Lightbulb}
+                title="Custom Analysis Prompts"
+                description="Go beyond our built-in analysis types. Guide the AI with your own prompts and questions to find the specific insights you need."
+                status="Later"
+              />
+              <RoadmapCard
+                icon={CheckCircle}
+                title="Third-Party Integrations"
+                description="Connect Insights Crucible to your favorite tools. Automatically import from Google Drive & Dropbox, and export to Notion & Slack."
+                status="Later"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- FINAL CTA --- */}
+      <section className="pb-20 md:pb-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center bg-white dark:bg-slate-900 p-10 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+              Have an Idea?
+            </h2>
+            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+              Our roadmap is driven by feedback from users like you. If there's
+              a feature you'd love to see, we want to hear about it.
+            </p>
+            <div className="mt-8">
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" size="lg">
+                    Request a Feature
+                    <ArrowRight />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Request a Feature</DialogTitle>
+                    <DialogDescription>
+                      Have a great idea? We'd love to hear it. The best ideas
+                      come from our users.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor="title">Feature Title</Label>
+                      <Input
+                        id="title"
+                        placeholder="e.g., Cross-File Thematic Analysis"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    {/* REFRAMED a "Description" to "The Problem" */}
+                    <div className="grid w-full gap-1.5">
+                      <Label htmlFor="description">
+                        What problem would this feature solve for you?
+                      </Label>
+                      <Textarea
+                        id="description"
+                        placeholder="e.g., 'I waste a lot of time manually comparing interview transcripts to find common themes...'"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    {/* NEW "Priority" field */}
+                    <div className="grid w-full gap-1.5">
+                      <Label className="pb-4">
+                        How important is this for you?
+                      </Label>
+                      <RadioGroup
+                        defaultValue="Important"
+                        value={priority}
+                        onValueChange={setPriority}
+                        className="grid grid-cols-3 gap-4"
+                      >
+                        <div>
+                          <RadioGroupItem
+                            value="Nice-to-Have"
+                            id="p1"
+                            className="peer sr-only"
+                          />
+                          <Label
+                            htmlFor="p1"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                          >
+                            Nice-to-Have
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem
+                            value="Important"
+                            id="p2"
+                            className="peer sr-only"
+                          />
+                          <Label
+                            htmlFor="p2"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                          >
+                            Important
+                          </Label>
+                        </div>
+                        <div>
+                          <RadioGroupItem
+                            value="Critical"
+                            id="p3"
+                            className="peer sr-only"
+                          />
+                          <Label
+                            htmlFor="p3"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                          >
+                            Critical
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="mt-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="animate-spin" /> Submitting...
+                        </>
+                      ) : (
+                        "Submit Feedback"
+                      )}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default RoadmapPage;

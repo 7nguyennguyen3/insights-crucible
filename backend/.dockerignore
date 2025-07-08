@@ -1,0 +1,17 @@
+# .dockerignore
+
+# Git and IDE files
+.git
+.gitignore
+.vscode/
+
+# Local environment and caches
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Your GCP key file - DO NOT INCLUDE
+gcp-credentials.json

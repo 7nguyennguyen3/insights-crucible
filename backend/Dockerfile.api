@@ -1,0 +1,23 @@
+# Dockerfile.api
+
+FROM python:3.13.5-slim-bookworm
+
+# Apply OS security updates to fix vulnerabilities
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables using the modern key=value format
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Copy and install only the lightweight dependencies
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+# Copy the application source code
+COPY src/ ./src/
+
+# This CMD line points to the API entrypoint.
+# A long timeout is not needed as this service only handles fast requests.
+CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 3 --worker-class uvicorn.workers.UvicornWorker src.main_api:app

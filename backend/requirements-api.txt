@@ -1,0 +1,15 @@
+# requirements-api.txt
+
+# Web Framework
+fastapi==0.115.12
+gunicorn==23.0.0
+uvicorn==0.34.3
+
+# Google Cloud Services
+firebase-admin==6.8.0
+google-cloud-tasks==2.19.3
+
+# Core utilities used by the above
+python-dotenv==1.1.0
+pydantic==2.11.5
+rich==14.0.0
