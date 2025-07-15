@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   Accordion,
   AccordionContent,
@@ -9,22 +8,18 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import React from "react";
 
 import {
   AlertTriangle,
-  Lightbulb,
-  Users,
-  MessageSquareQuote,
   HelpCircle,
+  Lightbulb,
+  MessageSquareQuote,
   PlusCircle,
+  Users,
 } from "lucide-react";
-import { ContextualBriefingDisplay } from "./ContextualBriefingDisplay";
+import { ConsultantAnalysisSection } from "../../_global/interface";
 import { EditableField } from "./EditableField";
-import {
-  ConsultantAnalysisSection,
-  ContextualBriefing,
-  Viewpoint,
-} from "../../_global/interface";
 
 type ConsultantItemField =
   | "client_pain_points"
@@ -32,9 +27,6 @@ type ConsultantItemField =
   | "critical_quotes"
   | "open_questions"
   | "key_stakeholders_mentioned";
-
-type ViewpointField = "supporting_viewpoints" | "challenging_viewpoints";
-type ViewpointProperty = keyof Viewpoint;
 
 interface AnalysisResultsDisplayProps {
   results: ConsultantAnalysisSection[];
@@ -55,33 +47,6 @@ interface AnalysisResultsDisplayProps {
     sectionId: string,
     field: "executive_summary" | "section_title",
     value: any
-  ) => void;
-  onContextualBriefingChange: (
-    sectionId: string,
-    field: keyof ContextualBriefing,
-    value: string
-  ) => void;
-  onContextualBriefingListItemChange: (
-    sectionId: string,
-    field: "key_nuances_and_conditions",
-    index: number,
-    value: string
-  ) => void;
-  onContextualBriefingViewpointChange: (
-    sectionId: string,
-    field: ViewpointField,
-    index: number,
-    prop: ViewpointProperty,
-    value: string
-  ) => void;
-  onContextualBriefingAddItem: (
-    sectionId: string,
-    field: "key_nuances_and_conditions" | ViewpointField
-  ) => void;
-  onContextualBriefingDeleteItem: (
-    sectionId: string,
-    field: "key_nuances_and_conditions" | ViewpointField,
-    index: number
   ) => void;
 }
 
@@ -313,44 +278,6 @@ export const ConsultantReportView: React.FC<AnalysisResultsDisplayProps> = (
                 sectionId={section.id}
                 {...props}
               />
-
-              {section.contextual_briefing &&
-                Object.keys(section.contextual_briefing).length > 0 && (
-                  <ContextualBriefingDisplay
-                    briefing={section.contextual_briefing}
-                    isEditMode={isEditMode}
-                    onFieldChange={(field, value) =>
-                      props.onContextualBriefingChange(section.id, field, value)
-                    }
-                    onListItemChange={(field, index, value) =>
-                      props.onContextualBriefingListItemChange(
-                        section.id,
-                        field,
-                        index,
-                        value
-                      )
-                    }
-                    onViewpointChange={(field, index, prop, value) =>
-                      props.onContextualBriefingViewpointChange(
-                        section.id,
-                        field,
-                        index,
-                        prop,
-                        value
-                      )
-                    }
-                    onAddItem={(field) =>
-                      props.onContextualBriefingAddItem(section.id, field)
-                    }
-                    onDeleteItem={(field, index) =>
-                      props.onContextualBriefingDeleteItem(
-                        section.id,
-                        field,
-                        index
-                      )
-                    }
-                  />
-                )}
             </div>
           </AccordionContent>
         </AccordionItem>

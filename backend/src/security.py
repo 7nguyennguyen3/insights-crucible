@@ -1,18 +1,18 @@
-import os
+# src/security.py
+
 from fastapi import Security, HTTPException, status, Request
 from fastapi.security import APIKeyHeader
-from google.auth.transport import requests  # Add this import
+from google.auth.transport import requests
 from google.oauth2 import id_token
 
-# Define the name of the header we will look for.
+# 1. Import the centralized settings object
+from src.config import settings
+
+# 2. Define constants and get variables directly from the validated settings object
 API_KEY_HEADER = APIKeyHeader(name="X-Internal-API-Key")
-
-# Get the secret key from an environment variable for security.
-# NEVER hardcode this value.
-INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY")
-
-if not INTERNAL_API_KEY:
-    raise ValueError("INTERNAL_API_KEY environment variable not set")
+INTERNAL_API_KEY = settings.INTERNAL_API_KEY
+WORKER_SERVICE_URL = settings.WORKER_SERVICE_URL
+GCP_SERVICE_ACCOUNT_EMAIL = settings.GCP_SERVICE_ACCOUNT_EMAIL
 
 
 async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
@@ -40,30 +40,25 @@ async def verify_gcp_task_request(request: Request):
     token = auth_header.split("Bearer ")[1]
 
     try:
-        # --- 1. Get the expected audience from environment variables ---
-        WORKER_SERVICE_URL = os.getenv("WORKER_SERVICE_URL")
-        if not WORKER_SERVICE_URL:
-            raise ValueError("WORKER_SERVICE_URL environment variable not set.")
-
-        # --- THIS IS THE FIX ---
-        # The audience to check against must match what was set during task creation.
+        # The audience to check against is now read from our settings object
         expected_audience = WORKER_SERVICE_URL
-        # --- END FIX ---
 
-        # --- 2. Verify the token using Google's library ---
+        # Verify the token using Google's library
         decoded_token = id_token.verify_oauth2_token(
             token, requests.Request(), audience=expected_audience
         )
 
-        # --- 3. Verify the token issuer and service account email ---
+        # Verify the token issuer and service account email
         if decoded_token.get("iss") != "https://accounts.google.com":
             raise HTTPException(
                 status_code=403, detail="Forbidden: Invalid token issuer"
             )
 
         email = decoded_token.get("email")
-        gcp_service_account = os.getenv("GCP_SERVICE_ACCOUNT_EMAIL")
-        if email != gcp_service_account:
+        print(
+            f"DEBUG: Token email: {email}, Expected email: {GCP_SERVICE_ACCOUNT_EMAIL}"
+        )
+        if email != GCP_SERVICE_ACCOUNT_EMAIL:
             raise HTTPException(
                 status_code=403, detail="Forbidden: Invalid token service account email"
             )

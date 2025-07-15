@@ -2,7 +2,6 @@ import { create } from "zustand";
 
 interface UserProfile {
   plan: string;
-  credits: number;
 }
 
 interface UserProfileState {

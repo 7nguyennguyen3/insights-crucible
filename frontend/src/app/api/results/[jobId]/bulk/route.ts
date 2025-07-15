@@ -2,12 +2,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
-import { AnalysisSection, SynthesisResults } from "@/app/_global/interface"; // Import SynthesisResults
+import { AnalysisSection, SynthesisResults } from "@/app/_global/interface";
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> } // <-- 1. Type is a Promise
 ) {
+  const { jobId } = await params;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -17,15 +18,16 @@ export async function PATCH(
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
-    const { jobId } = await context.params;
-
-    // --- CHANGE: Destructure the new updatedSynthesisResults property ---
+    // Destructure all possible fields from the request body
     const {
       updatedResults,
       updatedJobTitle,
       updatedSlideDeck,
       updatedSynthesisResults,
       updatedArgumentStructure,
+      updatedGlobalBriefing, // Add this
+      updatedBlogPost, // Add this
+      updatedXThread, // Add this
     } = await request.json();
 
     if (!jobId) {
@@ -38,7 +40,7 @@ export async function PATCH(
     const batch = db.batch();
     const jobDocRef = db.collection(`saas_users/${userId}/jobs`).doc(jobId);
 
-    // 1. Update the individual analysis sections (no change here)
+    // 1. Update individual analysis sections
     if (Array.isArray(updatedResults)) {
       updatedResults.forEach((section: AnalysisSection) => {
         if (section.id) {
@@ -51,23 +53,35 @@ export async function PATCH(
       });
     }
 
-    // 2. Update the main job title (no change here)
+    // 2. Create an object for all top-level field updates
+    const topLevelUpdates: { [key: string]: any } = {};
+
     if (typeof updatedJobTitle === "string") {
-      batch.update(jobDocRef, { job_title: updatedJobTitle });
+      topLevelUpdates.job_title = updatedJobTitle;
     }
-
-    // 3. Update the slide deck outline (no change here)
     if (Array.isArray(updatedSlideDeck)) {
-      batch.update(jobDocRef, { generated_slide_outline: updatedSlideDeck });
+      topLevelUpdates.generated_slide_outline = updatedSlideDeck;
     }
-
-    // --- CHANGE: Add logic to update the synthesis results ---
     if (updatedSynthesisResults) {
-      batch.update(jobDocRef, { synthesis_results: updatedSynthesisResults });
+      topLevelUpdates.synthesis_results = updatedSynthesisResults;
+    }
+    if (updatedArgumentStructure) {
+      topLevelUpdates.argument_structure = updatedArgumentStructure;
+    }
+    // ADD logic for new fields
+    if (updatedGlobalBriefing) {
+      topLevelUpdates.global_contextual_briefing = updatedGlobalBriefing;
+    }
+    if (typeof updatedBlogPost === "string") {
+      topLevelUpdates.generated_blog_post = updatedBlogPost;
+    }
+    if (Array.isArray(updatedXThread)) {
+      topLevelUpdates.generated_overall_x_thread = updatedXThread;
     }
 
-    if (updatedArgumentStructure) {
-      batch.update(jobDocRef, { argument_structure: updatedArgumentStructure });
+    // 3. Apply all top-level updates in one go
+    if (Object.keys(topLevelUpdates).length > 0) {
+      batch.update(jobDocRef, topLevelUpdates);
     }
 
     // Atomically commit all the changes
@@ -75,7 +89,7 @@ export async function PATCH(
 
     return NextResponse.json({ message: "Bulk update successful" });
   } catch (error) {
-    console.error(`Bulk update failed for job ${context.params.jobId}:`, error);
+    console.error(`Bulk update failed for job ${jobId}:`, error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

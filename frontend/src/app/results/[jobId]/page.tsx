@@ -20,6 +20,7 @@ import {
 } from "@/app/components/analysis/AnalysisPageLayout";
 import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
 import { ConsultantReportView } from "@/app/components/analysis/ConsultantReportView";
+import { ContextualBriefingDisplay } from "@/app/components/analysis/ContextualBriefingDisplay";
 import { AnalysisHeader } from "@/app/components/analysis/AnalysisHeader";
 import { GeneralReportView } from "@/app/components/analysis/GeneralReportView";
 import { SlideDeckDisplay } from "@/app/components/analysis/SlideDeckDisplay";
@@ -35,6 +36,11 @@ import {
 import { useJobData } from "@/hooks/useJobData";
 import { useShareDialog } from "@/hooks/useShareDialog";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
+import { useSimplePdfExport } from "@/hooks/useSimplePdfExport";
+import { useDocxExport } from "@/hooks/useDocxExport";
+import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
+import { BlogPostDisplay } from "@/app/components/analysis/BlogPostDisplay";
+import { XThreadDisplay } from "@/app/components/analysis/XThreadDisplay";
 
 const ResultsPage = () => {
   const { loading: authLoading } = useAuthStore();
@@ -79,10 +85,16 @@ const ResultsPage = () => {
     handleArgumentStructureListChange,
     handleArgumentStructureAddItem,
     handleArgumentStructureDeleteItem,
+    handleBlogPostChange,
+    handleXThreadAddItem,
+    handleXThreadChange,
+    handleXThreadDeleteItem,
   } = useJobData(jobId);
 
   // --- 2. Call your other hooks, passing in values from useJobData ---
   const { exportToMarkdown } = useMarkdownExport(jobData!);
+  const { exportToPdf } = useSimplePdfExport(jobData!);
+  const { exportToDocx } = useDocxExport(jobData!);
   const {
     isShareDialogOpen,
     setIsShareDialogOpen,
@@ -114,7 +126,8 @@ const ResultsPage = () => {
     return <div>Error loading analysis. Please try again.</div>;
   }
 
-  // --- 4. Render the JSX with props from the hooks ---
+  const claimForBriefing = jobData.global_contextual_briefing?.claim_text;
+
   return (
     <>
       <AnalysisPageLayout
@@ -143,91 +156,128 @@ const ResultsPage = () => {
             onEdit={() => setIsEditMode(true)}
             onSave={handleSave}
             onCancel={handleCancel}
+            onExportPdf={exportToPdf}
+            onExportDocx={exportToDocx}
           />
         }
       >
-        {jobData.synthesis_results && (
-          <div className="mb-12">
-            <ExecutiveSynthesisView
-              synthesis={jobData.synthesis_results}
-              isEditMode={isEditMode}
-              onSynthesisChange={handleSynthesisChange}
-              onSynthesisListChange={handleSynthesisListChange}
-              onSynthesisContradictionChange={
-                handleSynthesisContradictionChange
-              }
-              onSynthesisAddItem={handleSynthesisAddItem}
-              onSynthesisDeleteItem={handleSynthesisDeleteItem}
-            />
-            <div className="my-12">
-              <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2">
-                Detailed Section Analysis
-              </h2>
+        <div id="analysis-report-content">
+          {/* Step 1: Render the top-level card based on persona */}
+          {persona === "consultant" && jobData.synthesis_results && (
+            <div className="mb-12">
+              <ExecutiveSynthesisView
+                synthesis={jobData.synthesis_results}
+                isEditMode={isEditMode}
+                onSynthesisChange={handleSynthesisChange}
+                onSynthesisListChange={handleSynthesisListChange}
+                onSynthesisContradictionChange={
+                  handleSynthesisContradictionChange
+                }
+                onSynthesisAddItem={handleSynthesisAddItem}
+                onSynthesisDeleteItem={handleSynthesisDeleteItem}
+              />
             </div>
-          </div>
-        )}
+          )}
 
-        {persona === "consultant" ? (
-          <>
-            <ConsultantReportView
-              results={jobData.results as ConsultantAnalysisSection[]}
+          {persona === "general" && jobData.argument_structure && (
+            <div className="mb-12">
+              <ArgumentStructureCard
+                structure={jobData.argument_structure}
+                isEditMode={isEditMode}
+                onFieldChange={handleArgumentStructureFieldChange}
+                onListChange={handleArgumentStructureListChange}
+                onAddItem={handleArgumentStructureAddItem}
+                onDeleteItem={handleArgumentStructureDeleteItem}
+              />
+            </div>
+          )}
+
+          {/* Step 2: Render the Global Briefing right after the top-level card */}
+          {jobData.global_contextual_briefing &&
+            Object.keys(jobData.global_contextual_briefing).length > 0 && (
+              <div className="mb-12 p-6 bg-slate-50 dark:bg-slate-900 rounded-lg shadow-sm border dark:border-slate-800">
+                <ContextualBriefingDisplay
+                  briefing={jobData.global_contextual_briefing.briefing_data}
+                  claimText={claimForBriefing || "the document's central claim"} // <-- PASS THE PROP
+                  isEditMode={isEditMode}
+                  onFieldChange={handleContextualBriefingChange}
+                  onListItemChange={handleContextualBriefingListItemChange}
+                  onViewpointChange={handleContextualBriefingViewpointChange}
+                  onAddItem={handleContextualBriefingAddItem}
+                  onDeleteItem={handleContextualBriefingDeleteItem}
+                />
+              </div>
+            )}
+
+          {/* Render Blog Post */}
+          {jobData.generated_blog_post && (
+            <div className="mb-12">
+              <BlogPostDisplay
+                content={jobData.generated_blog_post}
+                isEditMode={isEditMode}
+                onChange={handleBlogPostChange}
+              />
+            </div>
+          )}
+
+          {/* Render X/Twitter Thread */}
+          {jobData.generated_overall_x_thread && (
+            <div className="mb-12">
+              <XThreadDisplay
+                thread={jobData.generated_overall_x_thread}
+                isEditMode={isEditMode}
+                onChange={handleXThreadChange}
+                onAddItem={handleXThreadAddItem}
+                onDeleteItem={handleXThreadDeleteItem}
+              />
+            </div>
+          )}
+          {/* Step 3: Add the header for the detailed section list */}
+          <div className="my-12">
+            <h2
+              className="text-2xl font-bold text-slate-700 
+            dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
+            >
+              Detailed Section Analysis
+            </h2>
+          </div>
+          {persona === "consultant" ? (
+            <>
+              <ConsultantReportView
+                results={jobData.results as ConsultantAnalysisSection[]}
+                isEditMode={isEditMode}
+                onFieldChange={handleFieldChange as any}
+                onAddItem={handleAddItem}
+                onDeleteItem={handleDeleteItem}
+                onItemChange={handleItemChange}
+              />
+              {jobData.generated_slide_outline && (
+                <div className="mt-12">
+                  <SlideDeckDisplay
+                    slides={jobData.generated_slide_outline}
+                    isEditMode={isEditMode}
+                    onAddSlide={handleAddSlide}
+                    onDeleteSlide={handleDeleteSlide}
+                    onSlideTitleChange={handleSlideTitleChange}
+                    onAddBullet={handleAddBullet}
+                    onDeleteBullet={handleDeleteBullet}
+                    onSlideChange={handleSlideChange}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <GeneralReportView
+              results={jobData.results as GeneralAnalysisSection[]}
               isEditMode={isEditMode}
               onFieldChange={handleFieldChange as any}
               onAddItem={handleAddItem}
               onDeleteItem={handleDeleteItem}
               onItemChange={handleItemChange}
-              onContextualBriefingChange={handleContextualBriefingChange as any}
-              onContextualBriefingListItemChange={
-                handleContextualBriefingListItemChange
-              }
-              onContextualBriefingViewpointChange={
-                handleContextualBriefingViewpointChange as any
-              }
-              onContextualBriefingAddItem={handleContextualBriefingAddItem}
-              onContextualBriefingDeleteItem={
-                handleContextualBriefingDeleteItem
-              }
+              onQaChange={handleQaChange}
             />
-            {jobData.generated_slide_outline && (
-              <div className="mt-12">
-                <SlideDeckDisplay
-                  slides={jobData.generated_slide_outline}
-                  isEditMode={isEditMode}
-                  onAddSlide={handleAddSlide}
-                  onDeleteSlide={handleDeleteSlide}
-                  onSlideTitleChange={handleSlideTitleChange}
-                  onAddBullet={handleAddBullet}
-                  onDeleteBullet={handleDeleteBullet}
-                  onSlideChange={handleSlideChange}
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <GeneralReportView
-            results={jobData.results as GeneralAnalysisSection[]}
-            isEditMode={isEditMode}
-            argument_structure={jobData.argument_structure}
-            onArgumentStructureFieldChange={handleArgumentStructureFieldChange}
-            onArgumentStructureListChange={handleArgumentStructureListChange}
-            onArgumentStructureAddItem={handleArgumentStructureAddItem}
-            onArgumentStructureDeleteItem={handleArgumentStructureDeleteItem}
-            onFieldChange={handleFieldChange as any}
-            onAddItem={handleAddItem}
-            onDeleteItem={handleDeleteItem}
-            onItemChange={handleItemChange}
-            onQaChange={handleQaChange}
-            onContextualBriefingChange={handleContextualBriefingChange}
-            onContextualBriefingListItemChange={
-              handleContextualBriefingListItemChange
-            }
-            onContextualBriefingViewpointChange={
-              handleContextualBriefingViewpointChange
-            }
-            onContextualBriefingAddItem={handleContextualBriefingAddItem}
-            onContextualBriefingDeleteItem={handleContextualBriefingDeleteItem}
-          />
-        )}
+          )}
+        </div>
       </AnalysisPageLayout>
 
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>

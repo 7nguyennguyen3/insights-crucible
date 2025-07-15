@@ -3,24 +3,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
-
-// DEFINE YOUR TIER LIMITS HERE
-// This makes it easy to add 'pro', 'business' tiers later.
-const TIER_LIMITS = {
-  free: {
-    // Default plan
-    audio_seconds_per_credit: 3600, // 1 hour
-    chars_per_credit: 50000,
-  },
-  pro: {
-    audio_seconds_per_credit: 7200, // 2 hours
-    chars_per_credit: 100000,
-  },
-};
+import { calculateCost, TIER_LIMITS } from "@/lib/billing"; // 1. Import from billing.ts
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate user
+    // 1. Authenticate user (no changes here)
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
     if (!sessionCookie) {
@@ -29,34 +16,28 @@ export async function POST(request: NextRequest) {
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
-    // 2. Get user's data from Firestore
+    // 2. Get user's data from Firestore (no changes here)
     const userDocRef = db.collection("saas_users").doc(userId);
     const userDoc = await userDocRef.get();
     if (!userDoc.exists) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
-    const userData = userDoc.data();
-    const userPlan = userData?.plan || "free"; // Default to 'free' if no plan is set
-    const userCredits = userData?.analyses_remaining || 0;
+    const userData = userDoc.data()!;
+    const userPlan = userData.plan || "free";
+    const userCredits = userData.analyses_remaining || 0;
 
-    // 3. Determine user's limits based on their plan
-    const limits =
-      TIER_LIMITS[userPlan as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
-
-    // 4. Calculate the required credits
+    // 3. Calculate the required credits using the helper function
     const { durations, character_count } = await request.json();
     let calculatedCost = 0;
 
     if (Array.isArray(durations)) {
-      // If we receive an array of durations, calculate cost for each file
-      for (const duration of durations) {
-        const fileCost = Math.ceil(duration / limits.audio_seconds_per_credit);
-        // Each file costs a minimum of 1 credit
-        calculatedCost += Math.max(1, fileCost);
-      }
+      // For a batch of audio files, sum the cost of each one
+      calculatedCost = durations.reduce((total: number, duration: number) => {
+        return total + calculateCost({ duration_seconds: duration }, userPlan);
+      }, 0);
     } else if (typeof character_count === "number") {
-      // The logic for text-based analysis remains the same
-      calculatedCost = Math.ceil(character_count / limits.chars_per_credit);
+      // For a single text analysis
+      calculatedCost = calculateCost({ character_count }, userPlan);
     } else {
       return NextResponse.json(
         { error: "Invalid request body." },
@@ -64,38 +45,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure cost is at least 1 credit
-    calculatedCost = Math.max(1, calculatedCost);
-
-    // 5. Check if user has enough credits
+    // 4. Check if user has enough credits (no changes here)
     if (userCredits < calculatedCost) {
       return NextResponse.json(
         {
           error: "Insufficient Credits",
           detail: `This job requires ${calculatedCost} analysis credits, but you only have ${userCredits}.`,
         },
-        { status: 402 } // Payment Required
+        { status: 402 }
       );
     }
 
-    // 6. If they have enough, return the calculated cost for confirmation
-    // New, more detailed response payload
-    let responsePayload = {
+    // 5. If they have enough, return the calculated cost for confirmation
+    const limits =
+      TIER_LIMITS[userPlan as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
+
+    const responsePayload = {
       message: "Credit check successful.",
       calculatedCost: calculatedCost,
-      // Add the context needed for the UI explanation
       usage: 0,
       limitPerCredit: 0,
       unit: "",
     };
 
     if (Array.isArray(durations)) {
-      // If we processed an array of audio files
-      responsePayload.usage = durations.reduce((a, b) => a + b, 0); // Sum the durations for the usage report
+      responsePayload.usage = durations.reduce((a, b) => a + b, 0);
       responsePayload.limitPerCredit = limits.audio_seconds_per_credit;
       responsePayload.unit = "audio";
     } else if (typeof character_count === "number") {
-      // If we processed a text transcript
       responsePayload.usage = character_count;
       responsePayload.limitPerCredit = limits.chars_per_credit;
       responsePayload.unit = "text";

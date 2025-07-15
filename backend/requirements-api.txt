@@ -13,3 +13,4 @@ google-cloud-tasks==2.19.3
 python-dotenv==1.1.0
 pydantic==2.11.5
 rich==14.0.0
+pydantic-settings==2.10.1

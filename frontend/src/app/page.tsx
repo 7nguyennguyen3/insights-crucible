@@ -2,18 +2,17 @@
 
 "use client";
 
-import React from "react";
 import {
   ArrowRight,
-  UploadCloud,
-  Zap,
   BarChart,
   BrainCircuit,
+  Copy,
   FileText,
   MessageSquareQuote,
-  Copy, // NEW: Icon for content creation feature
+  UploadCloud,
+  Zap,
 } from "lucide-react";
-import { FaXTwitter } from "react-icons/fa6";
+import React from "react";
 
 // --- Components (Button, FeatureCard, HowItWorksStep) are unchanged ---
 
@@ -116,7 +115,7 @@ const MarketingHomePage = () => {
       {/* --- Visual Section with Video (Unchanged) --- */}
       <section className="pb-20 md:pb-32">
         <div className="container mx-auto px-4">
-          <div className="relative max-w-5xl mx-auto bg-slate-200 dark:bg-slate-800/50 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-700 p-2 pt-7">
+          {/* <div className="relative max-w-5xl mx-auto bg-slate-200 dark:bg-slate-800/50 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-700 p-2 pt-7">
             <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -132,7 +131,7 @@ const MarketingHomePage = () => {
                 className="absolute top-0 left-0 w-full h-full"
               ></iframe>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 

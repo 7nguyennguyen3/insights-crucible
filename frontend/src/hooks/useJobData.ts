@@ -68,6 +68,9 @@ export const useJobData = (jobId: string) => {
       updatedSlideDeck: draftData.generated_slide_outline,
       updatedSynthesisResults: draftData.synthesis_results,
       updatedArgumentStructure: draftData.argument_structure,
+      updatedGlobalBriefing: draftData.global_contextual_briefing,
+      updatedBlogPost: draftData.generated_blog_post,
+      updatedXThread: draftData.generated_overall_x_thread,
     };
 
     try {
@@ -282,13 +285,13 @@ export const useJobData = (jobId: string) => {
   );
 
   const handleContextualBriefingChange = useCallback(
-    (sectionId: string, field: keyof ContextualBriefing, value: any) => {
+    (field: keyof ContextualBriefing, value: any) => {
       setDraftData(
         produce((draft) => {
-          if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
-          if (section?.contextual_briefing) {
-            (section.contextual_briefing as any)[field] = value;
+          // Access .briefing_data to modify the correct object
+          if (draft?.global_contextual_briefing?.briefing_data) {
+            (draft.global_contextual_briefing.briefing_data as any)[field] =
+              value;
           }
         })
       );
@@ -297,32 +300,29 @@ export const useJobData = (jobId: string) => {
   );
 
   const handleContextualBriefingAddItem = useCallback(
-    (
-      sectionId: string,
-      field: "key_nuances_and_conditions" | ViewpointField
-    ) => {
+    (field: "key_nuances_and_conditions" | ViewpointField) => {
       setDraftData(
         produce((draft) => {
-          if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
-          if (section?.contextual_briefing) {
-            if (field === "key_nuances_and_conditions") {
-              section.contextual_briefing.key_nuances_and_conditions = [
-                ...(section.contextual_briefing.key_nuances_and_conditions ||
-                  []),
-                "",
-              ];
-            } else if (field === "supporting_viewpoints") {
-              section.contextual_briefing.supporting_viewpoints = [
-                ...(section.contextual_briefing.supporting_viewpoints || []),
-                { perspective: "", source: "", url: "" },
-              ];
-            } else if (field === "challenging_viewpoints") {
-              section.contextual_briefing.challenging_viewpoints = [
-                ...(section.contextual_briefing.challenging_viewpoints || []),
-                { perspective: "", source: "", url: "" },
-              ];
-            }
+          if (!draft?.global_contextual_briefing?.briefing_data) return;
+
+          // Access .briefing_data to get to the actual content
+          const briefing = draft.global_contextual_briefing.briefing_data;
+
+          if (field === "key_nuances_and_conditions") {
+            briefing.key_nuances_and_conditions = [
+              ...(briefing.key_nuances_and_conditions || []),
+              "",
+            ];
+          } else if (field === "supporting_viewpoints") {
+            briefing.supporting_viewpoints = [
+              ...(briefing.supporting_viewpoints || []),
+              { perspective: "New Perspective", source: "New Source", url: "" },
+            ];
+          } else if (field === "challenging_viewpoints") {
+            briefing.challenging_viewpoints = [
+              ...(briefing.challenging_viewpoints || []),
+              { perspective: "New Perspective", source: "New Source", url: "" },
+            ];
           }
         })
       );
@@ -331,20 +331,16 @@ export const useJobData = (jobId: string) => {
   );
 
   const handleContextualBriefingDeleteItem = useCallback(
-    (
-      sectionId: string,
-      field: "key_nuances_and_conditions" | ViewpointField,
-      index: number
-    ) => {
+    (field: "key_nuances_and_conditions" | ViewpointField, index: number) => {
       setDraftData(
         produce((draft) => {
-          if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
-          if (section?.contextual_briefing) {
-            const arrayField = section.contextual_briefing[field];
-            if (Array.isArray(arrayField)) {
-              arrayField.splice(index, 1);
-            }
+          if (!draft?.global_contextual_briefing?.briefing_data) return;
+
+          // Access .briefing_data to get to the actual content
+          const arrayField =
+            draft.global_contextual_briefing.briefing_data[field];
+          if (Array.isArray(arrayField)) {
+            arrayField.splice(index, 1);
           }
         })
       );
@@ -353,19 +349,17 @@ export const useJobData = (jobId: string) => {
   );
 
   const handleContextualBriefingListItemChange = useCallback(
-    (
-      sectionId: string,
-      field: "key_nuances_and_conditions",
-      index: number,
-      value: string
-    ) => {
+    (field: "key_nuances_and_conditions", index: number, value: string) => {
       setDraftData(
         produce((draft) => {
-          if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
-          if (section?.contextual_briefing?.key_nuances_and_conditions) {
-            section.contextual_briefing.key_nuances_and_conditions[index] =
-              value;
+          // Access .briefing_data to get to the actual content
+          if (
+            draft?.global_contextual_briefing?.briefing_data
+              ?.key_nuances_and_conditions
+          ) {
+            draft.global_contextual_briefing.briefing_data.key_nuances_and_conditions[
+              index
+            ] = value;
           }
         })
       );
@@ -375,7 +369,6 @@ export const useJobData = (jobId: string) => {
 
   const handleContextualBriefingViewpointChange = useCallback(
     (
-      sectionId: string,
       field: ViewpointField,
       index: number,
       prop: ViewpointProperty,
@@ -383,19 +376,66 @@ export const useJobData = (jobId: string) => {
     ) => {
       setDraftData(
         produce((draft) => {
-          if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
-          if (section?.contextual_briefing) {
-            const viewpointArray = section.contextual_briefing[field];
-            if (viewpointArray?.[index]) {
-              (viewpointArray[index] as any)[prop] = value;
-            }
+          if (!draft?.global_contextual_briefing?.briefing_data) return;
+
+          // Access .briefing_data to get to the actual content
+          const viewpointArray =
+            draft.global_contextual_briefing.briefing_data[field];
+          if (viewpointArray?.[index]) {
+            (viewpointArray[index] as any)[prop] = value;
           }
         })
       );
     },
     []
   );
+
+  const handleBlogPostChange = useCallback((newContent: string) => {
+    setDraftData(
+      produce((draft) => {
+        if (draft) {
+          draft.generated_blog_post = newContent;
+        }
+      })
+    );
+  }, []);
+
+  // --- Handlers for X Thread ---
+  const handleXThreadChange = useCallback(
+    (index: number, newContent: string) => {
+      setDraftData(
+        produce((draft) => {
+          if (draft?.generated_overall_x_thread) {
+            draft.generated_overall_x_thread[index] = newContent;
+          }
+        })
+      );
+    },
+    []
+  );
+
+  const handleXThreadAddItem = useCallback(() => {
+    setDraftData(
+      produce((draft) => {
+        if (draft) {
+          if (!draft.generated_overall_x_thread) {
+            draft.generated_overall_x_thread = [];
+          }
+          draft.generated_overall_x_thread.push("New tweet...");
+        }
+      })
+    );
+  }, []);
+
+  const handleXThreadDeleteItem = useCallback((index: number) => {
+    setDraftData(
+      produce((draft) => {
+        if (draft?.generated_overall_x_thread) {
+          draft.generated_overall_x_thread.splice(index, 1);
+        }
+      })
+    );
+  }, []);
 
   // --- Handlers for the Slide Deck ---
   const handleAddSlide = useCallback(() => {
@@ -602,5 +642,11 @@ export const useJobData = (jobId: string) => {
     handleArgumentStructureListChange,
     handleArgumentStructureAddItem,
     handleArgumentStructureDeleteItem,
+
+    // --- Blog Post & X-Thread Handlers ---
+    handleBlogPostChange,
+    handleXThreadChange,
+    handleXThreadAddItem,
+    handleXThreadDeleteItem,
   };
 };

@@ -2,12 +2,32 @@
 
 "use client";
 
-import Image from "next/image"; // Import the Next.js Image component
+import { PRIVACY_POLICY_JSON } from "@/lib/data";
+import Image from "next/image";
 import Link from "next/link";
 import { FaGithub, FaLinkedin, FaXTwitter } from "react-icons/fa6";
+import React, { useState, useEffect } from "react"; // Import useEffect
+import PrivacyPolicyModal from "./PrivacyPolicyModel";
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
+  // Initialize currentYear as null or an empty string for SSR
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  // Use useEffect to set the year only after the component mounts on the client
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []); // Empty dependency array means this runs once on mount
+
+  const [isPrivacyPolicyOpen, setIsPrivacyPolicyOpen] = useState(false);
+
+  const handleOpenPrivacyPolicy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsPrivacyPolicyOpen(true);
+  };
+
+  const handleClosePrivacyPolicy = () => {
+    setIsPrivacyPolicyOpen(false);
+  };
 
   return (
     <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
@@ -78,12 +98,13 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/legal/privacy"
-                  className="text-base text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-500"
+                <a
+                  href="#"
+                  onClick={handleOpenPrivacyPolicy}
+                  className="cursor-pointer text-base text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-500"
                 >
                   Privacy Policy
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -92,20 +113,20 @@ const Footer = () => {
           <div className="space-y-6">
             <Link href="/" className="flex items-center">
               <Image
-                src="/logo-icon.svg" // Assumes logo.svg is in the /public directory
+                src="/logo-icon.svg"
                 alt="Insights Crucible Logo"
-                width={40} // Adjust width as needed
-                height={40} // Adjust height as needed
-                className="h-16 w-auto" // Example sizing
+                width={40}
+                height={40}
+                className="h-16 w-auto"
               />
               <span className="sr-only">Insights Crucible</span>
             </Link>
             <p className="text-base text-slate-600 dark:text-slate-400">
-              Transforming content into actionable insights.
+              Transform Content into Actionable Intelligence.
             </p>
             <div className="flex space-x-5">
               <a
-                href="https://twitter.com"
+                href="https://x.com/ICrucibleHQ" // Example new Twitter handle
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-blue-600 dark:hover:text-blue-500"
@@ -113,17 +134,20 @@ const Footer = () => {
                 <span className="sr-only">Twitter</span>
                 <FaXTwitter className="h-6 w-6" />
               </a>
-              <a
-                href="https://github.com"
+
+              {/* Assuming you want to keep GitHub link, if not, remove this <a> tag */}
+              {/* <a
+                href="https://github.com/your-github" // Replace with your actual GitHub
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-slate-900 dark:hover:text-white"
               >
                 <span className="sr-only">GitHub</span>
                 <FaGithub className="h-6 w-6" />
-              </a>
+              </a> */}
+
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/company/insights-crucible"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-blue-700 dark:hover:text-blue-600"
@@ -137,10 +161,18 @@ const Footer = () => {
 
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
           <p className="text-base text-slate-500 dark:text-slate-400 text-center">
-            &copy; {currentYear} Insights Crucible. All rights reserved.
+            &copy; {currentYear ? currentYear : ""} Insights Crucible. All
+            rights reserved.
+            {/* Added a conditional render for currentYear */}
           </p>
         </div>
       </div>
+
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal
+        isOpen={isPrivacyPolicyOpen}
+        onClose={handleClosePrivacyPolicy}
+      />
     </footer>
   );
 };

@@ -19,39 +19,41 @@ import { Button } from "@/components/ui/button";
 import { LifeBuoy, Search, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-// You can easily manage all your FAQs here
 const faqData = [
   {
     category: "Getting Started",
     questions: [
       {
-        q: "What is Insight Engine?",
-        a: "Insight Engine is a powerful tool that transforms raw content like audio, video, or text into structured summaries, key concepts, and ready-to-publish content like social media threads and blog posts.",
+        q: "What is Insights Crucible?",
+        a: "Insights Crucible is a platform that analyzes your text or audio content to extract structured summaries, key concepts, and generate ready-to-publish material like social media threads and blog posts.",
       },
       {
-        q: "How do I process my first file?",
-        a: "Navigate to the 'Insight Engine' page. You can either paste a transcript directly into the text area or use the 'Upload File' tab to select an audio or video file from your computer. Then, select the analyses you want to run and click 'Process'.",
+        q: "How do I run my first analysis?",
+        // ✅ UPDATED: More precise description of the process.
+        a: "Navigate to the launch engine. You can either paste a transcript or upload a supported audio file (MP3, M4A, WAV). After you provide the content, click 'Check Requirements' to see the analysis cost. If you have enough allowance, you can then confirm to begin processing.",
       },
       {
-        q: "What file formats are supported?",
-        a: "We currently support MP3, MP4, M4A, and WAV for file uploads. You can also process any text by pasting it directly.",
+        q: "What file formats do you support?",
+        a: "We currently support MP3, MP4, M4A, and WAV for audio uploads. You can also process any text by pasting it directly.",
       },
     ],
   },
   {
-    category: "Billing & Subscription",
+    category: "Billing and Plans",
     questions: [
       {
-        q: "How does the credit system work?",
-        a: "Every analysis has an estimated cost based on its complexity and length. These costs are deducted from your monthly credits. Your free plan includes $1 of credits every month, and you can upgrade to a Pro plan for more credits and discounts.",
+        q: "How does the analysis allowance work?",
+        // ✅ UPDATED: Replaced 'credits' with 'analyses'.
+        a: "Each analysis you run costs a minimum of 1 from your allowance. The Free plan includes 3 analyses per month. Paid plans (Charter/Pro) come with a more generous allowance of 25 analyses per month.",
       },
       {
-        q: "How can I upgrade my plan?",
-        a: "You can view and change your subscription plan from the 'Pricing' page. If you are on a paid plan, you can manage your billing details from the 'Settings' page.",
+        q: "Do my unused analyses roll over?",
+        // ✅ UPDATED: Clearer policy for free vs. paid.
+        a: "For paid plans, yes! Unused analyses roll over to the next month. For the Free plan, the allowance resets to 3 new analyses at the beginning of each calendar month and does not roll over.",
       },
       {
-        q: "Do my credits roll over to the next month?",
-        a: "No, your monthly credits reset at the beginning of each billing cycle. They do not roll over.",
+        q: "How do I upgrade or manage my plan?",
+        a: "You can upgrade from a Free to a paid plan on our 'Pricing' page. If you are already on a paid plan, all management tasks, including cancellation and billing details, are handled on your 'Account' page.",
       },
     ],
   },
@@ -60,11 +62,11 @@ const faqData = [
     questions: [
       {
         q: "How do I change my password?",
-        a: "You can change your password on the 'Settings' page. You will be required to enter your current password for security purposes.",
+        a: "You can change your password on the 'Settings' page, accessible from your Account dashboard. You will be required to enter your current password for security.",
       },
       {
         q: "How do I delete my account?",
-        a: "You can delete your account from the 'Danger Zone' section at the bottom of the 'Settings' page. Please be aware that this action is permanent and cannot be undone.",
+        a: "You can permanently delete your account from the 'Danger Zone' section at the bottom of the 'Settings' page. Please be aware that this action is irreversible.",
       },
     ],
   },

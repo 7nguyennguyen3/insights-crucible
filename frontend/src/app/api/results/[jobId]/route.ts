@@ -6,8 +6,9 @@ import { cookies } from "next/headers";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> } // <-- 1. Type is a Promise
 ) {
+  const { jobId } = await params;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -17,7 +18,6 @@ export async function GET(
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
-    const { jobId } = await context.params;
     if (!jobId) {
       return NextResponse.json(
         { error: "Job ID is required" },
@@ -48,8 +48,8 @@ export async function GET(
       status: jobData?.status,
       job_title: jobData?.job_title,
       structured_transcript: jobData?.structured_transcript || null,
+      global_contextual_briefing: jobData?.global_contextual_briefing || null,
 
-      // --- NEW ---
       generated_slide_outline: jobData?.generated_slide_outline || null,
 
       generated_blog_post: jobData?.generated_blog_post || null,
@@ -67,10 +67,7 @@ export async function GET(
 
     return NextResponse.json(finalResponse);
   } catch (error) {
-    console.error(
-      `Error fetching results for job ${context.params.jobId}:`,
-      error
-    );
+    console.error(`Error fetching results for job ${jobId}:`, error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -13,7 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthInitializer />
       <NotificationListener />
       {children}
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
     </SWRConfig>
   );
 }

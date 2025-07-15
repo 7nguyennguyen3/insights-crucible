@@ -1,14 +1,14 @@
-// pages/pricing.tsx
-
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { loadStripe } from "@stripe/stripe-js";
 import apiClient from "@/lib/apiClient";
+import { useAuthStore } from "@/store/authStore";
+import { loadStripe } from "@stripe/stripe-js";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
+// UI Components
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,11 +18,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Check, X, Loader2, Star, Award } from "lucide-react";
+import { Award, Check, Loader2, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@radix-ui/react-label";
 
-// Initialize Stripe.js with your publishable key
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 );
@@ -35,11 +43,16 @@ const PricingPage = () => {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(
     null
   );
+  // ✅ CHANGED: Billing cycle is now fixed to monthly.
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">(
     "monthly"
   );
+  const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState(user?.email || "");
+  const [contactMessage, setContactMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
-  // --- CHANGE: Updated feature lists for the new analysis-based model ---
   const tiers = [
     {
       name: "Free",
@@ -64,8 +77,8 @@ const PricingPage = () => {
       planId: "charter",
       price: { monthly: "$15", annually: "$150" },
       price_id: {
-        monthly: process.env.NEXT_PUBLIC_STRIPE_CHARTER_PLAN_PRICE_ID!,
-        annually: process.env.NEXT_PUBLIC_STRIPE_CHARTER_ANNUAL_PLAN_PRICE_ID!,
+        monthly: process.env.NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID!,
+        annually: null,
       },
       description: "Limited-time lifetime pricing for our first 100 users.",
       features: [
@@ -101,45 +114,69 @@ const PricingPage = () => {
     },
   ];
 
-  // The handleCreateCheckout and handleManageSubscription functions remain unchanged
-  const handleCreateCheckout = async (priceId: string) => {
-    if (!user) return router.push("/auth/signin");
+  const handleCreateCheckout = async ({
+    priceId,
+    quantity = 1,
+  }: {
+    priceId: string;
+    quantity?: number;
+  }) => {
+    if (!user) {
+      router.push("/auth/signin");
+      return;
+    }
     setIsCheckoutLoading(priceId);
     try {
-      const success_url = `${window.location.origin}/dashboard?payment_success=true`;
+      const success_url = `${window.location.origin}/account?payment_success=true`;
       const cancel_url = window.location.href;
+
       const { data } = await apiClient.post(
         "/billing/create-checkout-session",
-        { priceId, success_url, cancel_url }
+        { priceId, quantity, success_url, cancel_url }
       );
+
       const stripe = await stripePromise;
-      if (!stripe) throw new Error("Stripe.js not loaded");
+      if (!stripe) throw new Error("Stripe.js has not loaded yet.");
+
       await stripe.redirectToCheckout({ sessionId: data.sessionId });
     } catch (err) {
       console.error("Failed to create checkout session:", err);
+      toast.error("An error occurred. Please try again.");
     } finally {
       setIsCheckoutLoading(null);
     }
   };
 
-  const handleManageSubscription = async () => {
-    if (!user) return router.push("/auth/signin");
-    setIsCheckoutLoading("manage_subscription");
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactName || !contactEmail || !contactMessage) {
+      toast.error("Please fill out all fields.");
+      return;
+    }
+    setIsSending(true);
     try {
-      const { data } = await apiClient.post("/billing/create-portal-session");
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("Could not retrieve billing portal URL.");
-      }
-    } catch (err) {
-      console.error("Failed to create portal session:", err);
+      await apiClient.post("/support/contact", {
+        name: contactName,
+        email: contactEmail,
+        message: contactMessage,
+      });
+      toast.success("Message Sent!", {
+        description: "Thanks for reaching out. We'll get back to you shortly.",
+      });
+      setIsContactDialogOpen(false); // Close dialog on success
+      // Reset form
+      setContactName("");
+      setContactEmail(user?.email || "");
+      setContactMessage("");
+    } catch (error) {
+      toast.error("Failed to send message.", {
+        description: "Please try again.",
+      });
     } finally {
-      setIsCheckoutLoading(null);
+      setIsSending(false);
     }
   };
 
-  // The getButtonState logic remains unchanged
   const getButtonState = (tier: (typeof tiers)[0]) => {
     if (!user) {
       return {
@@ -157,16 +194,20 @@ const PricingPage = () => {
       }
       return {
         text: "Manage Subscription",
-        action: handleManageSubscription,
-        disabled: isCheckoutLoading === "manage_subscription",
+        action: () => router.push("/account"),
+        disabled: isCheckoutLoading === "manage",
       };
     }
 
     if (tier.planId === "charter") {
       const priceId = tier.price_id[billingCycle];
+      if (!priceId) {
+        // Handles the case where the annual plan is disabled
+        return { text: "Not Available", action: () => {}, disabled: true };
+      }
       return {
         text: "Become a Charter Member",
-        action: () => handleCreateCheckout(priceId!),
+        action: () => handleCreateCheckout({ priceId: priceId! }),
         disabled: isCheckoutLoading !== null || currentPlan === "charter",
       };
     }
@@ -174,7 +215,7 @@ const PricingPage = () => {
     if (tier.planId === "enterprise") {
       return {
         text: "Contact Sales",
-        action: () => router.push("mailto:sales@yourdomain.com"), // Remember to change this email
+        action: () => setIsContactDialogOpen(true),
         disabled: false,
       };
     }
@@ -184,6 +225,68 @@ const PricingPage = () => {
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen w-full py-12 sm:py-16 lg:py-20">
+      <Dialog open={isContactDialogOpen} onOpenChange={setIsContactDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Contact Sales</DialogTitle>
+            <DialogDescription>
+              Have questions about our Enterprise plan? Fill out the form below
+              and we'll be in touch.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleContactSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="message" className="text-right">
+                  Message
+                </Label>
+                <Textarea
+                  id="message"
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isSending}>
+                {isSending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "Send Message"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
         <header className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
@@ -195,7 +298,7 @@ const PricingPage = () => {
           </p>
         </header>
 
-        {/* Billing Cycle Toggle remains unchanged */}
+        {/* ✅ CHANGED: Commented out the billing cycle toggle for now
         <div className="flex justify-center items-center gap-4 mb-12">
           <Label htmlFor="billing-cycle" className="font-medium">
             Monthly
@@ -214,9 +317,9 @@ const PricingPage = () => {
             Save 16%
           </span>
         </div>
+        */}
 
-        {/* The Tier Card mapping logic remains the same, it will use the new `tiers` data automatically */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch mt-12">
           {tiers.map((tier) => {
             const buttonState = getButtonState(tier);
             const price = tier.price[billingCycle];
@@ -245,7 +348,7 @@ const PricingPage = () => {
                     </span>
                     {tier.planId !== "free" && tier.planId !== "enterprise" && (
                       <span className="text-slate-500 dark:text-slate-400">
-                        {billingCycle === "monthly" ? "/month" : "/year"}
+                        /month
                       </span>
                     )}
                   </div>
@@ -293,7 +396,7 @@ const PricingPage = () => {
                     {isCheckoutLoading &&
                     (isCheckoutLoading === tier.price_id[billingCycle] ||
                       (buttonState.text === "Manage Subscription" &&
-                        isCheckoutLoading === "manage_subscription")) ? (
+                        isCheckoutLoading === "manage")) ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       buttonState.text
@@ -304,8 +407,6 @@ const PricingPage = () => {
             );
           })}
         </div>
-
-        {/* --- CHANGE: Updated FAQ section for the new model --- */}
         <section className="mt-20 max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-8">
             Frequently Asked Questions
@@ -316,41 +417,45 @@ const PricingPage = () => {
                 What counts as one "analysis"?
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Each file you upload and process, whether it's an audio file or
-                a text document, counts as a single analysis against your
-                monthly allowance, regardless of its length.
+                Each file you upload and process—whether audio or text—counts as
+                a single analysis against your balance, regardless of its
+                length.
               </p>
             </div>
             <div>
               <h3 className="font-semibold text-lg">
-                What happens if I use all my monthly analyses on the Charter
-                plan?
+                Do my monthly analyses roll over? 🤔
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Your allowance of 25 analyses will reset at the beginning of
-                your next billing cycle. We are currently exploring options for
-                purchasing additional analysis packs for power users.
+                <b>Yes, for paid plans.</b> Unused analyses on the Pro or
+                Charter plans roll over to the next month, up to a maximum
+                accumulated balance of 100 analyses.
+                <br />
+                <br />
+                Analyses for the Free plan do not roll over. Your balance is
+                reset to 3 new analyses at the start of each month.
               </p>
             </div>
             <div>
               <h3 className="font-semibold text-lg">
-                Do my monthly analyses roll over?
+                When do I get my new analyses? 🗓️
               </h3>
               <p className="text-slate-600 dark:text-slate-400 mt-2">
-                No, unused analyses do not roll over to the next month. Your 25
-                analyses are replenished on each billing cycle renewal. The 5
-                analyses on the Free plan are a one-time grant and do not
-                refresh.
+                <b>Pro & Charter Plans:</b> Your analysis allowance resets on
+                your personal billing date (e.g., if you subscribe on July 15th,
+                your next allowance arrives on August 15th).
+                <br />
+                <br />
+                <b>Free Plan:</b> You receive 3 new analyses on the 1st day of
+                every calendar month, based on Pacific Time (PT).
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg">
-                Can I cancel my Charter plan?
-              </h3>
+              <h3 className="font-semibold text-lg">Can I cancel my plan?</h3>
               <p className="text-slate-600 dark:text-slate-400 mt-2">
-                Yes, you can cancel your subscription at any time from your
-                account dashboard. You will retain access to Charter features
-                until the end of your current billing period.
+                Of course. You can cancel your subscription at any time from
+                your account dashboard. You'll retain access to all paid
+                features until the end of your current billing period.
               </p>
             </div>
           </div>

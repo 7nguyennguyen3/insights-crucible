@@ -1,6 +1,6 @@
 # Dockerfile.worker
 
-FROM python:3.13.5-slim-bookworm
+FROM python:3.11-slim-bookworm
 
 # Apply OS security updates to fix vulnerabilities
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
@@ -13,7 +13,11 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN python -m nltk.downloader punkt
+# Download the 'punkt' tokenizer data to a standard location inside the image
+RUN python -m nltk.downloader -d /usr/share/nltk_data punkt
+
+# Tell NLTK where to find its data within the container
+ENV NLTK_DATA /usr/share/nltk_data
 
 COPY src/ ./src/
 

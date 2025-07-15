@@ -9,8 +9,9 @@ const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
 // --- MODIFICATION: Changed from POST to GET ---
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> } // <-- 1. Type is a Promise
 ) {
+  const { jobId } = await params;
   try {
     // 1. Authenticate the user
     const cookieStore = await cookies();
@@ -22,7 +23,6 @@ export async function GET(
     const userId = decodedToken.uid;
 
     // 2. Get the job_id from the URL parameters
-    const { jobId } = await params;
     if (!jobId) {
       return NextResponse.json(
         { error: "Job ID is required" },

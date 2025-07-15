@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src import config
 from src.api_routes import router as analysis_router
 from src import db_manager
 

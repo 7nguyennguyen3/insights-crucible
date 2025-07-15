@@ -1,268 +1,71 @@
-// app/auth/page.tsx
-"use client";
+// src/app/auth/page.tsx
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { auth } from "@/lib/firebaseClient";
-import axios from "axios";
-import {
-  getAdditionalUserInfo,
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-} from "firebase/auth";
-import { Loader2, Terminal } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import { FaGoogle } from "react-icons/fa6"; // Import the icon
+import React from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function AuthPage() {
-  const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") || "signin";
+import { AuthForm } from "./AuthForm";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import admin from "@/lib/firebaseAdmin";
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default async function AuthPage() {
+  const sessionCookie = (await cookies()).get("session")?.value;
 
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(initialTab);
-
-  // Clear form fields and errors when tab changes
-  useEffect(() => {
-    setName("");
-    setEmail("");
-    setPassword("");
-    setError(null);
-  }, [activeTab]);
-
-  const handleSessionLogin = async (idToken: string) => {
-    await axios.post("/api/auth/session-login", { idToken });
-    // Use window.location.href for a full page reload to ensure session is read correctly
-    window.location.href = "/dashboard";
-  };
-
-  const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (activeTab === "signup" && password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-    setError(null);
-    setLoading(true);
-
+  if (sessionCookie) {
+    let isCookieValid = false;
     try {
-      if (activeTab === "signup") {
-        // --- Sign-Up Logic ---
-        // Step 1: Create the user account via your backend API
-        await axios.post("/api/auth/signup", { name, email, password });
-
-        // Step 2: Automatically sign them in to get the ID token
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const idToken = await userCredential.user.getIdToken();
-
-        // Step 3: Create the session
-        await handleSessionLogin(idToken);
-      } else {
-        // --- Sign-In Logic ---
-        // Step 1: Sign in with Firebase on the client
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const idToken = await userCredential.user.getIdToken();
-
-        // Step 2: Create the session
-        await handleSessionLogin(idToken);
-      }
-    } catch (err: any) {
-      const defaultError = "An unexpected error occurred. Please try again.";
-      const errorMsg =
-        err.response?.data?.message || err.message || defaultError;
-      setError(errorMsg);
-      console.error(err);
-    } finally {
-      setLoading(false);
+      // ✅ Only wrap the verification in the try...catch
+      await admin.auth().verifySessionCookie(sessionCookie, true);
+      isCookieValid = true;
+    } catch (error) {
+      // Cookie is invalid or expired. Silently proceed to show the login form.
+      // The console.error is optional here as this is an expected path.
     }
-  };
 
-  const handleGoogleSignIn = async () => {
-    setError(null);
-    setGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const additionalUserInfo = getAdditionalUserInfo(result);
-
-      if (additionalUserInfo?.isNewUser) {
-        await axios.post("/api/auth/social-signin", {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName,
-        });
-      }
-
-      const idToken = await user.getIdToken();
-      await handleSessionLogin(idToken);
-    } catch (err: any) {
-      setError("Failed to sign in with Google. Please try again.");
-      console.error("Google Sign-In Error:", err);
-    } finally {
-      setGoogleLoading(false);
+    if (isCookieValid) {
+      redirect("/dashboard");
     }
-  };
+  }
 
+  // If no cookie exists, or if the cookie was invalid, render the form.
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full max-w-md mx-4"
-      >
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">
-              {activeTab === "signin" ? "Welcome Back" : "Create an Account"}
-            </CardTitle>
-            <CardDescription>
-              {activeTab === "signin"
-                ? "Sign in to access your dashboard."
-                : "Enter your details to get started."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <Terminal className="h-4 w-4" />
-                <AlertTitle>Authentication Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading || loading}
-              >
-                {googleLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <FaGoogle className="mr-2 h-5 w-5" />
-                )}
-                Continue with Google
-              </Button>
-
-              <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-
-              <form onSubmit={handleEmailPasswordSubmit}>
-                <TabsContent value="signin" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email-signin">Email</Label>
-                    <Input
-                      id="email-signin"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={loading || googleLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password-signin">Password</Label>
-                    <Input
-                      id="password-signin"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={loading || googleLoading}
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="signup" className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name-signup">Name</Label>
-                    <Input
-                      id="name-signup"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      disabled={loading || googleLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email-signup">Email</Label>
-                    <Input
-                      id="email-signup"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={loading || googleLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password-signup">Password</Label>
-                    <Input
-                      id="password-signup"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={loading || googleLoading}
-                    />
-                  </div>
-                </TabsContent>
-
-                <Button
-                  type="submit"
-                  className="w-full mt-4"
-                  disabled={loading || googleLoading}
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {activeTab === "signin" ? "Sign In" : "Create Account"}
-                </Button>
-              </form>
-            </div>
-          </CardContent>
-        </Card>
-      </Tabs>
+      <React.Suspense fallback={<AuthSkeleton />}>
+        <AuthForm />
+      </React.Suspense>
     </div>
+  );
+}
+
+function AuthSkeleton() {
+  return (
+    <Card className="w-full max-w-md mx-4">
+      <CardHeader className="text-center space-y-3">
+        <Skeleton className="h-8 w-48 mx-auto" />
+        <Skeleton className="h-5 w-64 mx-auto" />
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <div className="relative my-2">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+        </div>
+        <div className="grid w-full grid-cols-2 gap-2 mt-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-4 pt-4">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <Skeleton className="h-10 w-full mt-4" />
+      </CardContent>
+    </Card>
   );
 }

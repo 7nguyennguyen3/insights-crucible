@@ -4,8 +4,9 @@ import { cookies } from "next/headers";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
+  const { jobId } = await params;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -15,7 +16,6 @@ export async function GET(
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
-    const { jobId } = params;
     if (!jobId) {
       return NextResponse.json(
         { error: "Job ID is required" },
@@ -35,7 +35,7 @@ export async function GET(
 
     return NextResponse.json({ status: docSnap.data()?.status || "UNKNOWN" });
   } catch (error) {
-    console.error(`Error fetching status for job ${params.jobId}:`, error);
+    console.error(`Error fetching status for job ${jobId}:`, error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -30,11 +30,24 @@ export interface Utterance {
   end?: number;
 }
 
+export interface Notification {
+  id: string; // The unique ID from the Firestore document
+  message: string;
+  isRead: boolean;
+  link: string;
+  createdAt: any; // Typically a Firestore Timestamp object, can be typed more strictly if needed
+}
+
 // --- ADDED BACK: Definitions for Contextual Briefing ---
 export interface Viewpoint {
   perspective: string;
   source: string;
   url: string;
+}
+
+export interface GlobalContextualBriefingPayload {
+  claim_text: string;
+  briefing_data: ContextualBriefing;
 }
 
 export interface ContextualBriefing {
@@ -117,6 +130,7 @@ export interface JobData {
   structured_transcript?: Utterance[];
   results: AnalysisSection[]; // Uses the new, flexible union type
 
+  global_contextual_briefing?: GlobalContextualBriefingPayload;
   synthesis_results?: SynthesisResults;
   argument_structure?: ArgumentStructure;
 

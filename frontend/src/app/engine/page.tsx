@@ -4,7 +4,7 @@ import apiClient from "@/lib/apiClient";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone, FileRejection } from "react-dropzone";
 import { toast } from "sonner";
 
@@ -45,7 +45,12 @@ import {
   XCircle,
   Terminal,
   Check,
+  CheckCircle,
+  Sparkles,
 } from "lucide-react";
+import { UploadProgressToast } from "../components/UploadProgressToast";
+import { ref, uploadBytesResumable } from "firebase/storage";
+import { storage } from "@/lib/firebaseClient";
 
 // Data Types
 type FeatureConfig = {
@@ -102,7 +107,6 @@ const EnginePage = () => {
     run_blog_post_generation: false,
   });
   const [modelChoice, setModelChoice] = useState<ModelChoice>("universal");
-  const [calculatedCost, setCalculatedCost] = useState<number | null>(null);
 
   // --- ADDED: New state for analysis persona selection ---
   const [analysisPersona, setAnalysisPersona] =
@@ -112,8 +116,77 @@ const EnginePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filesUploaded, setFilesUploaded] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState<{
+    [fileName: string]: number;
+  }>({});
+
+  const [uploadToastId, setUploadToastId] = useState<string | number | null>(
+    null
+  );
+  const [filesInFlight, setFilesInFlight] = useState<File[]>([]);
+
   const [costDetails, setCostDetails] = useState<any | null>(null);
-  // Add this function back to your EnginePage component
+
+  useEffect(() => {
+    // If there's no active upload toast, do nothing
+    if (!uploadToastId || filesInFlight.length === 0) return;
+
+    const isComplete = filesUploaded === filesInFlight.length;
+
+    // Re-render the toast with the latest progress using the same ID
+    toast.custom(
+      () => (
+        <UploadProgressToast
+          files={filesInFlight}
+          progress={uploadProgress}
+          filesUploaded={filesUploaded}
+        />
+      ),
+      {
+        id: uploadToastId,
+        duration: isComplete ? 5000 : Infinity, // Keep open until complete
+      }
+    );
+
+    // When all files are uploaded, show the final success message and clean up
+    if (isComplete) {
+      // Use toast.custom for the final message to get full styling control
+      toast.custom(
+        () => (
+          <div className="w-80 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center mb-2">
+              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                Upload Complete
+              </h3>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Your files have been submitted and are now being processed.
+            </p>
+            <Button
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                router.push("/dashboard");
+                toast.dismiss(uploadToastId); // Dismiss toast on click
+              }}
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        ),
+        {
+          id: uploadToastId,
+          duration: 10000, // Let it stay on screen for 10 seconds
+        }
+      );
+
+      // Reset state for the next upload batch
+      setUploadToastId(null);
+      setFilesInFlight([]);
+    }
+  }, [uploadProgress, filesUploaded, uploadToastId, filesInFlight, router]);
+
   const getAudioDuration = (file: File): Promise<number> => {
     return new Promise((resolve, reject) => {
       const audio = document.createElement("audio");
@@ -170,8 +243,6 @@ const EnginePage = () => {
     }
   };
 
-  // In your EnginePage component
-
   const handleCostCalculation = async () => {
     if (!isReadyForAnalysis) return;
 
@@ -204,47 +275,57 @@ const EnginePage = () => {
     }
   };
 
-  // This function is now called AFTER the user confirms the cost
-  const handleProcessConfirmation = () => {
-    if (activeTab === "paste") {
-      handleTextProcess();
-    } else {
-      handleBulkUploadAndProcess();
-    }
-  };
-
-  const handleBulkUploadAndProcess = async () => {
-    if (selectedFiles.length === 0) return;
+  const handleBulkUploadAndProcess = async (filesToUpload: File[]) => {
     setStatus("uploading");
     setError(null);
-    setFilesUploaded(0);
+    // All toast management is now handled by the useEffect hook.
 
     try {
-      const uploadPromises = selectedFiles.map((file) => {
-        return (async () => {
-          const { data } = await apiClient.post("/uploads/generate-url", {
-            fileName: file.name,
-            fileType: file.type,
-          });
-          const { uploadUrl, filePath } = data;
+      const uploadPromises = filesToUpload.map((file) => {
+        return new Promise<{ storagePath: string; client_provided_id: string }>(
+          (resolve, reject) => {
+            if (!user) {
+              console.error("Upload attempted without a logged-in user.");
+              return reject(
+                new Error("You must be signed in to upload files.")
+              );
+            }
+            const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, filePath);
+            const uploadTask = uploadBytesResumable(storageRef, file);
 
-          await fetch(uploadUrl, {
-            method: "PUT",
-            body: file,
-            headers: { "Content-Type": file.type },
-          });
-
-          setFilesUploaded((prev) => prev + 1);
-
-          return {
-            storagePath: filePath,
-            client_provided_id: file.name,
-          };
-        })();
+            uploadTask.on(
+              "state_changed",
+              (snapshot) => {
+                const percentCompleted = Math.round(
+                  (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+                );
+                // Update state, which will trigger our useEffect to update the toast
+                setUploadProgress((prev) => ({
+                  ...prev,
+                  [file.name]: percentCompleted,
+                }));
+              },
+              (error) => {
+                console.error(`Upload failed for ${file.name}:`, error);
+                reject(new Error(`Upload failed for ${file.name}.`));
+              },
+              () => {
+                // Update state, which also triggers the useEffect
+                setFilesUploaded((prev) => prev + 1);
+                resolve({
+                  storagePath: filePath,
+                  client_provided_id: file.name,
+                });
+              }
+            );
+          }
+        );
       });
 
       const uploadedItems = await Promise.all(uploadPromises);
 
+      // The useEffect will handle the "Upload Complete" toast.
       setStatus("processing-batch");
 
       const processResponse = await apiClient.post("/process-bulk", {
@@ -253,30 +334,55 @@ const EnginePage = () => {
         model_choice: modelChoice,
       });
 
-      if (processResponse.data.batch_id) {
-        toast.success(`Batch of ${selectedFiles.length} files submitted!`, {
-          description: `Track them on your dashboard with Batch ID: ${processResponse.data.batch_id.substring(
-            0,
-            8
-          )}...`,
-          action: {
-            label: "Go to Dashboard",
-            onClick: () => router.push("/dashboard"),
-          },
-        });
-        resetState(activeTab);
-      } else {
+      if (!processResponse.data.batch_id) {
         throw new Error("Did not receive a batch ID from the server.");
       }
+      setStatus("idle");
+      // The success toast is now handled by the completion logic in our useEffect.
     } catch (err: any) {
       console.error("Bulk upload and process failed:", err);
-      const errorMsg =
-        err.response?.data?.detail ||
-        err.message ||
-        "An unexpected error occurred.";
-      toast.error("Process Failed", { description: errorMsg });
-      setError(errorMsg);
+      // If the process fails, update the toast to show an error.
+      if (uploadToastId) {
+        toast.error("Process Failed", {
+          id: uploadToastId,
+          description: "One or more files failed to upload or process.",
+        });
+      }
+      setError("An error occurred during the upload or processing.");
       setStatus("failed");
+    }
+  };
+
+  const handleProcessConfirmation = () => {
+    if (activeTab === "paste") {
+      handleTextProcess();
+    } else {
+      const filesToUpload = [...selectedFiles];
+      setFilesInFlight(filesToUpload); // Track the files for the useEffect
+
+      // Reset progress state for the new batch
+      setFilesUploaded(0);
+      setUploadProgress({});
+
+      // Create the initial toast and get its ID
+      const toastId = toast.custom(
+        () => (
+          <UploadProgressToast
+            files={filesToUpload}
+            progress={{}} // Initial empty progress
+            filesUploaded={0} // Initial zero files uploaded
+          />
+        ),
+        { duration: Infinity } // Keep it open until we manually update/dismiss it
+      );
+
+      setUploadToastId(toastId); // Save the ID to state, which triggers our useEffect
+
+      // Start the upload process in the background
+      handleBulkUploadAndProcess(filesToUpload);
+
+      // Immediately reset the main UI to unblock the user
+      resetState(activeTab);
     }
   };
 
@@ -337,7 +443,7 @@ const EnginePage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <header className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-            Insight Engine
+            Insights Crucible
           </h1>
           <p className="mt-3 text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
             Unlock structured summaries, key concepts, and content ideas from
@@ -424,7 +530,13 @@ const EnginePage = () => {
                             ? "MP3, MP4, M4A, WAV supported"
                             : "Please sign in to upload."}
                         </p>
+
+                        <p className="text-xs mt-4 text-slate-800 font-semibold">
+                          Files are deleted immediately after analysis for your
+                          privacy.
+                        </p>
                       </div>
+
                       {selectedFiles.length > 0 && (
                         <div className="space-y-2">
                           <h4 className="font-semibold">Selected Files:</h4>
@@ -485,14 +597,19 @@ const EnginePage = () => {
             </Card>
 
             {/* --- ADDED: New Card for Step 2 --- */}
-            <Card className="shadow-lg dark:bg-slate-900/70">
+            <Card className="shadow-lg border-2 border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 dark:border-blue-800">
               <CardHeader>
-                <CardTitle className="text-2xl">Choose Analysis Type</CardTitle>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Sparkles className="w-6 h-6 text-blue-500" />
+                  <span>Choose Analysis Type</span>
+                </CardTitle>
                 <CardDescription>
-                  Select the persona that best fits your goal for this analysis.
+                  This is a key step. Your choice here will determine the entire
+                  format and voice of your generated report.
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* All the inner content (RadioGroup, Labels, etc.) remains exactly the same. */}
                 <RadioGroup
                   value={analysisPersona}
                   onValueChange={(value: "general" | "consultant") =>
@@ -501,6 +618,7 @@ const EnginePage = () => {
                   className="grid grid-cols-1 md:grid-cols-2 gap-4"
                   disabled={!canInteract}
                 >
+                  {/* --- General Report Option --- */}
                   <Label
                     htmlFor="general"
                     className="flex flex-col items-start space-x-3 p-4 rounded-lg border bg-white dark:bg-slate-900 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20"
@@ -512,11 +630,15 @@ const EnginePage = () => {
                       </div>
                       <RadioGroupItem value="general" id="general" />
                     </div>
+                    {/* ✅ NEW DESCRIPTION */}
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-8">
-                      Chronological summary with key points, quotes, and advice.
-                      Ideal for research and notes.
+                      A comprehensive, chronological breakdown. Extracts key
+                      points, quotes, and action items, making it perfect for
+                      detailed notes or creating a factual record.
                     </p>
                   </Label>
+
+                  {/* --- Consultant Workbench Option --- */}
                   <Label
                     htmlFor="consultant"
                     className="flex flex-col items-start space-x-3 p-4 rounded-lg border bg-white dark:bg-slate-900 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20"
@@ -528,9 +650,12 @@ const EnginePage = () => {
                       </div>
                       <RadioGroupItem value="consultant" id="consultant" />
                     </div>
+                    {/* ✅ NEW DESCRIPTION */}
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-8">
-                      Thematic "slides" for presentations, with strategic advice
-                      and a narrative-focused layout.
+                      Transforms insights into a compelling narrative. Organizes
+                      ideas into thematic, presentation-ready slides with
+                      strategic recommendations. Ideal for client reports and
+                      persuasive storytelling.
                     </p>
                   </Label>
                 </RadioGroup>

@@ -3,7 +3,7 @@ import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // This is the URL the user will be redirected to after they are done
     // managing their subscription in the portal.
-    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/account/usage`;
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/account`;
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,

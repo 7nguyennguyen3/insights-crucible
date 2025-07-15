@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
-import { Stripe } from "stripe";
 
-// --- THIS IS THE FIX ---
-// List all of your subscription Price IDs here.
-// For now, it's just the one for your Pro Plan.
-const SUBSCRIPTION_PRICE_IDS = new Set([
-  "price_1Rb1IDGouIqXjNckkNEPW61t", // Your $10/mo Pro Plan Price ID
-]);
-// --- END FIX ---
+// ✅ THIS WAS MISSING: Import the Charter Member plan ID
+const proPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID;
+const charterMemberPriceId =
+  process.env.NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID;
+const analysisPackPriceId =
+  process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID;
+
+// ✅ THIS WAS MISSING: Validation for the charter plan
+if (!proPlanPriceId || !charterMemberPriceId || !analysisPackPriceId) {
+  throw new Error(
+    "Missing Stripe Price ID environment variables. Please check your .env.local file."
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,12 +27,11 @@ export async function POST(request: NextRequest) {
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
-    const { priceId, customAmount, success_url, cancel_url } =
-      await request.json();
+    const { priceId, quantity, success_url, cancel_url } = await request.json();
 
-    if (!success_url || !cancel_url || (!priceId && !customAmount)) {
+    if (!priceId || !success_url || !cancel_url) {
       return NextResponse.json(
-        { error: "Missing required parameters" },
+        { error: "Missing required parameters from the client." },
         { status: 400 }
       );
     }
@@ -39,54 +43,30 @@ export async function POST(request: NextRequest) {
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         email: decodedToken.email,
-        name: userDoc.data()?.name,
         metadata: { firebaseUID: userId },
       });
       stripeCustomerId = customer.id;
       await userDocRef.update({ stripeCustomerId });
     }
 
-    let line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    // ✅ THIS LOGIC IS CRITICAL: An array to hold all subscription IDs
+    const subscriptionPriceIds = [proPlanPriceId, charterMemberPriceId];
 
-    // --- THIS IS THE FIX ---
-    // Default to 'payment' mode for one-time purchases.
-    let mode: "subscription" | "payment" = "payment";
-
-    if (priceId) {
-      line_items.push({ price: priceId, quantity: 1 });
-      // If the provided Price ID is in our list of subscriptions, change the mode.
-      if (SUBSCRIPTION_PRICE_IDS.has(priceId)) {
-        mode = "subscription";
-      }
-    } else if (customAmount) {
-      const amountInCents = Math.round(parseFloat(customAmount) * 100);
-
-      if (amountInCents < 100) {
-        return NextResponse.json(
-          { error: "Custom amount must be at least $1.00" },
-          { status: 400 }
-        );
-      }
-
-      line_items.push({
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "Custom Credit Top-up",
-          },
-          unit_amount: amountInCents,
-        },
-        quantity: 1,
-      });
-      mode = "payment";
-    }
-    // --- END FIX ---
+    // ✅ THIS LOGIC IS CRITICAL: Check if the incoming price is in the array
+    const mode = subscriptionPriceIds.includes(priceId)
+      ? "subscription"
+      : "payment";
 
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ["card"],
-      line_items: line_items,
-      mode: mode, // The mode is now set dynamically
+      line_items: [
+        {
+          price: priceId,
+          quantity: quantity || 1,
+        },
+      ],
+      mode: mode,
       success_url: success_url,
       cancel_url: cancel_url,
     });
@@ -97,10 +77,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+    // This detailed logging is correct and will help if an error still occurs
+    console.error(
+      "FULL STRIPE CHECKOUT ERROR:",
+      JSON.stringify(error, null, 2)
     );
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

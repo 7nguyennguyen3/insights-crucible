@@ -1,3 +1,40 @@
+from pathlib import Path
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+APP_ROOT_DIR: Path = Path(__file__).parent.parent.resolve()
+
+
+class Settings(BaseSettings):
+    """
+    Defines and loads all application settings.
+    """
+
+    INTERNAL_API_KEY: Optional[str] = None
+
+    # The worker service needs these, but the API might not.
+    ASSEMBLYAI_API_KEY: Optional[str] = None
+
+    # The API service needs these to create tasks for the worker.
+    WORKER_SERVICE_URL: Optional[str] = None
+    GCP_SERVICE_ACCOUNT_EMAIL: Optional[str] = None
+    GOOGLE_CLOUD_LOCATION: Optional[str] = None
+    GCP_STORAGE_BUCKET_NAME: Optional[str] = None
+    GOOGLE_CLOUD_QUEUE_ID: Optional[str] = None
+
+    TAVILY_API_KEY: Optional[str] = None
+
+    class Config:
+        # 2. Reference the same constant here.
+        env_file = APP_ROOT_DIR / ".env"
+        env_file_encoding = "utf-8"
+
+        extra = "ignore"
+
+
+settings = Settings()
+
+
 class AppConfig:
     # --- LLM Model Names ---
     # A dictionary makes it easy to manage and swap models
@@ -15,15 +52,5 @@ class AppConfig:
 
     SEMANTIC_BOUNDARY_PARAMS = {"max_words": 12, "min_capitalization_ratio": 0.7}
 
-    # --- Pricing and Cost ---
-    MINIMUM_JOB_CHARGE_USD = 0.01
 
-    # You can even store parts of prompts here if you want
-    # For example:
-    # PROMPT_FRAGMENTS = {
-    #     "DEFAULT_SYSTEM_PROMPT": "You are a helpful assistant."
-    # }
-
-
-# Create a single instance to be imported by other modules
 app_config = AppConfig()

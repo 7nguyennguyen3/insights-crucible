@@ -4,14 +4,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { FieldValue } from "firebase-admin/firestore";
+import { calculateCost } from "@/lib/billing";
 
 const PYTHON_API_URL =
   process.env.PYTHON_API_URL || "http://127.0.0.1:8000/api";
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
 
+// Define a type for the items in the request body for clarity
+interface ProcessItem {
+  duration_seconds?: number;
+  character_count?: number;
+  // you can add other item properties here if needed, like 'storagePath'
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authentication (same as before)
+    // 1. Authentication
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
     if (!sessionCookie) {
@@ -20,53 +28,54 @@ export async function POST(request: NextRequest) {
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
-    // This body will come from your frontend, containing the list of items
     const requestBody = await request.json();
+    // Cast the items array to your new type
+    const items: ProcessItem[] = requestBody.items || [];
 
-    // 2. Credit Check for the ENTIRE BATCH
-    const totalEstimatedCost = requestBody.total_estimated_cost_usd; // Frontend will need to send this
+    const userDocRef = db.collection("saas_users").doc(userId);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const userData = userDoc.data()!;
+    const userPlan = userData.plan || "free";
+    const analysesRemaining = userData.analyses_remaining || 0;
 
-    if (typeof totalEstimatedCost === "number" && totalEstimatedCost > 0) {
-      const userDocRef = db.collection("saas_users").doc(userId);
-      const userDoc = await userDocRef.get();
-      if (!userDoc.exists) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
-      const userData = userDoc.data();
-      const availableBalance =
-        (userData?.credits || 0) - (userData?.pending_deductions || 0);
+    // 2. Calculate total cost with explicit types
+    const totalCalculatedCost = items.reduce(
+      (total: number, item: ProcessItem) => {
+        return total + calculateCost(item, userPlan);
+      },
+      0
+    );
 
-      if (availableBalance < totalEstimatedCost) {
-        return NextResponse.json(
-          {
-            error: "Insufficient Credits",
-            detail: `Your available credit of $${availableBalance.toFixed(
-              2
-            )} is not enough for the estimated batch cost of $${totalEstimatedCost.toFixed(
-              2
-            )}.`,
-          },
-          { status: 402 }
-        );
-      }
+    // 3. Check and Decrement Correct Amount
+    if (analysesRemaining < totalCalculatedCost) {
+      return NextResponse.json(
+        {
+          error: "Insufficient Analyses Remaining",
+          detail: `This batch requires ${totalCalculatedCost} analyses, but you only have ${analysesRemaining} left.`,
+        },
+        { status: 402 }
+      );
+    }
 
-      // Hold credits for the entire batch
+    if (totalCalculatedCost > 0) {
       await userDocRef.update({
-        pending_deductions: FieldValue.increment(totalEstimatedCost),
+        analyses_remaining: FieldValue.increment(-totalCalculatedCost),
       });
     }
 
-    // 3. Proxy the request to the Python /process-bulk endpoint
+    // 4. Proxy the request to the Python service
     const pythonApiResponse = await fetch(`${PYTHON_API_URL}/process-bulk`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Internal-API-Key": INTERNAL_API_KEY!,
       },
-      // The body now matches the BulkAnalysisRequest model
       body: JSON.stringify({
         user_id: userId,
-        items: requestBody.items, // Pass the list of items
+        items: requestBody.items,
         config: requestBody.config,
         model_choice: requestBody.model_choice,
       }),
@@ -75,20 +84,12 @@ export async function POST(request: NextRequest) {
     const responseData = await pythonApiResponse.json();
 
     if (!pythonApiResponse.ok) {
-      // If the bulk enqueue fails, revert the deduction
-      if (typeof totalEstimatedCost === "number") {
-        const userDocRef = db.collection("saas_users").doc(userId);
-        await userDocRef.update({
-          pending_deductions: FieldValue.increment(-totalEstimatedCost),
-        });
-      }
       return NextResponse.json(
         { error: "Error from bulk analysis service", details: responseData },
         { status: pythonApiResponse.status }
       );
     }
 
-    // Return the response from the Python service (which includes the batch_id)
     return NextResponse.json(responseData);
   } catch (error) {
     console.error("Proxy error in /api/process-bulk:", error);

@@ -1,28 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import apiClient from "@/lib/apiClient";
+import { useAuthStore } from "@/store/authStore";
+import { Loader2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Mail, MapPin, Linkedin, Github } from "lucide-react";
-import { FaXTwitter } from "react-icons/fa6";
 
 const ContactUsPage = () => {
+  const { user } = useAuthStore();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     message: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+      }));
+    }
+  }, [user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -35,17 +47,26 @@ const ContactUsPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // This is where you would handle the form submission, e.g., send an email or save to a database.
-    // For this example, we'll simulate a network request.
     try {
-      console.log("Submitting form data:", formData);
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate API call
+      const payload = {
+        ...formData,
+        uid: user ? user.uid : null,
+      };
+
+      // Replace the simulated API call with your actual apiClient
+      await apiClient.post("/support/contact", payload);
 
       toast.success("Message Sent!", {
         description:
           "Thank you for reaching out. We'll get back to you shortly.",
       });
-      setFormData({ name: "", email: "", message: "" }); // Reset form
+
+      // Reset the form, keeping user details if they are logged in
+      setFormData({
+        name: user?.name || "",
+        email: user?.email || "",
+        message: "",
+      });
     } catch (error) {
       toast.error("Submission Failed", {
         description: "Something went wrong. Please try again later.",

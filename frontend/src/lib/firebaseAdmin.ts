@@ -1,6 +1,5 @@
 import * as admin from "firebase-admin";
 
-// --- THIS IS THE FIX ---
 // Check if the app is already initialized to avoid errors during hot-reloading
 if (!admin.apps.length) {
   try {
@@ -12,9 +11,9 @@ if (!admin.apps.length) {
 
     admin.initializeApp({
       credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-        projectId: process.env.FIREBASE_PROJECT_ID,
       }),
       // Explicitly tell the Admin SDK which storage bucket to use
       storageBucket: bucketName,
@@ -27,7 +26,6 @@ if (!admin.apps.length) {
     console.error("Firebase Admin initialization error:", error);
   }
 }
-// --- END FIX ---
 
 export const auth = admin.auth();
 export const db = admin.firestore();

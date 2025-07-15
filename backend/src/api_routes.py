@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from src.models import (
     AnalysisRequest,
-    EstimateResponse,
     ProcessResponse,
     BulkAnalysisRequest,
     BulkProcessResponse,
@@ -10,129 +9,10 @@ from src.models import (
 from src import db_manager
 from src.security import verify_api_key
 from src import task_manager
-import math
+
 import uuid
 
 router = APIRouter()
-
-
-@router.post("/estimate", response_model=EstimateResponse)
-async def estimate_analysis_cost(
-    request: AnalysisRequest,
-    _=Depends(verify_api_key),
-):
-    """
-    Takes a transcript OR an audio duration and returns an estimated cost,
-    factoring in the chosen transcription model and selected features.
-    This estimate includes a buffer to improve user experience.
-    """
-
-    class Costs:
-        MINIMUM_USD = 0.01
-        BUFFER_PERCENTAGE = 0.15
-        TRANSCRIPTION_PRICING = {
-            "universal": 0.0075 / 60,  # Example: $0.0075/min
-            "slam-1": 0.0075 / 60,
-            "nano": 0.0033 / 60,  # Example: $0.0033/min
-        }
-        TAVILY_BRIEFING_PER_SECTION = 0.0825
-        X_THREAD_PER_SECTION = 0.001
-        BASE_LLM_ANALYSIS_PER_SECTION = 0.003
-        AVG_WORDS_PER_MINUTE = 150
-        AVG_WORDS_PER_SECTION = 1500
-
-    # --- Start of Logic ---
-
-    raw_estimated_cost = 0.0
-    num_sections = 0
-    message = ""
-
-    # Check if the chosen model is valid
-    if request.model_choice not in Costs.TRANSCRIPTION_PRICING:
-        raise HTTPException(status_code=400, detail="Invalid model_choice provided.")
-
-    # --- Case 1: Estimate based on audio duration ---
-    if request.duration_seconds and request.duration_seconds > 0:
-        transcription_cost = (
-            request.duration_seconds * Costs.TRANSCRIPTION_PRICING[request.model_choice]
-        )
-        estimated_words = (request.duration_seconds / 60) * Costs.AVG_WORDS_PER_MINUTE
-        num_sections = math.ceil(estimated_words / Costs.AVG_WORDS_PER_SECTION) or 1
-        message = f"Estimate for a {math.ceil(request.duration_seconds / 60)}-minute audio file using the '{request.model_choice}' model."
-
-        analysis_cost = num_sections * Costs.BASE_LLM_ANALYSIS_PER_SECTION
-
-        # Add costs for optional features based on the config
-        briefing_cost = (
-            num_sections * Costs.TAVILY_BRIEFING_PER_SECTION
-            if request.config.run_contextual_briefing
-            else 0
-        )
-        x_thread_cost = (
-            num_sections * Costs.X_THREAD_PER_SECTION
-            if request.config.run_x_thread_generation
-            else 0
-        )
-        # Add blog post cost if that feature is enabled
-        blog_post_cost = 0.005 if request.config.run_blog_post_generation else 0
-
-        raw_estimated_cost = (
-            transcription_cost
-            + analysis_cost
-            + briefing_cost
-            + x_thread_cost
-            + blog_post_cost
-        )
-
-    # --- Case 2: Estimate based on a provided transcript ---
-    elif request.transcript and request.transcript.strip():
-        word_count = len(request.transcript.split())
-        num_sections = math.ceil(word_count / Costs.AVG_WORDS_PER_SECTION) or 1
-        message = f"Estimate for a {word_count}-word transcript."
-
-        # No transcription cost for text input
-        analysis_cost = num_sections * Costs.BASE_LLM_ANALYSIS_PER_SECTION
-
-        # Add costs for optional features based on the config
-        briefing_cost = (
-            num_sections * Costs.TAVILY_BRIEFING_PER_SECTION
-            if request.config.run_contextual_briefing
-            else 0
-        )
-        x_thread_cost = (
-            num_sections * Costs.X_THREAD_PER_SECTION
-            if request.config.run_x_thread_generation
-            else 0
-        )
-        # Add blog post cost if that feature is enabled
-        blog_post_cost = 0.005 if request.config.run_blog_post_generation else 0
-
-        raw_estimated_cost = (
-            analysis_cost + briefing_cost + x_thread_cost + blog_post_cost
-        )
-
-    # --- Case 3: No valid input was provided ---
-    else:
-        # This case should ideally be caught by Pydantic models, but it's here as a safeguard.
-        raise HTTPException(
-            status_code=400,
-            detail="Request must include either a valid transcript or audio duration.",
-        )
-
-    # Apply the buffer to the raw cost
-    buffered_cost = raw_estimated_cost * (1 + Costs.BUFFER_PERCENTAGE)
-
-    # Ensure the final cost is not below the minimum charge
-    final_estimated_cost = max(Costs.MINIMUM_USD, buffered_cost)
-
-    if final_estimated_cost > Costs.MINIMUM_USD and raw_estimated_cost > 0:
-        message += " This includes a small buffer; your final cost may be lower."
-
-    return EstimateResponse(
-        estimated_cost_usd=round(final_estimated_cost, 4),
-        num_sections=num_sections,
-        message=message,
-    )
 
 
 @router.post("/process", response_model=ProcessResponse, status_code=202)

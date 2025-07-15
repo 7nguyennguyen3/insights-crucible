@@ -1,6 +1,6 @@
 import re
 import os
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import time
 import random
 import json
@@ -23,13 +23,12 @@ from tavily import TavilyClient
 from firebase_admin import firestore
 from functools import wraps
 from google.api_core.exceptions import ResourceExhausted
-from google.cloud import storage
+from google.cloud import storage as gcs_storage
 from langchain_core.runnables import RunnableConfig
 
-
+from src import clients
 from src import db_manager
 from src import cost_tracking
-from src.config import app_config
 from src.features import (
     generate_blog_post,
     generate_contextual_briefing,
@@ -79,6 +78,49 @@ Your tone should be professional, concise, and direct. Your output must be a str
         "final_assets": ["slide_deck", "blog_post", "x_thread"],
     },
 }
+
+
+def segment_monologue_with_word_timestamps(
+    assembly_words: List[Dict], words_per_section: int = 750
+) -> List[List[Dict]]:
+    """
+    Segments a monologue using AssemblyAI's word-level timestamps to create
+    sections with precise start and end times.
+    """
+    print(
+        f"[cyan]🚀 Activating high-precision monologue segmentation ({words_per_section} words/section)...[/cyan]"
+    )
+    if not assembly_words:
+        return []
+
+    sections = []
+    for i in range(0, len(assembly_words), words_per_section):
+        word_chunk = assembly_words[i : i + words_per_section]
+        if not word_chunk:
+            continue
+
+        # Get the start time of the first word and end time of the last word
+        start_time_ms = word_chunk[0]["start"]
+        end_time_ms = word_chunk[-1]["end"]
+
+        # Create the section's text by joining the words
+        section_text = " ".join(word["text"] for word in word_chunk)
+
+        # Create the canonical utterance for this section
+        section_utterance = {
+            "speaker_id": "Speaker A",  # Monologue is always one speaker
+            "start_seconds": start_time_ms // 1000,
+            "end_seconds": end_time_ms // 1000,
+            "text": section_text,
+        }
+
+        # Each section is a list containing the single utterance
+        sections.append([section_utterance])
+
+    print(
+        f"[green]✓ Monologue successfully split into {len(sections)} high-precision sections.[/green]"
+    )
+    return sections
 
 
 def _get_normalized_cache_key(entity_name: str) -> str:
@@ -168,9 +210,7 @@ async def find_semantic_topic_boundaries_with_ai(
     if not numbered_transcript:
         return []
 
-    llm = ChatGoogleGenerativeAI(
-        model=app_config.LLM_MODELS["best-lite"], temperature=0
-    )
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.0)
     parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -256,9 +296,7 @@ async def find_boundaries_in_plain_text(
         return []
 
     # 3. Define the simple, fast AI task
-    llm = ChatGoogleGenerativeAI(
-        model=app_config.LLM_MODELS["best-lite"], temperature=0
-    )
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.0)
     parser = JsonOutputParser()
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -598,11 +636,10 @@ def merge_short_canonical_sections(
         start_time = section[0].get("start_seconds", -1)
         end_time = section[-1].get("end_seconds", -1)
 
-        # THIS IS THE FIX
         if start_time < 0 or end_time < 0:
-            # If a section has no valid timestamps, give it a duration that will
-            # GUARANTEE it is never considered "short" and merged.
-            return min_duration_seconds + 1
+            # If a section has no valid timestamps (like our new text chunks),
+            # its duration is effectively zero, forcing it to be merged.
+            return 0
 
         return abs(end_time - start_time)
 
@@ -667,7 +704,7 @@ async def analyze_content(
         f"     - [yellow]Phase 1: Performing broad '{persona}'-focused analysis...[/yellow]"
     )
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["best"], temperature=0.2)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.2)
     parser = JsonOutputParser()
     fixing_parser = OutputFixingParser.from_llm(parser=parser, llm=llm)
 
@@ -707,9 +744,7 @@ async def generate_final_title(
     if not synthesis_or_argument_data:
         return "Untitled Analysis"
 
-    llm = ChatGoogleGenerativeAI(
-        model=app_config.LLM_MODELS["best-lite"], temperature=0.4
-    )
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.4)
     parser = StrOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -777,7 +812,7 @@ async def generate_slide_deck_outline(
         # The new, preferred context is the rich synthesis result
         full_context = json.dumps(synthesis_results, indent=2)
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["best"], temperature=0.2)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.2)
     parser = JsonOutputParser()
 
     # The prompt is updated to leverage the synthesis results for a better narrative
@@ -839,7 +874,7 @@ async def filter_entities(
         f"{log_prefix} [yellow]Phase 2: Filtering {len(potential_entities)} potential entities...[/yellow]"
     )
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["main"], temperature=0.1)
+    llm, llm_options = clients.get_llm("main", temperature=0.1)
     parser = JsonOutputParser()
     fixing_parser = OutputFixingParser.from_llm(parser=parser, llm=llm)
 
@@ -893,7 +928,7 @@ async def filter_claim(
         f"{log_prefix} [yellow]Phase 3: Filtering {len(potential_claims)} potential claims...[/yellow]"
     )
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["main"], temperature=0.1)
+    llm, llm_options = clients.get_llm("main", temperature=0.1)
     parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -949,101 +984,70 @@ async def enrich_section_with_analysis(
     user_id: str,
     job_id: str,
     section_index: int,
-    persona: str,  # 1. ADDED the missing 'persona' parameter here
+    persona: str,
 ) -> Dict:
     """
-    Orchestrates the analysis of a single section, using the specified persona
-    to guide the analysis steps and data extraction.
+    Orchestrates the analysis of a single section and returns both the
+    analysis data and the cost metrics incurred.
     """
-    log_prefix = f"    - [Section {section_index + 1}]"
+    log_prefix = f"     - [Section {section_index + 1}]"
     persona_cfg = PERSONA_CONFIG.get(persona, PERSONA_CONFIG["general"])
     content_for_llm = "\n".join(
         [clean_line_for_analysis(line) for line in section_content.splitlines()]
     )
 
+    # This will hold cost metrics specifically from this function's operations.
+    total_costs = {"tavily_searches": 0}
+
     try:
-        # 2. PASS the 'persona' parameter to analyze_content
         broad_analysis = await analyze_content(
             content_for_llm, runnable_config, persona=persona
         )
-
-        # FIX: Ensure broad_analysis is always a dictionary to prevent errors.
         if not broad_analysis:
-            log_msg = f"{log_prefix} [red]Warning: Broad analysis returned None. Skipping enrichment for this section.[/red]"
-            print(log_msg)
-            db_manager.log_progress(user_id, job_id, log_msg)
-            return {}  # Return an empty dict to prevent a crash
-
+            return {"analysis_data": {}, "cost_metrics": total_costs}
     except Exception as e:
         log_msg = f"{log_prefix} [red]Error during Phase 1 (Broad Analysis): {e}[/red]"
         print(log_msg)
         db_manager.log_progress(user_id, job_id, log_msg)
-        return {}
+        return {"analysis_data": {}, "cost_metrics": total_costs}
 
-    # 3. USE persona_cfg to get keys dynamically instead of hardcoding them
     entities_key = persona_cfg["output_keys"]["entities"]
     claims_key = persona_cfg["output_keys"]["claims"]
-
     potential_entities = broad_analysis.get(entities_key, [])
     potential_claims = broad_analysis.get(claims_key, [])
-
-    # This logic now correctly differentiates between personas
-    claim_for_briefing = None
-    if job_config.get("run_contextual_briefing"):
+    # --- MODIFICATION START ---
+    # This function no longer generates briefings. It only filters the best claim
+    # for this specific section and passes it up for the global selection later.
+    claim_for_section = ""
+    if potential_claims:
         if persona == "consultant":
-            # For consultants, the first "open_question" is the claim.
-            claim_for_briefing = potential_claims[0] if potential_claims else None
+            # For consultants, the "claim" is just the first open question
+            claim_for_section = potential_claims[0]
         else:
-            # For general, filter the claims to find the best one.
-            best_claim = await filter_claim(
+            # For general persona, we still filter to find the best claim IN THIS SECTION
+            claim_for_section = await filter_claim(
                 potential_claims, content_for_llm, runnable_config, section_index
             )
-            claim_for_briefing = best_claim if best_claim else None
 
-    # --- Task Execution ---
-    tasks_to_run = {
-        "entities": filter_entities(
-            potential_entities, content_for_llm, runnable_config, section_index
-        )
-    }
-    if claim_for_briefing:
-        tasks_to_run["briefing"] = generate_contextual_briefing(
-            claim_text=claim_for_briefing,
-            context=content_for_llm,
-            user_id=user_id,
-            job_id=job_id,
-            section_index=section_index,
-        )
-
-    print(f"{log_prefix} [cyan]Executing enrichment tasks in parallel...[/cyan]")
-    task_results_list = await asyncio.gather(
-        *tasks_to_run.values(), return_exceptions=True
+    # The only async task now is entity filtering.
+    key_entities = await filter_entities(
+        potential_entities, content_for_llm, runnable_config, section_index
     )
-    task_results = dict(zip(tasks_to_run.keys(), task_results_list))
 
-    # --- Final Assembly ---
     final_analysis = broad_analysis
-    final_analysis["key_entities"] = (
-        task_results.get("entities")
-        if not isinstance(task_results.get("entities"), Exception)
-        else []
-    )
-    final_analysis["contextual_briefing"] = (
-        task_results.get("briefing")
-        if not isinstance(task_results.get("briefing"), Exception)
-        else {}
-    )
+    final_analysis["key_entities"] = key_entities if key_entities else []
 
-    # Add the verified claim to the output for reference
+    # This key is now used to pass up the best claim from this section.
     final_analysis["verifiable_claims"] = (
-        [claim_for_briefing] if claim_for_briefing else []
+        [claim_for_section] if claim_for_section else []
     )
-
-    # Clean up intermediate keys
+    # This is no longer generated here, so it's an empty object.
+    final_analysis["contextual_briefing"] = {}
     final_analysis.pop(entities_key, None)
     final_analysis.pop(claims_key, None)
 
-    return final_analysis
+    # Return both the analysis and the aggregated costs
+    return {"analysis_data": final_analysis, "cost_metrics": total_costs}
 
 
 @retry_with_exponential_backoff
@@ -1053,20 +1057,18 @@ async def get_context_for_entities(
     user_id: str,
     job_id: str,
     section_index: int,
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """
-    Fetches context for a list of entities using a 3-tier strategy:
-    1. Normalized Firestore Cache Check (Fastest)
-    2. Concurrent Web Searches (for all cache misses)
-    3. Batch Synthesis of web results
-    Enhanced with indexed logging for parallel execution traceability.
+    Fetches context for entities and returns the explanations along with cost metrics.
     """
-    if not entities:
-        return {}
-
-    log_prefix = f"       - [Section {section_index + 1}]"
-    print(f"{log_prefix} [cyan]Starting Context Enrichment...[/cyan]")
+    cost_metrics = {"tavily_searches": 0}
     final_explanations = {}
+
+    if not entities:
+        return {"explanations": {}, "cost_metrics": cost_metrics}
+
+    log_prefix = f"         - [Section {section_index + 1}]"
+    print(f"{log_prefix} [cyan]Starting Context Enrichment...[/cyan]")
 
     # --- Tier 1: Normalized Cache Check ---
     print(f"{log_prefix}    - 1. Checking Firestore cache with normalized keys...")
@@ -1084,7 +1086,7 @@ async def get_context_for_entities(
                 print(f"{log_prefix}      - CACHE HIT for: '{entity}'")
                 final_explanations[entity] = doc.to_dict().get("explanation")
             else:
-                entities_to_fetch.append(entity)  # This entity was a cache miss
+                entities_to_fetch.append(entity)
         except Exception as e:
             print(
                 f"{log_prefix}      - [red]Error accessing Firestore for entity '{entity}': {e}[/red]"
@@ -1093,19 +1095,16 @@ async def get_context_for_entities(
 
     if not entities_to_fetch:
         print(f"{log_prefix}    - [green]All entities found in cache. Done.[/green]")
-        return final_explanations
+        return {"explanations": final_explanations, "cost_metrics": cost_metrics}
 
     print(
         f"{log_prefix}    - 2. Searching web concurrently for {len(entities_to_fetch)} cache misses..."
     )
 
     # --- Tier 2: Concurrent Web Search ---
-    llm = ChatGoogleGenerativeAI(
-        model=app_config.LLM_MODELS["best-lite"], temperature=0.1
-    )
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.1)
     tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
-    # A. Generate smart search queries in parallel
     query_gen_prompt = ChatPromptTemplate.from_template(
         "You are a search expert. Generate a concise, effective search query to find a relevant explanation for the term '{topic}' "
         "based on the following context.\n\nCONTEXT:\n{context}"
@@ -1117,7 +1116,6 @@ async def get_context_for_entities(
     ]
     smart_queries = await asyncio.gather(*query_gen_tasks)
 
-    # B. Execute all web searches in parallel
     search_tasks = [
         asyncio.to_thread(tavily_client.search, query=query, search_depth="basic")
         for query in smart_queries
@@ -1125,13 +1123,11 @@ async def get_context_for_entities(
     ]
     search_results_list = await asyncio.gather(*search_tasks)
 
-    # C. Aggregate and deduplicate results
+    # Correctly count searches and populate the results list
+    cost_metrics["tavily_searches"] = len(search_results_list)
     all_search_results = []
     for result_group in search_results_list:
         all_search_results.extend(result_group.get("results", []))
-        db_manager.update_job_cost_metrics(
-            user_id, job_id, {"tavily_basic_searches": firestore.Increment(1)}
-        )
 
     unique_results = list(
         {result["url"]: result for result in all_search_results}.values()
@@ -1141,7 +1137,7 @@ async def get_context_for_entities(
         print(
             f"{log_prefix}    - [yellow]Web search returned no results. Aborting enrichment for remaining entities.[/yellow]"
         )
-        return final_explanations
+        return {"explanations": final_explanations, "cost_metrics": cost_metrics}
 
     # --- Tier 3: Batch Synthesis ---
     print(
@@ -1180,7 +1176,7 @@ async def get_context_for_entities(
             )
         final_explanations[entity] = explanation
 
-    return final_explanations
+    return {"explanations": final_explanations, "cost_metrics": cost_metrics}
 
 
 async def transcribe_audio_from_gcs(
@@ -1203,97 +1199,82 @@ async def transcribe_audio_from_gcs(
     try:
         ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
         if not ASSEMBLYAI_API_KEY:
-            raise ValueError("ASSEMBLYAI_API_KEY not found in environment variables.")
+            raise ValueError("ASSEMBLYAI_API_KEY not found.")
 
-        print("   [dim]1/4: Downloading audio from GCS...[/dim]")
-        storage_client = storage.Client()
         bucket_name = os.getenv("GCP_STORAGE_BUCKET_NAME")
         if not bucket_name:
             raise ValueError("GCP_STORAGE_BUCKET_NAME is not set.")
-        bucket = storage_client.bucket(bucket_name)
+
+        # 1. Use the pre-loaded GCS client
+        bucket = clients.gcs_client.bucket(bucket_name)
         blob = bucket.blob(storage_path)
-        audio_data = blob.download_as_bytes()
-        print("   [green]✓[/green] [dim]Download complete.[/dim]")
+        audio_bytes = await asyncio.to_thread(blob.download_as_bytes)
 
         headers = {"authorization": ASSEMBLYAI_API_KEY}
-        async with httpx.AsyncClient(timeout=600.0) as client:
-            print("   [dim]2/4: Uploading audio to AssemblyAI...[/dim]")
-            upload_response = await client.post(
-                "https://api.assemblyai.com/v2/upload",
-                headers=headers,
-                content=audio_data,
-            )
-            upload_response.raise_for_status()
-            audio_url = upload_response.json()["upload_url"]
-            print("   [green]✓[/green] [dim]Upload complete.[/dim]")
 
-            print(
-                f"   [dim]3/4: Submitting for transcription with '{model_name}' model and diarization...[/dim]"
-            )
-            payload = {
-                "audio_url": audio_url,
-                "speech_model": model_name,
-                "speaker_labels": True,  # Enable Speaker Diarization
-            }
-            submit_response = await client.post(
-                "https://api.assemblyai.com/v2/transcript",
-                json=payload,
-                headers=headers,
-            )
-            submit_response.raise_for_status()
-            transcript_id = submit_response.json()["id"]
-            print("   [green]✓[/green] [dim]Submission complete.[/dim]")
+        # 2. Use the pre-loaded HTTPX client directly
+        upload_response = await clients.httpx_client.post(
+            "https://api.assemblyai.com/v2/upload",
+            headers=headers,
+            content=audio_bytes,
+        )
+        upload_response.raise_for_status()
+        audio_url = upload_response.json()["upload_url"]
 
-            print("   [dim]4/4: Polling for results (this may take a moment)...[/dim]")
-            while True:
-                await asyncio.sleep(5)
-                poll_endpoint = (
-                    f"https://api.assemblyai.com/v2/transcript/{transcript_id}"
+        payload = {
+            "audio_url": audio_url,
+            "speech_model": model_name,
+            "speaker_labels": True,
+        }
+        submit_response = await clients.httpx_client.post(
+            "https://api.assemblyai.com/v2/transcript",
+            json=payload,
+            headers=headers,
+        )
+        submit_response.raise_for_status()
+        transcript_id = submit_response.json()["id"]
+
+        while True:
+            await asyncio.sleep(5)
+            poll_endpoint = f"https://api.assemblyai.com/v2/transcript/{transcript_id}"
+            poll_response = await clients.httpx_client.get(
+                poll_endpoint, headers=headers
+            )
+            poll_response.raise_for_status()
+            result = poll_response.json()
+
+            if result["status"] == "completed":
+                print("   [green]✓[/green] [dim]Polling complete.[/dim]")
+                audio_duration = result.get("audio_duration", 0)
+                if audio_duration is None:
+                    audio_duration = 0
+
+                print(
+                    Panel(
+                        f"[bold green]Transcription Successful[/bold green]\n"
+                        f"   - [bold]Duration:[/bold] {audio_duration:.2f} seconds\n"
+                        f"   - [bold]Model Used:[/bold] {result.get('speech_model')}",
+                        title="[bold green]Result[/bold green]",
+                        border_style="green",
+                        expand=False,
+                    )
                 )
-                poll_response = await client.get(poll_endpoint, headers=headers)
-                poll_response.raise_for_status()
-                result = poll_response.json()
 
-                if result["status"] == "completed":
-                    print("   [green]✓[/green] [dim]Polling complete.[/dim]")
-                    audio_duration = result.get("audio_duration", 0)
-                    if audio_duration is None:
-                        audio_duration = 0
-
-                    db_manager.update_job_cost_metrics(
-                        user_id, job_id, {"assemblyai_audio_seconds": audio_duration}
-                    )
-
-                    # Log the successful result panel
+                if not result.get("utterances"):
                     print(
-                        Panel(
-                            f"[bold green]Transcription Successful[/bold green]\n"
-                            f"   - [bold]Duration:[/bold] {audio_duration:.2f} seconds\n"
-                            f"   - [bold]Model Used:[/bold] {result.get('speech_model')}",
-                            title="[bold green]Result[/bold green]",
-                            border_style="green",
-                            expand=False,
-                        )
+                        "[bold yellow]LOG:[/bold yellow] Diarization did not return utterances. Creating a fallback structure."
                     )
+                    return [{"speaker": "A", "text": result.get("text", "")}]
 
-                    # Check if utterances were returned
-                    if not result.get("utterances"):
-                        print(
-                            "[bold yellow]LOG:[/bold yellow] Diarization did not return utterances. Creating a fallback structure."
-                        )
-                        # Fallback: create a single-speaker structure if diarization fails
-                        return [{"speaker": "A", "text": result.get("text", "")}]
+                print(
+                    f"[bold green]LOG:[/bold green] Diarization successful. Found {len(result['utterances'])} utterances."
+                )
+                return result
 
-                    # Log and return the structured utterances
-                    print(
-                        f"[bold green]LOG:[/bold green] Diarization successful. Found {len(result['utterances'])} utterances."
-                    )
-                    return result["utterances"]
-
-                elif result["status"] == "failed":
-                    raise Exception(
-                        f"AssemblyAI transcription failed: {result.get('error')}"
-                    )
+            elif result["status"] == "failed":
+                raise Exception(
+                    f"AssemblyAI transcription failed: {result.get('error')}"
+                )
 
     except httpx.HTTPStatusError as e:
         print(
@@ -1303,6 +1284,61 @@ async def transcribe_audio_from_gcs(
     except Exception as e:
         print(f"[bold red]An unexpected error occurred:[/bold red] {e}")
         raise
+
+
+async def _select_best_claim_for_global_briefing(
+    all_claims: List[str],
+    synthesis_or_argument_data: Dict,
+    runnable_config: RunnableConfig,
+) -> str:
+    """
+    From a list of all claims, select the single most impactful one
+    using the high-level synthesis as context.
+    """
+    if not all_claims:
+        return ""
+
+    print(
+        f"\n[magenta]🧠 Selecting best claim from {len(all_claims)} candidates for global briefing...[/magenta]"
+    )
+
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.0)
+    parser = JsonOutputParser()
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a senior editor. You have been given a high-level strategic analysis of a document and a list of specific claims made within it. "
+                "Your task is to select the SINGLE most important, insightful, and thematically central claim from the list. "
+                "This claim will be used for a detailed briefing, so it should be a substantive statement. "
+                "Your output must be a JSON object with a single key 'best_claim' containing the chosen string.\n{format_instructions}",
+            ),
+            (
+                "human",
+                "HIGH-LEVEL ANALYSIS (for context):\n{high_level_context}\n\nLIST OF POTENTIAL CLAIMS TO CHOOSE FROM:\n{claim_list}",
+            ),
+        ]
+    )
+    chain = prompt | llm | parser
+
+    try:
+        result = await chain.ainvoke(
+            {
+                "high_level_context": json.dumps(synthesis_or_argument_data),
+                "claim_list": json.dumps(list(set(all_claims))),
+                "format_instructions": parser.get_format_instructions(),
+            },
+            config=runnable_config,
+        )
+        best_claim = result.get("best_claim", "")
+        print(f"  [green]✓ Best claim selected: '{best_claim[:80]}...'[/green]")
+        return best_claim
+    except Exception as e:
+        print(
+            f"[red]Could not select best overall claim: {e}. Defaulting to first claim.[/red]"
+        )
+        return all_claims[0] if all_claims else ""
 
 
 async def _process_single_section(
@@ -1316,11 +1352,10 @@ async def _process_single_section(
     persona: str,
 ) -> Optional[Dict]:
     """
-    Helper function to fully process a single canonical section based on the persona.
+    Orchestrates the full analysis of a single section and returns the results
+    along with ALL cost metrics incurred during processing.
     """
     log_prefix = f"  - [Section {section_index + 1}]"
-    persona_cfg = PERSONA_CONFIG.get(persona, PERSONA_CONFIG["general"])
-
     start_time_s = section[0].get("start_seconds", -1)
     end_time_s = section[-1].get("end_seconds", -1)
     start_time_str = (
@@ -1343,13 +1378,14 @@ async def _process_single_section(
         log_msg = f"{log_prefix} Result already exists. Skipping."
         print(f"      [green]L {log_msg}[/green]")
         existing_data = db_manager.get_section_result(user_id, job_id, section_doc_id)
-        return {"status": "skipped", "full_analysis": existing_data}
+        return {"status": "skipped", "full_analysis": existing_data, "cost_metrics": {}}
 
     content_for_llm = "\n".join(
         [f"{utterance['speaker_id']}: {utterance['text']}" for utterance in section]
     )
 
-    analysis_data = await enrich_section_with_analysis(
+    # --- THIS IS THE CORRECTED LOGIC ---
+    enrichment_result = await enrich_section_with_analysis(
         section_content=content_for_llm,
         runnable_config=runnable_config,
         job_config=config,
@@ -1359,10 +1395,14 @@ async def _process_single_section(
         persona=persona,
     )
 
-    if not analysis_data:
-        return {"status": "skipped_no_data", "index": section_index}
+    analysis_data = enrichment_result.get("analysis_data", {})
+    section_cost_metrics = enrichment_result.get("cost_metrics", {})
 
-    context_data = await get_context_for_entities(
+    if not analysis_data:
+        return {"status": "skipped_no_data", "index": section_index, "cost_metrics": {}}
+
+    # This call gets costs for ENTITY lookups
+    context_result = await get_context_for_entities(
         entities=analysis_data.get("key_entities", []),
         transcript_context=content_for_llm,
         user_id=user_id,
@@ -1370,14 +1410,17 @@ async def _process_single_section(
         section_index=section_index,
     )
 
-    briefing_data = analysis_data.get("contextual_briefing", {})
+    # Combine the costs from entity lookups and briefing lookups
+    entity_costs = context_result.get("cost_metrics", {})
+    for key, value in entity_costs.items():
+        section_cost_metrics[key] = section_cost_metrics.get(key, 0) + value
 
+    # Assemble the final result for this section
     section_result = {
         "start_time": start_time_str,
         "end_time": end_time_str,
         **analysis_data,
-        "context_data": context_data,
-        "contextual_briefing": briefing_data,
+        "context_data": context_result.get("explanations", {}),
     }
 
     db_manager.save_section_result(user_id, job_id, section_index, section_result)
@@ -1385,9 +1428,11 @@ async def _process_single_section(
         user_id, job_id, f"✓ Section {section_index + 1}: Analysis complete and saved."
     )
 
+    # Return the final analysis AND the COMBINED cost metrics
     return {
         "status": "processed",
-        "full_analysis": section_result,  # Pass back the complete result
+        "full_analysis": section_result,
+        "cost_metrics": section_cost_metrics,
     }
 
 
@@ -1419,7 +1464,7 @@ async def perform_meta_synthesis(
     # We use JSON to maintain the structure, which is more robust than simple text.
     consolidated_context = json.dumps(all_sections_analysis, indent=2)
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["best"], temperature=0.3)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.3)
     parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -1491,7 +1536,7 @@ async def generate_argument_structure(
         )
     )
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["best"], temperature=0.1)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.1)
     parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -1541,9 +1586,11 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
     The main worker function, fully implemented with the robust two-pass
     Preprocessing -> Extraction -> Synthesis pipeline, driven by the specified analysis persona.
     """
+
     total_start_time = time.monotonic()
     timing_metrics = {}
-    MINIMUM_JOB_CHARGE_USD = app_config.MINIMUM_JOB_CHARGE_USD or 0.01
+    storage_path = None
+    final_cost_metrics = {"tavily_searches": 0, "assemblyai_audio_seconds": 0}
 
     # Get the configuration for the specified persona, defaulting to 'general'
     persona_cfg = PERSONA_CONFIG.get(persona, PERSONA_CONFIG["general"])
@@ -1579,17 +1626,43 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         canonical_transcript = []
 
         # Step 2: Input Acquisition & Normalization
+        # Step 2: Input Acquisition & Normalization
         storage_path = request_data.get("storagePath")
+        transcription_result = (
+            None  # Will hold the full AssemblyAI result if applicable
+        )
+
         if storage_path:
             db_manager.update_job_status(
                 user_id, job_id, "PROCESSING", "Step 2/7: Transcribing audio file..."
             )
-            utterances = await transcribe_audio_from_gcs(
+            # This call now returns the full result dictionary from AssemblyAI
+            transcription_result = await transcribe_audio_from_gcs(
                 storage_path,
                 user_id,
                 job_id,
                 request_data.get("model_choice", "universal"),
             )
+
+            if transcription_result:
+                audio_duration_seconds = transcription_result.get("audio_duration")
+                if audio_duration_seconds:
+                    final_cost_metrics["assemblyai_audio_seconds"] = (
+                        audio_duration_seconds
+                    )
+
+            # Gracefully handle if transcription failed or returned an unexpected format
+            utterances = transcription_result.get("utterances", [])
+            if not utterances and transcription_result.get("text"):
+                # Fallback for non-diarized transcripts
+                utterances = [
+                    {
+                        "text": transcription_result.get("text", ""),
+                        "start": 0,
+                        "end": transcription_result.get("audio_duration", 0) * 1000,
+                    }
+                ]
+
             print(
                 "[cyan]Step 2a: Converting audio transcript to canonical format...[/cyan]"
             )
@@ -1611,11 +1684,10 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             if not raw_transcript_text:
                 raise ValueError("Input text is empty.")
 
-            # --- FIX: Un-escape the newline characters ---
-            # This converts the literal '\\n' into actual line breaks
+            # Un-escape newline characters for proper parsing
             corrected_text = raw_transcript_text.replace("\\n", "\n")
 
-            # Pass the corrected text to the parser
+            # Pass the corrected text to the robust parser
             canonical_transcript = await preprocess_and_normalize_transcript(
                 corrected_text
             )
@@ -1641,27 +1713,63 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         runnable_config = RunnableConfig(callbacks=[token_tracker])
 
         sections = []
-        if len(canonical_transcript) == 1:
-            full_text = canonical_transcript[0]["text"]
-            sections = segment_by_word_count(full_text)
+
+        total_duration_seconds = (
+            canonical_transcript[-1].get("end_seconds", 0)
+            if canonical_transcript
+            else 0
+        )
+
+        dynamic_min_duration = 240  # Default to 4 minutes
+
+        if total_duration_seconds < 900:  # Less than 15 minutes
+            dynamic_min_duration = 240  # Use 4-minute sections
+        elif total_duration_seconds > 3600:  # More than 1 hour
+            dynamic_min_duration = 360  # Use 6-minute sections
+
+        print(
+            f"[cyan]Content length is {total_duration_seconds // 60} minutes. Using dynamic section target of ~{dynamic_min_duration // 60} minutes.[/cyan]"
+        )
+
+        # Determine if we have a single, long utterance from an audio file
+        is_long_single_utterance = (
+            storage_path
+            and len(canonical_transcript) == 1
+            and len(canonical_transcript[0].get("text", "").split()) > 150
+        )
+
+        if is_long_single_utterance:
+            # --- NEW HIGH-PRECISION LOGIC ---
+            sections = segment_monologue_with_word_timestamps(
+                transcription_result["words"], words_per_section=750
+            )
         else:
             print(
                 "[cyan]Timestamped transcript detected. Running standard segmentation...[/cyan]"
             )
-            boundary_indices = await find_semantic_topic_boundaries_with_ai(
-                canonical_transcript, runnable_config, user_id, job_id
-            )
-            if 0 not in boundary_indices:
-                boundary_indices.insert(0, 0)
 
-            raw_sections = create_sections_from_canonical(
-                canonical_transcript, boundary_indices
-            )
-            # The merge step is ONLY called for timestamped files.
-            sections = merge_short_canonical_sections(
-                raw_sections, min_duration_seconds=240
-            )
-
+            # If it's a long single utterance, split it into sentences first
+            if is_long_single_utterance:
+                sections = segment_monologue_with_word_timestamps(
+                    canonical_transcript[0], words_per_section=750
+                )
+            else:
+                # This part remains the same for multi-speaker transcripts
+                print(
+                    "[cyan]Timestamped transcript detected. Running standard segmentation...[/cyan]"
+                )
+                transcript_for_segmentation = canonical_transcript
+                boundary_indices = await find_semantic_topic_boundaries_with_ai(
+                    transcript_for_segmentation, runnable_config, user_id, job_id
+                )
+                if not boundary_indices or 0 not in boundary_indices:
+                    boundary_indices.insert(0, 0)
+                raw_sections = create_sections_from_canonical(
+                    transcript_for_segmentation, boundary_indices
+                )
+                sections = merge_short_canonical_sections(
+                    raw_sections, min_duration_seconds=dynamic_min_duration
+                )
         sections = [s for s in sections if s]
         num_sections = len(sections)
 
@@ -1692,6 +1800,16 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             for i, section in enumerate(sections)
         ]
         section_processing_results = await asyncio.gather(*analysis_tasks)
+        for res in section_processing_results:
+            if res and res.get("cost_metrics"):
+                for key, value in res["cost_metrics"].items():
+                    final_cost_metrics[key] = final_cost_metrics.get(key, 0) + value
+
+        all_section_analyses = [
+            res["full_analysis"]
+            for res in section_processing_results
+            if res and res.get("full_analysis")
+        ]
         timing_metrics["section_analysis_s"] = time.monotonic() - start_section_analysis
 
         all_section_analyses = [
@@ -1741,6 +1859,69 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
                     user_id, job_id, "✓ Argument structure analysis complete."
                 )
                 pass_2_data = argument_structure_results
+
+        if config.get("run_contextual_briefing") and all_section_analyses:
+            log_msg = "Step 5b: Generating Global Contextual Briefing..."
+            print(f"[magenta]\n{log_msg}[/magenta]")
+            db_manager.log_progress(user_id, job_id, log_msg)
+            start_briefing_time = time.monotonic()
+
+            # 1. Aggregate all claims from all sections
+            all_claims = [
+                claim
+                for analysis in all_section_analyses
+                if analysis.get("verifiable_claims")
+                for claim in analysis["verifiable_claims"]
+            ]
+
+            if all_claims:
+                # 2. Select the best overall claim using Pass 2 data as context
+                best_overall_claim = await _select_best_claim_for_global_briefing(
+                    all_claims, pass_2_data, runnable_config
+                )
+
+                # 3. Generate the single, global briefing if a claim was found
+                if best_overall_claim:
+                    # We need the full text for the briefing's context
+                    full_text_content = "\n\n".join(
+                        "\n".join(
+                            f"{utt['speaker_id']}: {utt['text']}" for utt in section
+                        )
+                        for section in sections
+                    )
+
+                    # Using section_index=-1 as a sentinel for a global briefing
+                    briefing_result_wrapper = await generate_contextual_briefing(
+                        claim_text=best_overall_claim,
+                        context=full_text_content,
+                        user_id=user_id,
+                        job_id=job_id,
+                        section_index=-1,  # Indicates a global briefing
+                    )
+
+                    global_briefing_data = briefing_result_wrapper.get("briefing", {})
+                    briefing_costs = briefing_result_wrapper.get("cost_metrics", {})
+
+                    # 4. Save the result and update costs
+                    if global_briefing_data:
+                        briefing_payload = {
+                            "claim_text": best_overall_claim,
+                            "briefing_data": global_briefing_data,
+                        }
+
+                    # Save the new payload
+                    db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
+                        job_id
+                    ).update({"global_contextual_briefing": briefing_payload})
+                    for key, value in briefing_costs.items():
+                        final_cost_metrics[key] = final_cost_metrics.get(key, 0) + value
+
+                    db_manager.log_progress(
+                        user_id, job_id, "✓ Global contextual briefing generated."
+                    )
+                    timing_metrics["global_briefing_s"] = (
+                        time.monotonic() - start_briefing_time
+                    )
 
         # Update Job Title based on first section's analysis
         final_job_title = await generate_final_title(pass_2_data, runnable_config)
@@ -1792,122 +1973,105 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             time.monotonic() - start_final_content
         )
 
-        # Step 6 & 7: Finalize Results and Cost Calculation
-        log_msg = "Step 7/7: Finalizing results and calculating cost..."
+        # Step 7: Finalize and Log All Metrics for Analytics
+        log_msg = "Step 7/7: Finalizing results and logging analytics..."
         print(f"[magenta]\n{log_msg}[/magenta]")
         db_manager.update_job_status(user_id, job_id, "PROCESSING", log_msg)
+
+        # --- Calculate Final Metrics ---
         start_finalization = time.monotonic()
 
-        final_llm_metrics = token_tracker.get_metrics()
-        db_manager.update_job_cost_metrics(
-            user_id,
-            job_id,
-            {
-                "llm_input_tokens_total": final_llm_metrics["llm_input_tokens"],
-                "llm_output_tokens_total": final_llm_metrics["llm_output_tokens"],
-            },
-        )
-        final_cost_metrics = db_manager.get_job_cost_metrics(user_id, job_id)
-
-        pre_discount_cost_usd = (
-            (final_cost_metrics.get("llm_input_tokens_total", 0) * 0.0000003)
-            + (final_cost_metrics.get("llm_output_tokens_total", 0) * 0.0000006)
-            + (final_cost_metrics.get("tavily_basic_searches", 0) * 0.008)
-            + (final_cost_metrics.get("tavily_advanced_searches", 0) * 0.016)
-            + (final_cost_metrics.get("assemblyai_audio_seconds", 0) * 0.0003)
-        )
-        user_plan = db_manager.get_user_plan(user_id)
-        plan_discount_usd = pre_discount_cost_usd * 0.15 if user_plan == "pro" else 0
-        final_billed_usd = max(
-            MINIMUM_JOB_CHARGE_USD, pre_discount_cost_usd - plan_discount_usd
-        )
-
-        db_manager.update_job_cost_metrics(
-            user_id,
-            job_id,
-            {
-                "pre_discount_cost_usd": round(pre_discount_cost_usd, 6),
-                "plan_discount_usd": round(plan_discount_usd, 6),
-                "final_billed_usd": round(final_billed_usd, 6),
-            },
-        )
-
-        cost_breakdown = {
-            "llm_input_tokens": final_cost_metrics.get("llm_input_tokens_total", 0),
-            "llm_output_tokens": final_cost_metrics.get("llm_output_tokens_total", 0),
-            "tavily_searches": final_cost_metrics.get("tavily_basic_searches", 0)
-            + final_cost_metrics.get("tavily_advanced_searches", 0),
-            "assemblyai_seconds": final_cost_metrics.get("assemblyai_audio_seconds", 0),
-            "pre_discount_cost_usd": round(pre_discount_cost_usd, 6),
-            "plan_discount_usd": round(plan_discount_usd, 6),
-            "final_billed_usd": round(final_billed_usd, 6),
-        }
-        usage_record_data = {
-            "costInUSD": round(final_billed_usd, 6),
-            "type": "audio" if storage_path else "text",
-            "usageMetric": (
-                cost_breakdown["assemblyai_seconds"]
-                if storage_path
-                else len(request_data.get("transcript", ""))
-            ),
-            "breakdown": cost_breakdown,
-        }
-        db_manager.create_usage_record(user_id, job_id, usage_record_data)
-
-        original_estimate = job_doc.get("estimated_cost_usd", 0)
-        settlement_successful = db_manager.settle_job_cost(
-            user_id, original_estimate, final_billed_usd
-        )
-        if not settlement_successful:
-            raise Exception("Credit settlement failed.")
-
+        # Calculate final timing first, so you can include it in the record
         timing_metrics["finalization_s"] = time.monotonic() - start_finalization
         timing_metrics["total_job_s"] = time.monotonic() - total_start_time
-        db_manager.update_job_cost_metrics(
-            user_id, job_id, {"timing_metrics": timing_metrics}
+
+        final_llm_metrics = token_tracker.get_metrics()
+        internal_cost_usd = (
+            (final_llm_metrics.get("llm_input_tokens", 0) * 0.0000003)
+            + (final_llm_metrics.get("llm_output_tokens", 0) * 0.0000006)
+            + (final_cost_metrics.get("tavily_searches", 0) * 0.008)
+            + (final_cost_metrics.get("assemblyai_audio_seconds", 0) * 0.0003)
         )
 
+        # --- Build the "Golden Record" for your Dashboard ---
+        usage_record_data = {
+            "userId": user_id,
+            "jobId": job_id,
+            "type": "audio" if storage_path else "text",
+            "persona": persona,
+            # Core Metrics
+            "internalCostUSD": round(internal_cost_usd, 6),
+            "totalCompletionSeconds": round(timing_metrics["total_job_s"], 2),
+            "inputDurationSeconds": request_data.get("duration_seconds", 0),
+            "timingBreakdownSeconds": {
+                key.replace("_s", ""): round(value, 2)
+                for key, value in timing_metrics.items()
+                if key != "total_job_s"  # Avoid duplicating the total
+            },
+            # Detailed Breakdown for Deeper Analysis
+            "breakdown": {
+                "llm_input_tokens": final_llm_metrics.get("llm_input_tokens", 0),
+                "llm_output_tokens": final_llm_metrics.get("llm_output_tokens", 0),
+                # This now correctly reads the value captured in Step 2
+                "assemblyai_seconds": final_cost_metrics.get(
+                    "assemblyai_audio_seconds", 0
+                ),
+                # This now uses the correct key for Tavily searches
+                "tavily_searches": final_cost_metrics.get("tavily_searches", 0),
+            },
+        }
+
+        # Save the single, consolidated analytics record
+        db_manager.create_usage_record(user_id, job_id, usage_record_data)
+
+        # --- Finalize Job Status ---
         db_manager.update_job_status(
             user_id,
             job_id,
             "COMPLETED",
-            f"Analysis of {num_sections} sections complete. Final cost: ${round(final_billed_usd, 4)}",
+            f"Analysis of {num_sections} sections complete.",
         )
         db_manager.create_notification(user_id, job_id, final_job_title)
         db_manager.log_progress(user_id, job_id, "✅ Analysis Complete.")
 
-        cost_details = (
-            f"  - [bold]Subtotal:[/bold] ${pre_discount_cost_usd:.4f} USD\n"
-            f"  - [bold]Pro Discount (15%):[/bold] -${plan_discount_usd:.4f} USD\n"
-            f"  - [bold]Final Billed Amount:[/bold] ${final_billed_usd:.4f} USD\n\n"
-            f"  - [dim]LLM Tokens:[/dim] [dim]{cost_breakdown.get('llm_input_tokens', 0):,} (Input) | {cost_breakdown.get('llm_output_tokens', 0):,} (Output)[/dim]\n"
-            f"  - [dim]Tavily Searches:[/dim] [dim]{cost_breakdown.get('tavily_searches', 0)}[/dim]\n"
-            f"  - [dim]AssemblyAI Audio:[/dim] [dim]{cost_breakdown.get('assemblyai_seconds', 0):.2f} seconds[/dim]"
-        )
         print(
             Panel(
-                f"[bold green]Final Cost Metrics for Job ID: {job_id}[/bold green]\n{cost_details}",
-                title="[bold green]Metrics[/bold green]",
+                "\n".join(
+                    [
+                        f"  - {key.replace('_s', '').replace('_', ' ').capitalize():<30}: {value:.2f}s"
+                        for key, value in timing_metrics.items()
+                        if key != "total_job_s"
+                    ]
+                    + [
+                        "-" * 40,
+                        f"  - {'Total job time':<30}: {timing_metrics.get('total_job_s', 0):.2f}s",
+                    ]
+                ),
+                title="[bold yellow]⏱️ Performance Metrics[/bold yellow]",
+                border_style="yellow",
+                expand=False,
+            )
+        )
+
+        print(
+            Panel(
+                "\n".join(
+                    [
+                        f"  - {'LLM Input Tokens':<30}: {final_llm_metrics.get('llm_input_tokens', 0):,}",
+                        f"  - {'LLM Output Tokens':<30}: {final_llm_metrics.get('llm_output_tokens', 0):,}",
+                        f"  - {'Tavily Searches':<30}: {final_cost_metrics.get('tavily_searches', 0)}",
+                        f"  - {'AssemblyAI Audio':<30}: {final_cost_metrics.get('assemblyai_audio_seconds', 0):.2f}s",
+                        "-" * 40,
+                        f"  - {'Estimated Internal Cost':<30}: ${internal_cost_usd:.6f}",
+                    ]
+                ),
+                title="[bold green]💰 Cost & Usage Metrics[/bold green]",
                 border_style="green",
-                title_align="left",
+                expand=False,
             )
         )
 
-        timing_details = "\n".join(
-            [
-                f"  - [bold]{key.replace('_s', ' (s)'):<30}:[/bold] {value:.2f}"
-                for key, value in timing_metrics.items()
-            ]
-        )
-        print(
-            Panel(
-                f"[bold cyan]Performance Timing for Job ID: {job_id}[/bold cyan]\n{timing_details}",
-                title="[bold cyan]Timing[/bold cyan]",
-                border_style="cyan",
-                title_align="left",
-            )
-        )
-
+        # --- Simplified final logging ---
         print(
             Panel(
                 f"[bold green]✅ Analysis COMPLETE for Job ID:[/bold green]\n[white]{job_id}[/white]",
@@ -1926,11 +2090,10 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         db_manager.update_job_status(user_id, job_id, "FAILED", error_message)
         db_manager.log_progress(user_id, job_id, f"❌ Analysis Failed: {error_message}")
 
-        job_doc_on_fail = db_manager.get_job_status(user_id, job_id)
-        if job_doc_on_fail:
-            original_estimate = job_doc_on_fail.get("estimated_cost_usd", 0)
-            if original_estimate > 0:
-                print(
-                    f"[yellow]Refunding pre-authorized amount of ${original_estimate} for failed job.[/yellow]"
-                )
-                db_manager.settle_job_cost(user_id, original_estimate, 0)
+        print(f"[yellow]Issuing refund for job {job_id}...[/yellow]")
+        db_manager.refund_analysis_credit(user_id)
+
+    finally:
+        if storage_path:
+            print(f"[cyan]Job processing finished. Cleaning up source file...[/cyan]")
+            db_manager.delete_gcs_file(storage_path)

@@ -3,6 +3,12 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, FileText, Share2, Pencil, Save, FileDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AnalysisActionButtonsProps {
   isPublicPage: boolean;
@@ -16,6 +22,8 @@ interface AnalysisActionButtonsProps {
   onSave: () => void;
   onCancel: () => void;
   onExportToPowerPoint?: () => void;
+  onExportPdf: () => void;
+  onExportDocx: () => void;
 }
 
 export const AnalysisActionButtons: React.FC<AnalysisActionButtonsProps> = ({
@@ -30,6 +38,8 @@ export const AnalysisActionButtons: React.FC<AnalysisActionButtonsProps> = ({
   onSave,
   onCancel,
   onExportToPowerPoint,
+  onExportDocx,
+  onExportPdf,
 }) => {
   if (isPublicPage) {
     return (
@@ -93,14 +103,28 @@ export const AnalysisActionButtons: React.FC<AnalysisActionButtonsProps> = ({
           )}
 
           {/* Button is NOW ALSO present in the private (non-public) view */}
-          <Button
-            variant="outline"
-            onClick={onExportMarkdown}
-            disabled={!hasData}
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy as Markdown
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={!hasData}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onExportMarkdown}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy as Markdown
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportDocx}>
+                <FileText className="h-4 w-4 mr-2" />
+                Download as Word (.docx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportPdf}>
+                <FileDown className="h-4 w-4 mr-2" />
+                Download as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
             variant="outline"

@@ -1,116 +1,151 @@
-// app/hooks/useMarkdownExport.ts
-
 import { useCallback } from "react";
 import { toast } from "sonner";
 import {
   JobData,
   GeneralAnalysisSection,
   ConsultantAnalysisSection,
+  Slide,
+  Contradiction,
+  GlobalContextualBriefingPayload,
+  Viewpoint,
 } from "@/app/_global/interface";
+import { generateReportBlueprint } from "@/app/utils/reportGenerator";
 
-// Move the markdown generation logic into a standalone utility function
-const generateMarkdown = (data: JobData) => {
-  let md = `# ${data.job_title}\n\n`;
+const generateMarkdown = (data: JobData): string => {
+  const blueprint = generateReportBlueprint(data);
+  let md = "";
 
-  // 1. Add High-Level Synthesis/Argument based on persona
-  // FIX: Added optional chaining (?.) and nullish coalescing (?? []) to all .forEach calls for safety.
-  if (data.synthesis_results) {
-    md += `## Executive Synthesis\n\n`;
-    md += `### Strategic Narrative Arc\n${
-      data.synthesis_results.narrative_arc || ""
-    }\n\n`;
+  // Helper to format malformed markdown from the DB
+  const formatMarkdownContent = (content: string) => {
+    if (!content) return "";
+    let formatted = content.replace(/(\n)(##+\s)/g, "\n\n$2");
+    formatted = formatted.replace(/(##+\s[^\n]+)(\n)([^\n])/g, "$1\n\n$3");
+    return formatted;
+  };
 
-    md += `### Overarching Themes\n`;
-    (data.synthesis_results.overarching_themes ?? []).forEach(
-      (theme) => (md += `- ${theme}\n`)
-    );
-    md += `\n`;
+  for (const part of blueprint) {
+    switch (part.type) {
+      case "title":
+        md += `# ${part.content}\n\n`;
+        break;
 
-    md += `### Key Contradictions\n`;
-    (data.synthesis_results.key_contradictions ?? []).forEach((c) => {
-      md += `> **Point A:** ${c.point_a}\n`;
-      md += `> **Point B:** ${c.point_b}\n`;
-      md += `**Analysis:** ${c.analysis}\n\n`;
-    });
+      case "synthesis":
+        md += `## Executive Synthesis\n\n`;
+        md += `### Strategic Narrative Arc\n${
+          part.data.narrative_arc || "N/A"
+        }\n\n`;
+        md += `### Overarching Themes\n`;
+        (part.data.overarching_themes ?? []).forEach(
+          (theme: string) => (md += `- ${theme}\n`)
+        );
+        md += `\n`;
+        md += `### Key Contradictions\n`;
+        (part.data.key_contradictions ?? []).forEach((c: Contradiction) => {
+          md += `> **Point A:** ${c.point_a}\n> **Point B:** ${c.point_b}\n**Analysis:** ${c.analysis}\n\n`;
+        });
+        md += `### Unifying Insights\n`;
+        (part.data.unifying_insights ?? []).forEach(
+          (insight: string) => (md += `* ${insight}\n\n`)
+        );
+        break;
 
-    md += `### Unifying Insights\n`;
-    (data.synthesis_results.unifying_insights ?? []).forEach(
-      (insight) => (md += `* ${insight}\n\n`)
-    );
-  } else if (data.argument_structure) {
-    md += `## Argument & Thesis Breakdown\n\n`;
-    md += `### Main Thesis\n${data.argument_structure.main_thesis || ""}\n\n`;
+      case "argument":
+        md += `## Argument & Thesis Breakdown\n\n`;
+        md += `### Main Thesis\n${part.data.main_thesis || "N/A"}\n\n`;
+        md += `### Supporting Arguments\n`;
+        (part.data.supporting_arguments ?? []).forEach(
+          (arg: string) => (md += `- ${arg}\n`)
+        );
+        md += `\n`;
+        if (part.data.counterarguments_mentioned?.length > 0) {
+          md += `### Counterarguments Mentioned\n`;
+          (part.data.counterarguments_mentioned ?? []).forEach(
+            (arg: string) => (md += `- ${arg}\n`)
+          );
+          md += `\n`;
+        }
+        break;
 
-    md += `### Supporting Arguments\n`;
-    (data.argument_structure.supporting_arguments ?? []).forEach(
-      (arg) => (md += `- ${arg}\n`)
-    );
-    md += `\n`;
+      case "global_briefing":
+        const briefing = part.data as GlobalContextualBriefingPayload;
+        md += `## Global Contextual Briefing\n\n`;
+        md += `**Claim:** ${briefing.claim_text}\n\n`;
+        if (briefing.briefing_data.overall_summary) {
+          md += `### Summary\n${briefing.briefing_data.overall_summary}\n\n`;
+        }
+        if (briefing.briefing_data.supporting_viewpoints?.length) {
+          md += `### Supporting Viewpoints\n`;
+          briefing.briefing_data.supporting_viewpoints.forEach(
+            (v: Viewpoint) => {
+              md += `- **${v.source}:** ${v.perspective}\n`;
+            }
+          );
+          md += `\n`;
+        }
+        if (briefing.briefing_data.challenging_viewpoints?.length) {
+          md += `### Challenging Viewpoints\n`;
+          briefing.briefing_data.challenging_viewpoints.forEach(
+            (v: Viewpoint) => {
+              md += `- **${v.source}:** ${v.perspective}\n`;
+            }
+          );
+          md += `\n`;
+        }
+        break;
 
-    if (data.argument_structure.counterarguments_mentioned?.length > 0) {
-      md += `### Counterarguments Mentioned\n`;
-      (data.argument_structure.counterarguments_mentioned ?? []).forEach(
-        (arg) => (md += `- ${arg}\n`)
-      );
-      md += `\n`;
+      case "blog_post":
+        md += `## Generated Blog Post\n\n`;
+        md += `${formatMarkdownContent(part.content)}\n\n`;
+        break;
+
+      case "x_thread":
+        md += `## Generated X/Twitter Thread\n\n`;
+        (part.thread as string[]).forEach((tweet, index) => {
+          md += `${index + 1}. ${tweet}\n\n`;
+        });
+        break;
+
+      case "detailed_sections_header":
+        md += `## Detailed Section-by-Section Analysis\n\n`;
+        break;
+
+      case "detailed_sections":
+        (part.sections ?? []).forEach((section: any, index: number) => {
+          if (part.persona === "consultant") {
+            const s = section as ConsultantAnalysisSection;
+            md += `### ${index + 1}. ${s.section_title}\n\n**Executive Summary:** ${
+              s.executive_summary
+            }\n\n`;
+            md += `**Client Pain Points:**\n`;
+            (s.client_pain_points ?? []).forEach((p) => (md += `- ${p}\n`));
+            md += `\n`;
+          } else {
+            const s = section as GeneralAnalysisSection;
+            md += `### ${index + 1}. ${s.generated_title}\n\n> ${
+              s["1_sentence_summary"]
+            }\n\n`;
+            md += `**Summary Points:**\n`;
+            (s.summary_points ?? []).forEach((p) => (md += `- ${p}\n`));
+            md += `\n`;
+          }
+        });
+        break;
+
+      case "slide_deck_header":
+        md += `## Slide Deck Outline\n\n`;
+        break;
+
+      case "slide_deck":
+        (part.slides ?? []).forEach((slide: Slide) => {
+          md += `### ${slide.slide_title}\n\n`;
+          (slide.slide_bullets ?? []).forEach(
+            (bullet: string) => (md += `- ${bullet}\n`)
+          );
+          md += `\n`;
+        });
+        break;
     }
   }
-
-  // 2. Add Detailed Section-by-Section Analysis
-  md += `## Detailed Section-by-Section Analysis\n\n`;
-
-  const persona = data.request_data?.config?.analysis_persona;
-
-  if (persona === "consultant") {
-    (data.results ?? []).forEach((section, index) => {
-      const consultantSection = section as ConsultantAnalysisSection;
-      md += `### ${index + 1}. ${consultantSection.section_title} (${
-        consultantSection.start_time
-      } - ${consultantSection.end_time})\n\n`;
-      md += `**Executive Summary:** ${consultantSection.executive_summary}\n\n`;
-      md += `**Client Pain Points:**\n`;
-      (consultantSection.client_pain_points ?? []).forEach(
-        (p) => (md += `- ${p}\n`)
-      );
-      md += `\n`;
-      md += `**Strategic Opportunities:**\n`;
-      (consultantSection.strategic_opportunities ?? []).forEach(
-        (o) => (md += `- ${o}\n`)
-      );
-      md += `\n`;
-      md += `**Critical Quotes:**\n`;
-      (consultantSection.critical_quotes ?? []).forEach(
-        (q) => (md += `> ${q}\n`)
-      );
-      md += `\n\n`;
-    });
-  } else if (persona === "general") {
-    (data.results ?? []).forEach((section, index) => {
-      const generalSection = section as GeneralAnalysisSection;
-      md += `### ${index + 1}. ${generalSection.generated_title} (${
-        generalSection.start_time
-      } - ${generalSection.end_time})\n\n`;
-      md += `> ${generalSection["1_sentence_summary"]}\n\n`;
-      md += `**Summary Points:**\n`;
-      (generalSection.summary_points ?? []).forEach((p) => (md += `- ${p}\n`));
-      md += `\n`;
-      md += `**Actionable Advice:**\n`;
-      (generalSection.actionable_advice ?? []).forEach(
-        (a) => (md += `- ${a}\n`)
-      );
-      md += `\n`;
-      md += `**Notable Quotes:**\n`;
-      (generalSection.notable_quotes ?? []).forEach((q) => (md += `> ${q}\n`));
-      md += `\n\n`;
-      md += `**Questions & Answers:**\n`;
-      (generalSection.questions_and_answers ?? []).forEach((qa) => {
-        md += `- **Q:** ${qa.question}\n`;
-        md += `  - **A:** ${qa.answer}\n`;
-      });
-      md += `\n`;
-    });
-  }
-
   return md;
 };
 
@@ -120,7 +155,6 @@ export const useMarkdownExport = (jobData: JobData | null) => {
       toast.error("No data available to export.");
       return;
     }
-
     const markdownContent = generateMarkdown(jobData);
     navigator.clipboard.writeText(markdownContent);
     toast.success("Analysis copied to clipboard as Markdown!");

@@ -17,7 +17,7 @@ def create_analysis_task(user_id: str, job_id: str):
         GCP_LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION")
         GCP_QUEUE_ID = os.getenv("GOOGLE_CLOUD_QUEUE_ID")
         WORKER_SERVICE_URL = os.getenv("WORKER_SERVICE_URL")
-        GCP_SERVICE_ACCOUNT_EMAIL = os.getenv("GCP_SERVICE_ACCOUNT_EMAIL")
+        WORKER_SERVICE_AUTH_SA_EMAIL = os.getenv("WORKER_SERVICE_AUTH_SA_EMAIL")
 
         if not all(
             [
@@ -25,12 +25,16 @@ def create_analysis_task(user_id: str, job_id: str):
                 GCP_LOCATION,
                 GCP_QUEUE_ID,
                 WORKER_SERVICE_URL,
-                GCP_SERVICE_ACCOUNT_EMAIL,
+                WORKER_SERVICE_AUTH_SA_EMAIL,
             ]
         ):
             raise ValueError(
                 "One or more required Google Cloud environment variables are not set."
             )
+
+        print(
+            f"DEBUG: Task will be invoked as service account: {WORKER_SERVICE_AUTH_SA_EMAIL}"
+        )  # <-- ADD THIS
 
         # --- 2. Construct the necessary paths and payload ---
         parent = tasks_client.queue_path(GCP_PROJECT, GCP_LOCATION, GCP_QUEUE_ID)
@@ -53,7 +57,7 @@ def create_analysis_task(user_id: str, job_id: str):
                 "headers": {"Content-type": "application/json"},
                 "body": json.dumps(payload).encode(),
                 "oidc_token": {
-                    "service_account_email": GCP_SERVICE_ACCOUNT_EMAIL,
+                    "service_account_email": WORKER_SERVICE_AUTH_SA_EMAIL,
                     "audience": token_audience,
                 },
             },

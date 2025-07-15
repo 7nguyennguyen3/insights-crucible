@@ -14,11 +14,9 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.runnables import RunnableConfig
 from google.api_core.exceptions import ResourceExhausted
 from tavily import TavilyClient
-from firebase_admin import firestore
 from rich import print
 
-from src import db_manager
-from src.config import app_config
+from src import clients
 
 
 def retry_with_exponential_backoff(func):
@@ -62,18 +60,29 @@ def retry_with_exponential_backoff(func):
 
 @retry_with_exponential_backoff
 async def generate_contextual_briefing(
-    claim_text: str, context: str, user_id: str, job_id: str, section_index: int
+    claim_text: str,
+    context: str,
+    user_id: str,
+    job_id: str,
+    section_index: int,
 ) -> Dict:
     """
     Generates a multi-angle briefing for a specific claim by performing parallel
     web searches and synthesizing the results.
+    NOW RETURNS COST METRICS.
     """
-    log_prefix = f"             - [Section {section_index + 1}]"
-    print(
-        f"{log_prefix} [bold purple]Starting 'Context & Perspectives Engine'...[/bold purple]"
-    )
+    if section_index == -1:
+        log_prefix = "             - [Global Briefing]"
+        print(
+            f"{log_prefix} [bold purple]Starting 'Global Context & Perspectives Engine'...[/bold purple]"
+        )
+    else:
+        log_prefix = f"                 - [Section {section_index + 1}]"
+        print(
+            f"{log_prefix} [bold purple]Starting 'Context & Perspectives Engine'...[/bold purple]"
+        )
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["main"], temperature=0.1)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.0)
     parser = JsonOutputParser()
 
     print(f"{log_prefix}   - Generating diverse queries for: '{claim_text[:60]}...'")
@@ -114,6 +123,11 @@ async def generate_contextual_briefing(
         f"{log_prefix}   - Searching Tavily with {len(search_queries)} queries in parallel..."
     )
     all_search_results = []
+
+    # --- START OF CORRECTION 1 ---
+    num_searches_performed = 0
+    # --- END OF CORRECTION 1 ---
+
     try:
         tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
         search_tasks = [
@@ -127,13 +141,15 @@ async def generate_contextual_briefing(
             if query and query.strip()
         ]
 
+        # --- START OF CORRECTION 2 ---
+        num_searches_performed = len(search_tasks)
+        # --- END OF CORRECTION 2 ---
+
         search_results_list = await asyncio.gather(*search_tasks)
 
         for result_group in search_results_list:
             all_search_results.extend(result_group.get("results", []))
-            db_manager.update_job_cost_metrics(
-                user_id, job_id, {"tavily_advanced_searches": firestore.Increment(1)}
-            )
+            # THE ERRONEOUS LINE BELOW HAS BEEN DELETED
 
         unique_results = list(
             {result["url"]: result for result in all_search_results}.values()
@@ -143,12 +159,18 @@ async def generate_contextual_briefing(
         print(
             f"{log_prefix}  - [red]An error occurred during web search fallback: {e}[/red]"
         )
-        return {"error": "SearchExecutionFailed", "details": str(e)}
+        return {
+            "briefing": {"error": "SearchExecutionFailed", "details": str(e)},
+            "cost_metrics": {"tavily_searches": num_searches_performed},
+        }
 
     if not unique_results:
         return {
-            "error": "NoSearchResults",
-            "details": "Web search returned no results for the generated queries.",
+            "briefing": {
+                "error": "NoSearchResults",
+                "details": "Web search returned no results for the generated queries.",
+            },
+            "cost_metrics": {"tavily_searches": num_searches_performed},
         }
 
     print(
@@ -187,14 +209,24 @@ async def generate_contextual_briefing(
                 "format_instructions": parser.get_format_instructions(),
             }
         )
-        return briefing
+        # --- START OF CORRECTION 3 ---
+        return {
+            "briefing": briefing,
+            "cost_metrics": {"tavily_searches": num_searches_performed},
+        }
+        # --- END OF CORRECTION 3 ---
+
     except Exception as e:
-        print(f"{log_prefix}  - [red]Error during briefing synthesis: {e}[/red]")
-        return {"error": "SynthesisFailed", "details": str(e)}
+        print(f"{log_prefix}   - [red]Error during briefing synthesis: {e}[/red]")
+        return {
+            "briefing": {"error": "SynthesisFailed", "details": str(e)},
+            "cost_metrics": {"tavily_searches": num_searches_performed},
+        }
 
 
 async def generate_x_thread(
-    all_sections_analysis: List[Dict], runnable_config: RunnableConfig
+    all_sections_analysis: List[Dict],
+    runnable_config: RunnableConfig,
 ) -> List[str]:
     """
     Generates a single, overall X-thread summarizing the entire analysis
@@ -211,7 +243,7 @@ async def generate_x_thread(
             full_context += f"- {point}\n"
         full_context += "\n"
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["best"], temperature=0.5)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.3)
     parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -253,7 +285,8 @@ async def generate_x_thread(
 
 
 async def generate_blog_post(
-    all_sections_analysis: List[Dict], runnable_config: RunnableConfig
+    all_sections_analysis: List[Dict],
+    runnable_config: RunnableConfig,
 ) -> str:
     """
     Generates a blog post from the analysis.
@@ -266,7 +299,7 @@ async def generate_blog_post(
         summary = "\n".join(section.get("summary_points", []))
         full_context += f"## {title}\n\n{summary}\n\n"
 
-    llm = ChatGoogleGenerativeAI(model=app_config.LLM_MODELS["best"], temperature=0.6)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.3)
     parser = StrOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(

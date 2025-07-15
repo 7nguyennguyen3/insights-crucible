@@ -67,13 +67,6 @@ class JobRequest(BaseModel):
     job_id: str
 
 
-# --- Response models can largely stay the same ---
-class EstimateResponse(BaseModel):
-    estimated_cost_usd: float
-    num_sections: int
-    message: str
-
-
 class ProcessResponse(BaseModel):
     job_id: str
     status: str

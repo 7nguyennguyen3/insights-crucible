@@ -6,12 +6,10 @@ import { AnalysisSection } from "@/app/_global/interface";
 
 export async function GET(
   request: NextRequest,
-  context: { params: { publicShareId: string } }
+  { params }: { params: Promise<{ publicShareId: string }> } // <-- 1. Type is a Promise
 ) {
+  const { publicShareId } = await params;
   try {
-    // FIX: Removed unnecessary 'await'
-    const { publicShareId } = context.params;
-
     if (!publicShareId) {
       return NextResponse.json(
         { error: "Share ID is required" },

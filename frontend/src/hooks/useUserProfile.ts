@@ -1,11 +1,13 @@
 import useSWR from "swr";
 import apiClient from "@/lib/apiClient";
 import { useAuthStore } from "@/store/authStore";
-
 // Define the shape of the profile data
 interface UserProfile {
   plan: string;
-  credits: number;
+  analyses_remaining: number;
+  nextBillingDate?: number;
+  cancel_at_period_end?: boolean;
+  subscription_ends_at?: number;
 }
 
 const fetcher = (url: string) => apiClient.get(url).then((res) => res.data);

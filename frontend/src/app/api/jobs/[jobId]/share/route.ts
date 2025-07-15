@@ -10,8 +10,9 @@ import { nanoid } from "nanoid";
  */
 export async function POST(
   request: NextRequest,
-  context: { params: { jobId: string } } // FIX: Changed signature
+  { params }: { params: Promise<{ jobId: string }> } // <-- 1. Type is a Promise
 ) {
+  const { jobId } = await params;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -20,7 +21,6 @@ export async function POST(
     }
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
-    const { jobId } = await context.params;
 
     if (!jobId) {
       return NextResponse.json(
@@ -63,13 +63,11 @@ export async function POST(
   }
 }
 
-/**
- * DELETE: Revoke an existing public share link for a job.
- */
 export async function DELETE(
   request: NextRequest,
-  context: { params: { jobId: string } } // FIX: Changed signature
+  { params }: { params: Promise<{ jobId: string }> } // <-- 1. Type is a Promise
 ) {
+  const { jobId } = await params;
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
@@ -78,7 +76,6 @@ export async function DELETE(
     }
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
-    const { jobId } = context.params; // FIX: Destructure from context
 
     if (!jobId) {
       return NextResponse.json(

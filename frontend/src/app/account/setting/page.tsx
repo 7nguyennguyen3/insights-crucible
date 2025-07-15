@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
   updatePassword,
   sendEmailVerification,
   deleteUser,
 } from "firebase/auth";
-import { auth } from "@/lib/firebaseClient"; // CORRECT: Import client-side auth
+import { auth } from "@/lib/firebaseClient";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, AlertTriangle, ShieldCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
@@ -40,9 +39,14 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
+interface CustomFirebaseError extends Error {
+  code: string;
+  message: string;
+  name: string;
+}
+
 const SettingsPage = () => {
-  const { user } = useAuthStore(); // We only need `user` for display purposes
-  const { profile } = useUserProfile();
+  const { user } = useAuthStore();
 
   // State for email verification
   const [isVerificationEmailSending, setIsVerificationEmailSending] =
@@ -56,25 +60,28 @@ const SettingsPage = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  // State for subscription management
-  const [isSubscriptionLoading, setIsSubscriptionLoading] = useState(false);
-
   // State for account deletion
   const [deletePassword, setDeletePassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // New state to control dialog
 
-  /**
-   * Handles sending a verification email to the user.
-   */
+  const [authProvider, setAuthProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (auth.currentUser) {
+      const providerId = auth.currentUser.providerData[0]?.providerId;
+      setAuthProvider(providerId);
+    }
+  }, [user]);
+
   const handleSendVerificationEmail = async () => {
-    // We use auth.currentUser which is the live Firebase User object
     if (!auth.currentUser) return;
     setIsVerificationEmailSending(true);
     try {
       await sendEmailVerification(auth.currentUser);
       toast.success("A new verification email has been sent to your inbox.");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Verification email error:", error);
       toast.error(
         "Failed to send verification email. Please try again shortly."
@@ -84,9 +91,6 @@ const SettingsPage = () => {
     }
   };
 
-  /**
-   * Handles the password change logic with Firebase re-authentication.
-   */
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
@@ -100,7 +104,6 @@ const SettingsPage = () => {
       setPasswordError("Password must be at least 6 characters long.");
       return;
     }
-    // Use the live user from auth instance for security operations
     const firebaseUser = auth.currentUser;
     if (!firebaseUser || !firebaseUser.email) {
       setPasswordError("No user is currently signed in.");
@@ -122,14 +125,19 @@ const SettingsPage = () => {
       setNewPassword("");
       setConfirmPassword("");
       toast.success("Password Updated!");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Password change failed:", error);
       let errorMessage = "Failed to update password. Please try again.";
-      if (error.code === "auth/wrong-password") {
-        errorMessage = "Incorrect current password. Please try again.";
-      } else if (error.code === "auth/too-many-requests") {
-        errorMessage = "Too many attempts. Please try again later.";
+
+      if (typeof error === "object" && error !== null && "code" in error) {
+        const firebaseError = error as { code: string };
+        if (firebaseError.code === "auth/wrong-password") {
+          errorMessage = "Incorrect current password. Please try again.";
+        } else if (firebaseError.code === "auth/too-many-requests") {
+          errorMessage = "Too many attempts. Please try again later.";
+        }
       }
+
       setPasswordError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -137,68 +145,116 @@ const SettingsPage = () => {
     }
   };
 
-  /**
-   * Handles creating a Stripe Billing Portal session.
-   */
-  const handleManageSubscription = async () => {
-    if (!user) return;
-    setIsSubscriptionLoading(true);
-    try {
-      const { data } = await apiClient.post("/billing/create-portal-session");
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("Could not retrieve billing portal URL.");
-      }
-    } catch (err) {
-      console.error("Failed to create portal session:", err);
-      toast.error("Could not open billing portal. Please try again later.");
-    } finally {
-      setIsSubscriptionLoading(false);
-    }
-  };
-
-  /**
-   * Handles the account deletion process with re-authentication.
-   */
   const handleDeleteAccount = async () => {
     setDeleteError(null);
-    const firebaseUser = auth.currentUser;
-    if (!firebaseUser || !firebaseUser.email) {
-      setDeleteError("No user is signed in to delete.");
+    const firebaseUser = auth.currentUser; // Directly get current user from firebase/auth
+
+    if (!firebaseUser) {
+      toast.error("No user is signed in.");
       return;
     }
+
     setIsDeleting(true);
+
     try {
-      const credential = EmailAuthProvider.credential(
-        firebaseUser.email,
-        deletePassword
-      );
+      // 1. Re-authenticate the user based on their provider
+      // (Your existing re-authentication logic is correct)
+      if (authProvider === "password") {
+        if (!firebaseUser.email || !deletePassword) {
+          setDeleteError("Password is required to delete your account.");
+          setIsDeleting(false);
+          return;
+        }
+        const credential = EmailAuthProvider.credential(
+          firebaseUser.email,
+          deletePassword
+        );
+        await reauthenticateWithCredential(firebaseUser, credential);
+      } else if (authProvider === "google.com") {
+        const provider = new GoogleAuthProvider();
+        await reauthenticateWithPopup(firebaseUser, provider);
+      } else {
+        setDeleteError(
+          "Account deletion for this sign-in method is not fully supported yet (client-side only for now)."
+        );
+        setIsDeleting(false);
+        return;
+      }
 
-      await reauthenticateWithCredential(firebaseUser, credential);
+      // 2. Get the ID token for the API call
+      // Ensure the user has been recently re-authenticated, otherwise get an error like "auth/requires-recent-login"
+      const idToken = await firebaseUser.getIdToken(true); // true forces a refresh if needed
+
+      // 3. Call your API route to delete the Firestore record
+      const apiResponse = await fetch("/api/auth/delete-account", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`, // Send the ID token for authentication
+        },
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(
+          errorData.error || "Failed to delete user record on server."
+        );
+      }
+
+      // 4. Delete the Firebase Authentication user (client-side)
       await deleteUser(firebaseUser);
+      await fetch("/api/auth/signout", { method: "POST" });
 
-      toast.success("Your account has been permanently deleted.");
-      // CORRECT: No need to call setUser(null).
-      // The onAuthStateChanged listener in useAuthStore will automatically
-      // handle the state update upon successful deletion.
+      toast.success(
+        "Your account and all associated data have been permanently deleted."
+      );
+      setIsDeleteDialogOpen(false); // Close the dialog
 
-      // Redirect to homepage after a short delay
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/"; // Redirect to home or login page
       }, 2000);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Account deletion failed:", error);
       let errorMessage = "An error occurred while deleting your account.";
-      if (error.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password. Account deletion failed.";
-      } else if (error.code === "auth/too-many-requests") {
-        errorMessage = "Too many attempts. Please try again later.";
+
+      if (typeof error === "object" && error !== null && "code" in error) {
+        // Assert to the more specific type
+        const firebaseError = error as CustomFirebaseError; // Use the CustomFirebaseError type
+        switch (firebaseError.code) {
+          case "auth/wrong-password":
+            errorMessage = "Incorrect password. Account deletion failed.";
+            break;
+          case "auth/too-many-requests":
+            errorMessage = "Too many attempts. Please try again later.";
+            break;
+          case "auth/popup-closed-by-user":
+            errorMessage = "Re-authentication cancelled. Please try again.";
+            break;
+          case "auth/requires-recent-login":
+            errorMessage =
+              "Please log in again to delete your account. This is a security measure.";
+            break;
+          default:
+            // Now 'firebaseError.message' is properly recognized
+            errorMessage =
+              firebaseError.message ||
+              "Re-authentication or deletion failed. Please try again.";
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message; // Catch errors from the API fetch or other general JS errors
       }
+
       setDeleteError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
+    }
+  };
+  const handleDialogChange = (open: boolean) => {
+    setIsDeleteDialogOpen(open);
+    if (!open) {
+      setDeletePassword("");
+      setDeleteError(null);
     }
   };
 
@@ -209,7 +265,7 @@ const SettingsPage = () => {
           Settings
         </h1>
         <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
-          Manage your account, password, and subscription plan.
+          Manage your account and password settings.
         </p>
       </header>
 
@@ -248,8 +304,8 @@ const SettingsPage = () => {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Not Verified</AlertTitle>
                   <AlertDescription>
-                    Your email address is not verified. Please check your inbox
-                    or resend the verification email.
+                    Your email is not verified. Please check your inbox or
+                    resend the verification email.
                   </AlertDescription>
                   <Button
                     variant={"outline"}
@@ -273,109 +329,89 @@ const SettingsPage = () => {
         </Card>
 
         {/* === Change Password Section === */}
-        <Card>
-          <form onSubmit={handleChangePassword}>
+        {authProvider === "password" ? (
+          <Card>
+            <form onSubmit={handleChangePassword}>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>
+                  For your security, you must provide your current password to
+                  make changes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <Input
+                    id="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">
+                      Confirm New Password
+                    </Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                {passwordError && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{passwordError}</AlertDescription>
+                  </Alert>
+                )}
+                {passwordSuccess && (
+                  <Alert variant="default">
+                    <ShieldCheck className="h-4 w-4" />
+                    <AlertTitle>Success</AlertTitle>
+                    <AlertDescription>{passwordSuccess}</AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+              <CardFooter className="mt-6">
+                <Button type="submit" disabled={isPasswordLoading}>
+                  {isPasswordLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save Password
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        ) : (
+          <Card>
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
-              <CardDescription>
-                For your security, you must provide your current password to
-                make changes.
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              {passwordError && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{passwordError}</AlertDescription>
-                </Alert>
-              )}
-              {passwordSuccess && (
-                <Alert variant="default">
-                  <ShieldCheck className="h-4 w-4" />
-                  <AlertTitle>Success</AlertTitle>
-                  <AlertDescription>{passwordSuccess}</AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-            <CardFooter className="mt-6">
-              <Button type="submit" disabled={isPasswordLoading}>
-                {isPasswordLoading && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Save Password
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-
-        {/* === Subscription Management Section === */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscription</CardTitle>
-            <CardDescription>
-              Manage your billing information and view your current plan.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center space-x-4">
-              <p className="font-medium">Your current plan:</p>
-              <Badge variant="secondary" className="text-base capitalize">
-                {profile?.plan || "Loading..."}
-              </Badge>
-            </div>
-          </CardContent>
-          <CardFooter>
-            {profile?.plan === "free" ? (
-              <p className="text-sm text-slate-500">
-                You are currently on the Free plan. Upgrade from the pricing
-                page.
+            <CardContent>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                You are signed in with a social account. Password management is
+                handled by your provider.
               </p>
-            ) : (
-              <Button
-                onClick={handleManageSubscription}
-                disabled={isSubscriptionLoading}
-              >
-                {isSubscriptionLoading && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Manage Subscription & Billing
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* === Danger Zone === */}
         <Card className="border-red-500 dark:border-red-600">
@@ -384,11 +420,11 @@ const SettingsPage = () => {
               Danger Zone
             </CardTitle>
             <CardDescription>
-              These actions are permanent and cannot be undone.
+              This action is permanent and cannot be undone.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Dialog>
+            <Dialog onOpenChange={handleDialogChange} open={isDeleteDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="destructive">Delete My Account</Button>
               </DialogTrigger>
@@ -396,37 +432,55 @@ const SettingsPage = () => {
                 <DialogHeader>
                   <DialogTitle>Are you absolutely sure?</DialogTitle>
                   <DialogDescription>
-                    This action cannot be undone. This will permanently delete
-                    your account and remove your data from our servers. To
-                    confirm, please enter your password.
+                    This action is permanent and cannot be undone. All files,
+                    records, and data associated with your account will be
+                    permanently deleted and unrecoverable. To confirm, please
+                    re-authenticate.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="py-4 space-y-4">
-                  <Label htmlFor="delete-password">Password</Label>
-                  <Input
-                    id="delete-password"
-                    type="password"
-                    value={deletePassword}
-                    onChange={(e) => setDeletePassword(e.target.value)}
-                    placeholder="Enter your password to confirm"
-                  />
-                  {deleteError && (
-                    <p className="text-sm text-red-500">{deleteError}</p>
-                  )}
-                </div>
+                {authProvider === "password" ? (
+                  <div className="py-4 space-y-2">
+                    <Label htmlFor="delete-password">Password</Label>
+                    <Input
+                      id="delete-password"
+                      type="password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      placeholder="Enter your password to confirm"
+                    />
+                  </div>
+                ) : (
+                  <div className="py-4 text-center">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      You signed in with Google. Please continue to
+                      re-authenticate and confirm deletion.
+                    </p>
+                  </div>
+                )}
+                {deleteError && (
+                  <p className="text-sm text-red-500 mt-2">{deleteError}</p>
+                )}
+
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
+                    <Button variant="outline" disabled={isDeleting}>
+                      Cancel
+                    </Button>
                   </DialogClose>
                   <Button
                     variant="destructive"
                     onClick={handleDeleteAccount}
-                    disabled={isDeleting || !deletePassword}
+                    disabled={
+                      isDeleting ||
+                      (authProvider === "password" && !deletePassword)
+                    }
                   >
                     {isDeleting && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    I understand, delete my account
+                    {authProvider === "google.com"
+                      ? "Continue with Google to Delete"
+                      : "I understand, delete my account"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

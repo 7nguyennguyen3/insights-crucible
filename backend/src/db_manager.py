@@ -1,54 +1,56 @@
 import datetime
 
 import firebase_admin
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
+from google.cloud import storage as gcs_storage
 from typing import Dict, List, Any
 from rich import print
+from google.api_core.exceptions import NotFound
+
+from src.config import settings
+
 
 db: firestore.Client = None
 
 
 def initialize_db():
-    """
-    Initializes the Firestore client. It automatically finds the credentials
-    via the GOOGLE_APPLICATION_CREDENTIALS environment variable.
-    """
     global db
 
-    if db is not None:
-        print("INFO:      Firestore client already initialized.")
+    if firebase_admin._apps:
+        print("INFO:      Firebase Admin SDK already initialized.")
+        if db is None:
+            db = firestore.client()
         return
 
     try:
-        print("INFO:      Attempting to initialize Firestore client...")
+        print("INFO:      Attempting to initialize Firebase Admin SDK...")
+        cred = credentials.ApplicationDefault()
 
-        # When called with no arguments, initialize_app() automatically uses the
-        # credentials from the file path specified in the
-        # GOOGLE_APPLICATION_CREDENTIALS environment variable.
-        if not firebase_admin._apps:
-            firebase_admin.initialize_app()
+        # Use the bucket name from the settings file
+        firebase_admin.initialize_app(
+            cred,
+            {"storageBucket": settings.GCP_STORAGE_BUCKET_NAME},
+        )
 
         db = firestore.client()
-        print("INFO:      Firestore client initialized successfully.")
+        print(
+            "INFO:      Firebase SDK initialized successfully for Firestore and Storage."
+        )
 
     except Exception as e:
-        print(f"ERROR:     Failed to initialize Firestore: {e}")
+        print(f"ERROR:     Failed to initialize Firebase: {e}")
         db = None
 
 
 def create_job(user_id: str, request_data: dict) -> str:
     """
-    Creates a new job record in Firestore, saving the estimated cost
-    for later settlement.
+    Creates a new job record in Firestore.
     """
     if db is None:
         raise ConnectionError("Database client not initialized.")
 
     now = datetime.datetime.now().strftime("%B %d, %Y at %I:%M %p")
     initial_title = f"Analysis from {now}"
-
-    # Extract the estimated cost from the request data sent by the Next.js API
-    estimated_cost = request_data.get("estimated_cost_usd", 0)
 
     job_ref = db.collection(f"saas_users/{user_id}/jobs").document()
     job_ref.set(
@@ -58,7 +60,6 @@ def create_job(user_id: str, request_data: dict) -> str:
             "request_data": request_data,
             "job_title": initial_title,
             "folderId": None,
-            "estimated_cost_usd": estimated_cost,
         }
     )
     return job_ref.id
@@ -186,29 +187,6 @@ def create_notification(user_id: str, job_id: str, title: str):
     )
 
 
-def update_job_cost_metrics(user_id: str, job_id: str, metrics_update: Dict):
-    """Updates specific cost metrics for a job."""
-    if db is None:
-        raise ConnectionError("Database client not initialized.")
-    job_ref = db.collection(f"saas_users/{user_id}/jobs").document(job_id)
-    # Use array_union or increment if you're tracking lists or counts
-    # For sums, you'll fetch, update, then set
-    # For simplicity, we'll assume we're passing the new total or using .update() for specific fields
-    job_ref.update(
-        {
-            f"cost_metrics.{key}": (
-                firestore.Increment(value) if isinstance(value, (int, float)) else value
-            )
-            for key, value in metrics_update.items()
-        }
-    )
-
-
-def get_job_cost_metrics(user_id: str, job_id: str) -> Dict[str, Any]:
-    job_doc = get_job_status(user_id, job_id)
-    return job_doc.get("cost_metrics", {}) if job_doc else {}
-
-
 def create_usage_record(user_id: str, job_id: str, usage_data: Dict):
     """Creates a new record in the top-level usage_records collection."""
     if db is None:
@@ -222,37 +200,6 @@ def create_usage_record(user_id: str, job_id: str, usage_data: Dict):
     # Create a new document in the usage_records collection
     db.collection("usage_records").add(usage_data)
     print(f"INFO:      Created usage record for job {job_id}.")
-
-
-def settle_job_cost(user_id: str, estimated_cost: float, final_cost: float) -> bool:
-    """
-    Settles the final cost of a job using a transaction.
-    - Decrements credits by the final_cost
-    - Decrements pending_deductions by the estimated_cost
-    """
-    if db is None:
-        raise ConnectionError("Database client not initialized.")
-
-    user_ref = db.collection("saas_users").document(user_id)
-
-    @firestore.transactional
-    def _settle(transaction, user_ref, estimated, final):
-        snapshot = user_ref.get(transaction=transaction)
-        if not snapshot.exists:
-            return False
-
-        # Atomically update both fields
-        transaction.update(
-            user_ref,
-            {
-                "credits": firestore.Increment(-final),
-                "pending_deductions": firestore.Increment(-estimated),
-            },
-        )
-        return True
-
-    transaction = db.transaction()
-    return _settle(transaction, user_ref, estimated_cost, final_cost)
 
 
 def does_section_result_exist(user_id: str, job_id: str, section_doc_id: str) -> bool:
@@ -296,3 +243,55 @@ def get_user_plan(user_id: str) -> str:
     except Exception as e:
         print(f"ERROR: Could not retrieve user plan for {user_id}: {e}")
         return "free"  # Default to 'free' on any error
+
+
+def refund_analysis_credit(user_id: str, amount: int = 1):
+    """
+    Refunds a specified number of analysis credits to a user.
+    """
+    try:
+        user_doc_ref = db.collection("saas_users").doc(user_id)
+        user_doc_ref.update({"analyses_remaining": firestore.Increment(amount)})
+        log_progress(
+            user_id, None, f"✅ Successfully refunded {amount} analysis credit."
+        )
+    except Exception as e:
+        print(
+            f"[bold red]CRITICAL: Failed to refund analysis credit for user {user_id}: {e}[/bold red]"
+        )
+
+
+def delete_gcs_file(storage_path: str):
+    """
+    Deletes a file from the default Google Cloud Storage bucket.
+    """
+    if not storage_path:
+        return
+
+    try:
+        storage_client = gcs_storage.Client()
+
+        # 2. Use the settings object instead of os.getenv()
+        bucket_name = settings.GCP_STORAGE_BUCKET_NAME
+
+        if not bucket_name:
+            print(
+                "[bold red]ERROR: GCP_STORAGE_BUCKET_NAME not set in config. Cannot delete file.[/bold red]"
+            )
+            return
+
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(storage_path)
+
+        print(f"Attempting to delete gs://{bucket_name}/{storage_path}...")
+        blob.delete()
+        print(f"[green]✓ Successfully deleted source file.[/green]")
+
+    except NotFound:
+        print(
+            f"[yellow]Warning: File not found at {storage_path}. It may have already been deleted.[/yellow]"
+        )
+    except Exception as e:
+        print(
+            f"[bold red]CRITICAL: Failed to delete GCS file {storage_path}: {e}[/bold red]"
+        )

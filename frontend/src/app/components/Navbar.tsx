@@ -6,28 +6,28 @@ import { auth } from "@/lib/firebaseClient";
 import { useAuthStore } from "@/store/authStore";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import NotificationBell from "./NotificationBell";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  DollarSign,
   LayoutDashboard,
   Loader2,
   LogOut,
+  Map,
   Menu,
+  Settings,
   Tags,
+  User2,
   UserCircle,
   X,
   Zap,
-  Settings,
 } from "lucide-react";
+import apiClient from "@/lib/apiClient";
 
 const Navbar = () => {
   const { user, loading } = useAuthStore();
-  const router = useRouter();
 
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -62,6 +62,7 @@ const Navbar = () => {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
+      await apiClient.post("/auth/signout");
       setIsProfileMenuOpen(false);
       setIsMobileMenuOpen(false);
       window.location.href = "/";
@@ -75,7 +76,6 @@ const Navbar = () => {
     setIsProfileMenuOpen(false);
   };
 
-  // Logo now always links to the homepage.
   const logoHref = "/";
 
   const renderDesktopMenu = () => {
@@ -143,20 +143,12 @@ const Navbar = () => {
                 </div>
 
                 <Link
-                  href="/pricing"
+                  href="/account"
                   onClick={closeAllMenus}
                   className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
-                  <Tags className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
-                  Pricing
-                </Link>
-                <Link
-                  href="/account/usage"
-                  onClick={closeAllMenus}
-                  className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                >
-                  <DollarSign className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
-                  Usage
+                  <User2 className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
+                  Account
                 </Link>
                 <Link
                   href="/account/setting"
@@ -165,6 +157,22 @@ const Navbar = () => {
                 >
                   <Settings className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
                   Setting
+                </Link>
+                <Link
+                  href="/roadmap"
+                  onClick={closeAllMenus}
+                  className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                >
+                  <Map className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
+                  Roadmap
+                </Link>
+                <Link
+                  href="/pricing"
+                  onClick={closeAllMenus}
+                  className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                >
+                  <Tags className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
+                  Pricing
                 </Link>
                 <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
                 <button
@@ -183,6 +191,9 @@ const Navbar = () => {
     // --- UPDATED LINKS FOR LOGGED-OUT USERS ---
     return (
       <div className="flex items-center gap-2">
+        <Link href="/roadmap">
+          <Button variant="ghost">Roadmap</Button>
+        </Link>
         <Link href="/pricing">
           <Button variant="ghost">Pricing</Button>
         </Link>
@@ -202,33 +213,28 @@ const Navbar = () => {
         <div className="space-y-1 px-2 pt-2 pb-3 sm:px-3">
           {user ? (
             <>
-              <Link href="/engine" onClick={closeAllMenus}>
-                <Button className="w-full justify-start mb-2 bg-blue-600 hover:bg-blue-700">
-                  <Zap className="h-5 w-5 mr-3" /> Launch Engine
-                </Button>
-              </Link>
-              <Link href="/dashboard" onClick={closeAllMenus}>
-                <Button
-                  variant={"outline"}
-                  className="w-full justify-start mb-2"
-                >
-                  <LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard
-                </Button>
-              </Link>
+              <div className="flex flex-col gap-2 mt-5">
+                <Link href="/engine" onClick={closeAllMenus}>
+                  <Button className="w-full justify-start mb-2 bg-blue-600 hover:bg-blue-700 max-w-[200px]">
+                    <Zap className="h-5 w-5 mr-3" /> Launch Engine
+                  </Button>
+                </Link>
+                <Link href="/dashboard" onClick={closeAllMenus}>
+                  <Button
+                    variant={"outline"}
+                    className="w-full justify-start mb-2 max-w-[200px]"
+                  >
+                    <LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard
+                  </Button>
+                </Link>
+              </div>
 
               <Link
-                href="/pricing"
+                href="/account"
                 onClick={closeAllMenus}
                 className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Tags className="h-5 w-5 mr-3" /> Pricing
-              </Link>
-              <Link
-                href="/account/usage"
-                onClick={closeAllMenus}
-                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                <DollarSign className="h-5 w-5 mr-3" /> Usage
+                <User2 className="h-5 w-5 mr-3" /> Account
               </Link>
               <Link
                 href="/account/setting"
@@ -236,6 +242,20 @@ const Navbar = () => {
                 className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <Settings className="h-5 w-5 mr-3" /> Setting
+              </Link>
+              <Link
+                href="/roadmap"
+                onClick={closeAllMenus}
+                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <Map className="h-5 w-5 mr-3" /> Roadmap
+              </Link>
+              <Link
+                href="/pricing"
+                onClick={closeAllMenus}
+                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <Tags className="h-5 w-5 mr-3" /> Pricing
               </Link>
               <div className="border-t border-slate-200 dark:border-slate-700 !my-2"></div>
               <button
@@ -247,7 +267,7 @@ const Navbar = () => {
             </>
           ) : (
             // --- UPDATED LINKS FOR LOGGED-OUT USERS (MOBILE) ---
-            <>
+            <div className="mt-5">
               <Link
                 href="/pricing"
                 onClick={closeAllMenus}
@@ -256,16 +276,26 @@ const Navbar = () => {
                 Pricing
               </Link>
               <Link
-                href="/auth"
+                href="/roadmap"
                 onClick={closeAllMenus}
                 className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                Sign In
+                Roadmap
               </Link>
-              <Link href="/auth?tab=signup" onClick={closeAllMenus}>
-                <Button className="w-full mt-2">Sign Up</Button>
-              </Link>
-            </>
+              <div className="flex flex-col gap-2">
+                <Link href="/auth" onClick={closeAllMenus} className="">
+                  <Button
+                    variant={"outline"}
+                    className="w-full mt-2 max-w-[200px]"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth?tab=signup" onClick={closeAllMenus}>
+                  <Button className="w-full mt-2 max-w-[200px]">Sign Up</Button>
+                </Link>
+              </div>
+            </div>
           )}
         </div>
       </div>

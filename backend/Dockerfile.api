@@ -1,6 +1,6 @@
 # Dockerfile.api
 
-FROM python:3.13.5-slim-bookworm
+FROM python:3.11-slim-bookworm
 
 # Apply OS security updates to fix vulnerabilities
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*

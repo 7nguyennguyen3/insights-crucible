@@ -1,11 +1,12 @@
+// /api/billing/webhook/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { db } from "@/lib/firebaseAdmin";
+import { auth, db } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 
-// We will listen to all events necessary for the full lifecycle
 const relevantEvents = new Set([
   "checkout.session.completed",
   "invoice.paid",
@@ -38,119 +39,176 @@ export async function POST(request: NextRequest) {
   if (relevantEvents.has(event.type)) {
     try {
       switch (event.type) {
-        case "checkout.session.completed":
+        case "checkout.session.completed": {
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
-          console.log(
-            `✅ Received checkout.session.completed for customer: ${checkoutSession.customer}`
-          );
-
           const customerId = checkoutSession.customer as string;
-          if (!customerId) {
-            throw new Error("Missing customer ID in checkout session.");
-          }
 
           const userQuery = await db
             .collection("saas_users")
             .where("stripeCustomerId", "==", customerId)
             .limit(1)
             .get();
+
           if (userQuery.empty) {
+            console.error(
+              `Webhook Error: No user found for Stripe Customer ID: ${customerId}`
+            );
             break;
           }
           const userDoc = userQuery.docs[0];
           const userId = userDoc.id;
 
-          // --- UNIFIED LOGIC FOR FULFILLMENT ---
-          if (checkoutSession.mode === "subscription") {
-            console.log(
-              `Upgrading user ${userId} to Pro plan and granting welcome credits.`
-            );
+          if (
+            checkoutSession.mode === "subscription" &&
+            checkoutSession.subscription
+          ) {
+            let subscription: Stripe.Subscription;
+            if (typeof checkoutSession.subscription === "string") {
+              subscription = await stripe.subscriptions.retrieve(
+                checkoutSession.subscription
+              );
+            } else {
+              subscription = checkoutSession.subscription;
+            }
 
-            // 1. Update plan and grant initial credits in one step
-            await userDoc.ref.update({
-              plan: "pro",
-              credits: FieldValue.increment(5.0), // Grant $5 welcome credit
-            });
+            const priceId = subscription.items.data[0].price.id;
+            let plan = "free";
+            let creditsToAdd = 0;
 
-            // 2. Create the usage record for the credit grant
-            await db.collection("usage_records").add({
-              userId: userId,
-              jobId: null,
-              jobTitle: "Pro Plan Welcome Credits",
-              type: "credit",
-              usageMetric: null,
-              costInUSD: 5.0, // Positive value for credits
-              createdAt: FieldValue.serverTimestamp(),
-              breakdown: null,
-            });
-            console.log(`Granted $5.00 welcome credit to user ${userId}.`);
-          } else if (checkoutSession.mode === "payment") {
-            console.log(
-              `Processing one-time credit purchase for user ${userId}.`
-            );
-            const amountPaid = checkoutSession.amount_total || 0;
-            const creditsToGrant = amountPaid / 100;
+            if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID) {
+              plan = "pro";
+              creditsToAdd = 25;
+            } else if (
+              priceId ===
+              process.env.NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID
+            ) {
+              plan = "charter";
+              creditsToAdd = 25;
+            }
 
-            if (creditsToGrant > 0) {
+            // ✅ FIX: Access current_period_end from the subscription item.
+            const nextBillingDate =
+              subscription.items.data[0].current_period_end;
+
+            if (plan !== "free") {
+              await auth.setCustomUserClaims(userId, { plan });
               await userDoc.ref.update({
-                credits: FieldValue.increment(creditsToGrant),
+                plan: plan,
+                analyses_remaining: FieldValue.increment(creditsToAdd),
+                nextBillingDate: nextBillingDate,
+                cancel_at_period_end: false,
+                subscription_ends_at: null,
               });
+              console.log(`✅ User ${userId} subscribed to ${plan} plan.`);
+            }
+          } else if (checkoutSession.mode === "payment") {
+            const lineItems = await stripe.checkout.sessions.listLineItems(
+              checkoutSession.id
+            );
+            const lineItem = lineItems.data[0];
+            const priceId = lineItem.price?.id;
 
-              await db.collection("usage_records").add({
-                userId: userId,
-                jobId: null,
-                jobTitle: `$${creditsToGrant.toFixed(2)} Credit Purchase`,
-                type: "credit",
-                usageMetric: null,
-                costInUSD: creditsToGrant,
-                createdAt: FieldValue.serverTimestamp(),
-                breakdown: null,
-              });
+            if (
+              priceId === process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID
+            ) {
+              const quantity = lineItem.quantity ?? 0;
+              if (quantity > 0) {
+                await userDoc.ref.update({
+                  analyses_remaining: FieldValue.increment(quantity),
+                });
+                console.log(
+                  `✅ User ${userId} purchased ${quantity} analyses.`
+                );
+              }
+            }
+          }
+          break;
+        }
+
+        case "invoice.paid": {
+          const invoice = event.data.object as Stripe.Invoice;
+
+          // ✅ FIX: Use the correct path for the subscription ID from the invoice.
+          const subscriptionId =
+            invoice.parent?.subscription_details?.subscription;
+
+          if (
+            invoice.billing_reason === "subscription_cycle" &&
+            subscriptionId
+          ) {
+            const customerId = invoice.customer as string;
+
+            const userQuery = await db
+              .collection("saas_users")
+              .where("stripeCustomerId", "==", customerId)
+              .limit(1)
+              .get();
+
+            if (!userQuery.empty) {
+              const userDoc = userQuery.docs[0];
+              const userPlan = userDoc.data()?.plan;
+
+              // Declare the subscription variable that we will populate.
+              let subscription: Stripe.Subscription;
+
+              // Check if you have the ID (string) or the full object.
+              if (typeof subscriptionId === "string") {
+                // If it's a string, retrieve the subscription object from Stripe.
+                subscription =
+                  await stripe.subscriptions.retrieve(subscriptionId);
+              } else {
+                // If it's already an object, just assign it.
+                subscription = subscriptionId;
+              }
+
+              // Now you can safely use the 'subscription' object.
+              // ✅ FIX: Access current_period_end from the subscription item.
+              const nextBillingDate =
+                subscription.items.data[0].current_period_end;
+
+              const updateData: {
+                nextBillingDate: number;
+                analyses_remaining?: FirebaseFirestore.FieldValue;
+              } = {
+                nextBillingDate: nextBillingDate,
+              };
+
+              if (userPlan === "pro" || userPlan === "charter") {
+                updateData.analyses_remaining = FieldValue.increment(25);
+              }
+
+              await userDoc.ref.update(updateData);
               console.log(
-                `Granted $${creditsToGrant.toFixed(
-                  2
-                )} purchased credit to user ${userId}.`
+                `✅ Refilled credits for ${userPlan} user ${userDoc.id}.`
               );
             }
           }
           break;
+        }
 
-        case "invoice.paid":
-          // This event is now primarily for *recurring* subscription payments.
-          // The initial payment is handled by checkout.session.completed.
-          const invoice = event.data.object as Stripe.Invoice;
-          // The 'billing_reason' can be 'subscription_cycle' for renewals.
-          if (invoice.billing_reason === "subscription_cycle") {
-            console.log(
-              `✅ Received recurring invoice.paid for customer: ${invoice.customer}`
-            );
-            // Add logic here to grant monthly credits for Pro plan renewals
-          }
-          break;
-
-        case "customer.subscription.deleted":
+        case "customer.subscription.deleted": {
           const subscription = event.data.object as Stripe.Subscription;
-          const customerId_deleted = subscription.customer as string;
-          console.log(
-            `Subscription cancelled for customer: ${customerId_deleted}`
-          );
+          const deletedCustomerId = subscription.customer as string;
 
-          const userQuery_deleted = await db
+          const deletedUserQuery = await db
             .collection("saas_users")
-            .where("stripeCustomerId", "==", customerId_deleted)
+            .where("stripeCustomerId", "==", deletedCustomerId)
             .limit(1)
             .get();
-          if (!userQuery_deleted.empty) {
-            const userDoc = userQuery_deleted.docs[0];
-            // Downgrade user back to the free plan
-            await userDoc.ref.update({
+
+          if (!deletedUserQuery.empty) {
+            const deletedUserDoc = deletedUserQuery.docs[0];
+            const userId = deletedUserDoc.id;
+
+            await auth.setCustomUserClaims(userId, { plan: "free" });
+
+            await deletedUserDoc.ref.update({
               plan: "free",
             });
-            console.log(
-              `User ${userDoc.id} downgraded to free plan due to cancellation.`
-            );
+            console.log(`User ${deletedUserDoc.id} downgraded to free plan.`);
           }
           break;
+        }
 
         default:
           console.log(`Unhandled relevant event type: ${event.type}`);

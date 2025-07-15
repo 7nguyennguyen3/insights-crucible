@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
+import { stripe } from "@/lib/stripe";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
+    // 1. Authenticate the user from their session cookie
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("session")?.value;
     if (!sessionCookie) {
@@ -12,6 +14,7 @@ export async function GET(request: NextRequest) {
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
     const userId = decodedToken.uid;
 
+    // 2. Fetch the user's document from Firestore
     const userDocRef = db.collection("saas_users").doc(userId);
     const userDoc = await userDocRef.get();
 
@@ -23,19 +26,38 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = userDoc.data();
+    let nextBillingDate: number | null = null;
 
-    // Return only the necessary, non-sensitive profile data
+    // 3. If the user has a Stripe ID, fetch their active subscription
+    if (userData?.stripeCustomerId) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: userData.stripeCustomerId,
+        status: "active",
+        limit: 1,
+      });
+
+      const subscription = subscriptions.data[0];
+
+      // 4. Safely get the billing date from the nested subscription item
+      if (subscription && subscription.items.data.length > 0) {
+        nextBillingDate = subscription.items.data[0].current_period_end;
+      }
+    }
+
+    // 5. Assemble and return the final profile object
     const userProfile = {
       plan: userData?.plan || "free",
-      credits: userData?.credits || 0,
+      analyses_remaining: userData?.analyses_remaining || 0,
+      nextBillingDate: nextBillingDate,
+      cancel_at_period_end: userData?.cancel_at_period_end || false,
+      subscription_ends_at: userData?.subscription_ends_at || null,
     };
 
     return NextResponse.json(userProfile);
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
