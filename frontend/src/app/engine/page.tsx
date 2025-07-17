@@ -487,9 +487,9 @@ const EnginePage = () => {
           <Alert className="mb-8 max-w-4xl mx-auto bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-700">
             <LogIn className="h-4 w-4" />
             <AlertTitle>Welcome!</AlertTitle>
-            <AlertDescription>
+            <AlertDescription className="flex">
               Please{" "}
-              <Link href="/auth/signin" className="font-bold underline">
+              <Link href="/auth" className="font-bold underline">
                 sign in
               </Link>{" "}
               to analyze your content.

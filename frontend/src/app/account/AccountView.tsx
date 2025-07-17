@@ -193,7 +193,7 @@ export function AccountView() {
   };
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= 100) {
+    if (newQuantity >= 5 && newQuantity <= 100) {
       setQuantity(newQuantity);
     }
   };
@@ -371,12 +371,16 @@ export function AccountView() {
                   <Label htmlFor="quantity" className="font-semibold">
                     Purchase One-Time Analysis Credit
                   </Label>
+                  {/* Add this new paragraph for the description */}
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Minimum purchase is 5 credits, maximum is 100.
+                  </p>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => handleQuantityChange(quantity - 1)}
-                      disabled={quantity <= 1}
+                      disabled={quantity <= 5}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
@@ -388,7 +392,7 @@ export function AccountView() {
                         handleQuantityChange(parseInt(e.target.value, 10))
                       }
                       className="text-center font-bold"
-                      min="1"
+                      min="5" // Changed from 1 to 5
                       max="100"
                     />
                     <Button

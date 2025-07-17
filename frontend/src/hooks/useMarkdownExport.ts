@@ -150,49 +150,75 @@ const generateMarkdown = (data: JobData): string => {
 
       case "detailed_sections":
         (part.sections ?? []).forEach((section: any, index: number) => {
+          const s = section; // 's' is now accessible throughout the forEach callback
+
+          // Construct the time string
+          let timeDisplay = "";
+          if (s.start_time || s.end_time) {
+            timeDisplay = ` (${s.start_time || "00:00"}-${s.end_time || "XX:XX"})`;
+          }
+
           if (part.persona === "consultant") {
-            const s = section as ConsultantAnalysisSection;
-            md += `### ${index + 1}. ${s.section_title}\n\n**Executive Summary:** ${
-              s.executive_summary
+            const consultantSection = section as ConsultantAnalysisSection;
+            md += `### ${index + 1}. ${consultantSection.section_title}${timeDisplay}\n\n**Executive Summary:** ${
+              consultantSection.executive_summary
             }\n\n`;
             md += `**Client Pain Points:**\n`;
-            (s.client_pain_points ?? []).forEach((p) => (md += `- ${p}\n`));
+            (consultantSection.client_pain_points ?? []).forEach(
+              (p) => (md += `- ${p}\n`)
+            );
             md += `\n`;
-          } else {
-            const s = section as GeneralAnalysisSection;
-            md += `### ${index + 1}. ${s.generated_title}\n\n> ${
-              s["1_sentence_summary"]
-            }\n\n`;
-            md += `**Summary Points:**\n`;
-            (s.summary_points ?? []).forEach((p) => (md += `- ${p}\n`));
-            md += `\n`;
-
-            // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
-            if (s.actionable_advice?.length > 0) {
-              md += `**Actionable Advice:**\n`;
-              (s.actionable_advice ?? []).forEach(
-                (advice) => (md += `- ${advice}\n`)
-              );
-              md += `\n`; // Add space after this section
-            }
-
-            if (s.notable_quotes?.length > 0) {
-              md += `**Notable Quotes:**\n`;
-              (s.notable_quotes ?? []).forEach(
+            // Add Critical Quotes for consultant persona
+            if (consultantSection.critical_quotes?.length > 0) {
+              md += `**Critical Quotes:**\n`;
+              (consultantSection.critical_quotes ?? []).forEach(
                 (quote) => (md += `> "${quote}"\n`)
               );
-              md += `\n`; // Add space after this section
+              md += `\n`;
+            }
+            // Add Strategic Opportunities for consultant persona
+            if (consultantSection.strategic_opportunities?.length > 0) {
+              md += `**Strategic Opportunities:**\n`;
+              (consultantSection.strategic_opportunities ?? []).forEach(
+                (opportunity) => (md += `- ${opportunity}\n`)
+              );
+              md += `\n`;
+            }
+          } else {
+            const generalSection = section as GeneralAnalysisSection;
+            md += `### ${index + 1}. ${generalSection.generated_title}${timeDisplay}\n\n> ${
+              generalSection["1_sentence_summary"]
+            }\n\n`;
+            md += `**Summary Points:**\n`;
+            (generalSection.summary_points ?? []).forEach(
+              (p) => (md += `- ${p}\n`)
+            );
+            md += `\n`;
+
+            if (generalSection.actionable_advice?.length > 0) {
+              md += `**Actionable Advice:**\n`;
+              (generalSection.actionable_advice ?? []).forEach(
+                (advice) => (md += `- ${advice}\n`)
+              );
+              md += `\n`;
             }
 
-            if (s.questions_and_answers?.length > 0) {
+            if (generalSection.notable_quotes?.length > 0) {
+              md += `**Notable Quotes:**\n`;
+              (generalSection.notable_quotes ?? []).forEach(
+                (quote) => (md += `> "${quote}"\n`)
+              );
+              md += `\n`;
+            }
+
+            if (generalSection.questions_and_answers?.length > 0) {
               md += `**Questions & Answers:**\n`;
-              (s.questions_and_answers ?? []).forEach((qa) => {
+              (generalSection.questions_and_answers ?? []).forEach((qa) => {
                 md += `**Q:** ${qa.question}\n`;
                 md += `**A:** ${qa.answer}\n\n`;
               });
-              md += `\n`; // Add space after this section
+              md += `\n`;
             }
-            // --- END REPLACEMENT / ADDITION ---
           }
         });
         break;

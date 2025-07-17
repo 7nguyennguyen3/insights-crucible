@@ -25,7 +25,7 @@ export const TIER_LIMITS = {
 export const ADD_ON_COSTS = {
   run_contextual_briefing: 0.5, // 5-Angle Perspective
   run_x_thread_generation: 0.25, // X/Twitter Thread
-  run_blog_post_generation: 0.25, // Blog Post
+  run_blog_post_generation: 0.5, // Blog Post
 };
 
 // Define a type for the keys of ADD_ON_COSTS for better type safety.

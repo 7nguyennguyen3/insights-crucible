@@ -140,6 +140,27 @@ export async function POST(request: NextRequest) {
                   emailError
                 );
               }
+
+              try {
+                const notificationsCollectionRef = db.collection(
+                  `saas_users/${userId}/notifications`
+                );
+                await notificationsCollectionRef.add({
+                  message: `Welcome to the Charter Member family! 🎉 You've received ${bonusCredits} 
+                  bonus analysis credits as a token of our appreciation.`,
+                  isRead: false,
+                  link: "/account",
+                  createdAt: FieldValue.serverTimestamp(),
+                });
+                console.log(
+                  `✅ Notification added for user ${userId} regarding ${bonusCredits} bonus credits.`
+                );
+              } catch (notificationError) {
+                console.error(
+                  `❌ Failed to create bonus credit notification for user ${userId}:`,
+                  notificationError
+                );
+              }
             }
 
             // You can add 'else if' blocks here for future plans like the "Pro" plan.

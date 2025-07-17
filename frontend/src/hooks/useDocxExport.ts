@@ -399,71 +399,63 @@ export const useDocxExport = (jobData: JobData | null) => {
 
         case "detailed_sections":
           (part.sections ?? []).forEach((section: any, index: number) => {
-            if (part.persona === "consultant") {
-              const s = section as ConsultantAnalysisSection;
+            // Add a separator *before* each section, except the very first one
+            if (index > 0) {
               docChildren.push(
                 new Paragraph({
-                  text: `${index + 1}. ${s.section_title}`,
+                  children: [
+                    new TextRun({
+                      text: "---", // Simple separator
+                      color: "A0A0A0", // Light gray color
+                    }),
+                  ],
+                  alignment: AlignmentType.CENTER,
+                  spacing: { after: 200, before: 200 }, // Spacing around the separator
+                })
+              );
+            }
+
+            // Declare 's' at this higher scope so it's accessible for both persona branches
+            const s = section;
+
+            // Construct the time string for the title
+            const timeDisplay =
+              s.start_time || s.end_time
+                ? ` (${s.start_time || "00:00"}-${s.end_time || "XX:XX"})`
+                : "";
+
+            if (part.persona === "consultant") {
+              const consultantSection = s as ConsultantAnalysisSection;
+              docChildren.push(
+                new Paragraph({
+                  text: `${index + 1}. ${consultantSection.section_title}${timeDisplay}`, // Add time here
                   heading: HeadingLevel.HEADING_3,
                 }),
                 new Paragraph({
                   text: "Executive Summary",
                   heading: HeadingLevel.HEADING_4,
                 }),
-                new Paragraph({ text: s.executive_summary || "N/A" }),
+                new Paragraph({
+                  text: consultantSection.executive_summary || "N/A",
+                }),
                 new Paragraph({
                   text: "Client Pain Points",
                   heading: HeadingLevel.HEADING_4,
                 }),
-                ...(s.client_pain_points || []).map(
+                ...(consultantSection.client_pain_points || []).map(
                   (p) => new Paragraph({ text: p, bullet: { level: 0 } })
                 ),
-                new Paragraph({ text: "" })
-              );
-            } else {
-              const s = section as GeneralAnalysisSection;
-              docChildren.push(
-                new Paragraph({
-                  text: `${index + 1}. ${s.generated_title}`,
-                  heading: HeadingLevel.HEADING_3,
-                }),
-                new Paragraph({
-                  text: "Summary",
-                  heading: HeadingLevel.HEADING_4,
-                }),
-                new Paragraph({ text: s["1_sentence_summary"] || "N/A" }),
-                new Paragraph({
-                  text: "Summary Points",
-                  heading: HeadingLevel.HEADING_4,
-                }),
-                ...(s.summary_points || []).map(
-                  (p) => new Paragraph({ text: p, bullet: { level: 0 } })
-                )
-                // New Paragraph() for spacing will be added after each new section
+                new Paragraph({ text: "" }) // Add a space after this block
               );
 
-              // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
-              if (s.actionable_advice?.length > 0) {
+              // Add Critical Quotes for consultant persona
+              if (consultantSection.critical_quotes?.length > 0) {
                 docChildren.push(
                   new Paragraph({
-                    text: "Actionable Advice",
+                    text: "Critical Quotes",
                     heading: HeadingLevel.HEADING_4,
                   }),
-                  ...(s.actionable_advice || []).map(
-                    (advice) =>
-                      new Paragraph({ text: advice, bullet: { level: 0 } })
-                  ),
-                  new Paragraph({ text: "" }) // Add space after this section
-                );
-              }
-
-              if (s.notable_quotes?.length > 0) {
-                docChildren.push(
-                  new Paragraph({
-                    text: "Notable Quotes",
-                    heading: HeadingLevel.HEADING_4,
-                  }),
-                  ...(s.notable_quotes || []).map(
+                  ...(consultantSection.critical_quotes || []).map(
                     (quote) =>
                       new Paragraph({
                         children: [
@@ -476,14 +468,86 @@ export const useDocxExport = (jobData: JobData | null) => {
                 );
               }
 
-              if (s.questions_and_answers?.length > 0) {
+              // Add Strategic Opportunities for consultant persona
+              if (consultantSection.strategic_opportunities?.length > 0) {
+                docChildren.push(
+                  new Paragraph({
+                    text: "Strategic Opportunities",
+                    heading: HeadingLevel.HEADING_4,
+                  }),
+                  ...(consultantSection.strategic_opportunities || []).map(
+                    (opportunity) =>
+                      new Paragraph({ text: opportunity, bullet: { level: 0 } })
+                  ),
+                  new Paragraph({ text: "" }) // Add space after this section
+                );
+              }
+            } else {
+              const generalSection = s as GeneralAnalysisSection;
+              docChildren.push(
+                new Paragraph({
+                  text: `${index + 1}. ${generalSection.generated_title}${timeDisplay}`, // Add time here
+                  heading: HeadingLevel.HEADING_3,
+                }),
+                new Paragraph({
+                  text: "Summary",
+                  heading: HeadingLevel.HEADING_4,
+                }),
+                new Paragraph({
+                  text: generalSection["1_sentence_summary"] || "N/A",
+                }),
+                new Paragraph({
+                  text: "Summary Points",
+                  heading: HeadingLevel.HEADING_4,
+                }),
+                ...(generalSection.summary_points || []).map(
+                  (p) => new Paragraph({ text: p, bullet: { level: 0 } })
+                ),
+                new Paragraph({ text: "" })
+              );
+
+              // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
+              if (generalSection.actionable_advice?.length > 0) {
+                docChildren.push(
+                  new Paragraph({
+                    text: "Actionable Advice",
+                    heading: HeadingLevel.HEADING_4,
+                  }),
+                  ...(generalSection.actionable_advice || []).map(
+                    (advice) =>
+                      new Paragraph({ text: advice, bullet: { level: 0 } })
+                  ),
+                  new Paragraph({ text: "" }) // Add space after this section
+                );
+              }
+
+              if (generalSection.notable_quotes?.length > 0) {
+                docChildren.push(
+                  new Paragraph({
+                    text: "Notable Quotes",
+                    heading: HeadingLevel.HEADING_4,
+                  }),
+                  ...(generalSection.notable_quotes || []).map(
+                    (quote) =>
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: `"${quote}"`, italics: true }),
+                        ],
+                        bullet: { level: 0 },
+                      })
+                  ),
+                  new Paragraph({ text: "" }) // Add space after this section
+                );
+              }
+
+              if (generalSection.questions_and_answers?.length > 0) {
                 docChildren.push(
                   new Paragraph({
                     text: "Questions & Answers",
                     heading: HeadingLevel.HEADING_4,
                   })
                 );
-                (s.questions_and_answers || []).forEach((qa) => {
+                (generalSection.questions_and_answers || []).forEach((qa) => {
                   docChildren.push(
                     new Paragraph({
                       children: [
@@ -496,18 +560,10 @@ export const useDocxExport = (jobData: JobData | null) => {
                 docChildren.push(new Paragraph({ text: "" })); // Add space after this section
               }
               // --- END REPLACEMENT / ADDITION ---
-
-              // Ensure there's a final space after the entire section if no new content was added at the end
-              // This handles cases where all the new optional sections might be empty.
-              if (
-                s.actionable_advice?.length === 0 &&
-                s.notable_quotes?.length === 0 &&
-                s.questions_and_answers?.length === 0
-              ) {
-                docChildren.push(new Paragraph({ text: "" }));
-              }
             }
           });
+          // The problematic logic to remove the last separator is no longer needed
+          // because separators are now added *before* each section (except the first).
           break;
 
         case "slide_deck_header":
