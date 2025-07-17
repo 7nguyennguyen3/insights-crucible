@@ -266,7 +266,6 @@ const Navbar = () => {
               </button>
             </>
           ) : (
-            // --- UPDATED LINKS FOR LOGGED-OUT USERS (MOBILE) ---
             <div className="mt-5">
               <Link
                 href="/pricing"
@@ -305,7 +304,7 @@ const Navbar = () => {
   return (
     <nav
       className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg 
-    border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 p-1"
+    border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -315,19 +314,13 @@ const Navbar = () => {
               onClick={closeAllMenus}
               className="flex items-center"
             >
-              {/* Light Mode Logo (Black Text) */}
-              <img
-                src={"/logo.svg"} // Path to your logo with BLACK text
-                alt="Insights Crucible Logo"
-                className="h-16 w-auto dark:hidden" // Visible in light mode, hidden in dark mode
-              />
-
-              {/* Dark Mode Logo (White Text) */}
-              <img
-                src={"/logo-dark.svg"} // Path to your logo with WHITE text
-                alt="Insights Crucible Logo (Dark Mode)"
-                className="h-16 w-auto hidden dark:block" // Hidden in light mode, visible in dark mode
-              />
+              <h3 className="font-montserrat font-bold text-lg">
+                Insights
+                <span className="bg-gradient-to-r from-red-500 to-orange-400 bg-clip-text text-transparent">
+                  {" "}
+                  Crucible
+                </span>
+              </h3>
             </Link>
           </div>
           <div className="hidden md:flex md:items-center">

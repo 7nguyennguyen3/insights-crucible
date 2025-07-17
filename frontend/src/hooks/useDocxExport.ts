@@ -16,6 +16,8 @@ import {
   Contradiction,
   GlobalContextualBriefingPayload,
   Viewpoint,
+  BlogPostData,
+  BlogBlock,
 } from "@/app/_global/interface";
 import { generateReportBlueprint } from "@/app/utils/reportGenerator";
 
@@ -264,8 +266,112 @@ export const useDocxExport = (jobData: JobData | null) => {
               heading: HeadingLevel.HEADING_2,
             })
           );
-          docChildren.push(...createParasFromMarkdown(part.content));
-          docChildren.push(new Paragraph({ text: "" }));
+          docChildren.push(new Paragraph({ text: "" })); // Add a space
+
+          const blogPost = part.content as BlogPostData;
+
+          if (blogPost && blogPost.title) {
+            // Add the blog post's main title as an H3
+            docChildren.push(
+              new Paragraph({
+                text: blogPost.title,
+                heading: HeadingLevel.HEADING_3,
+              })
+            );
+            docChildren.push(new Paragraph({ text: "" })); // Add a space
+
+            // Process each content block from the array
+            blogPost.content.forEach((block: BlogBlock) => {
+              switch (block.type) {
+                case "heading":
+                  docChildren.push(
+                    new Paragraph({
+                      text: block.text,
+                      // Use H4 for level 2, H5 for level 3
+                      heading:
+                        block.level === 2
+                          ? HeadingLevel.HEADING_4
+                          : HeadingLevel.HEADING_5,
+                    })
+                  );
+                  break;
+                case "paragraph":
+                  // The docx library handles text with markdown bold/italics
+                  const paraChildren = (block.text || "")
+                    .split(/(\*\*.*?\*\*|\*.*?\*)/g)
+                    .map((part) => {
+                      if (part.startsWith("**") && part.endsWith("**")) {
+                        return new TextRun({
+                          text: part.slice(2, -2),
+                          bold: true,
+                        });
+                      }
+                      if (part.startsWith("*") && part.endsWith("*")) {
+                        return new TextRun({
+                          text: part.slice(1, -1),
+                          italics: true,
+                        });
+                      }
+                      return new TextRun(part);
+                    });
+                  docChildren.push(new Paragraph({ children: paraChildren }));
+                  break;
+                case "list":
+                  (block.items || []).forEach((item: string) => {
+                    docChildren.push(
+                      new Paragraph({ text: item, bullet: { level: 0 } })
+                    );
+                  });
+                  break;
+                case "quote":
+                  docChildren.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: `"${block.text}"`, italics: true }),
+                      ],
+                      indent: { left: 720 }, // Indent in twentieths of a point
+                    })
+                  );
+                  if (block.author) {
+                    docChildren.push(
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: `— ${block.author}`,
+                            italics: true,
+                          }),
+                        ],
+                        alignment: AlignmentType.RIGHT,
+                      })
+                    );
+                  }
+                  break;
+                case "cta":
+                  docChildren.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: `➡️ ${block.text}`, bold: true }),
+                      ],
+                    })
+                  );
+                  break;
+                case "visual_suggestion":
+                  docChildren.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `💡 Visual Suggestion: ${block.description}`,
+                          italics: true,
+                        }),
+                      ],
+                    })
+                  );
+                  break;
+              }
+              // Add a space after each block for readability
+              docChildren.push(new Paragraph({ text: "" }));
+            });
+          }
           break;
 
         case "x_thread":
@@ -332,9 +438,74 @@ export const useDocxExport = (jobData: JobData | null) => {
                 }),
                 ...(s.summary_points || []).map(
                   (p) => new Paragraph({ text: p, bullet: { level: 0 } })
-                ),
-                new Paragraph({ text: "" })
+                )
+                // New Paragraph() for spacing will be added after each new section
               );
+
+              // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
+              if (s.actionable_advice?.length > 0) {
+                docChildren.push(
+                  new Paragraph({
+                    text: "Actionable Advice",
+                    heading: HeadingLevel.HEADING_4,
+                  }),
+                  ...(s.actionable_advice || []).map(
+                    (advice) =>
+                      new Paragraph({ text: advice, bullet: { level: 0 } })
+                  ),
+                  new Paragraph({ text: "" }) // Add space after this section
+                );
+              }
+
+              if (s.notable_quotes?.length > 0) {
+                docChildren.push(
+                  new Paragraph({
+                    text: "Notable Quotes",
+                    heading: HeadingLevel.HEADING_4,
+                  }),
+                  ...(s.notable_quotes || []).map(
+                    (quote) =>
+                      new Paragraph({
+                        children: [
+                          new TextRun({ text: `"${quote}"`, italics: true }),
+                        ],
+                        bullet: { level: 0 },
+                      })
+                  ),
+                  new Paragraph({ text: "" }) // Add space after this section
+                );
+              }
+
+              if (s.questions_and_answers?.length > 0) {
+                docChildren.push(
+                  new Paragraph({
+                    text: "Questions & Answers",
+                    heading: HeadingLevel.HEADING_4,
+                  })
+                );
+                (s.questions_and_answers || []).forEach((qa) => {
+                  docChildren.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: `Q: ${qa.question}`, bold: true }),
+                      ],
+                    }),
+                    new Paragraph({ text: `A: ${qa.answer}` })
+                  );
+                });
+                docChildren.push(new Paragraph({ text: "" })); // Add space after this section
+              }
+              // --- END REPLACEMENT / ADDITION ---
+
+              // Ensure there's a final space after the entire section if no new content was added at the end
+              // This handles cases where all the new optional sections might be empty.
+              if (
+                s.actionable_advice?.length === 0 &&
+                s.notable_quotes?.length === 0 &&
+                s.questions_and_answers?.length === 0
+              ) {
+                docChildren.push(new Paragraph({ text: "" }));
+              }
             }
           });
           break;

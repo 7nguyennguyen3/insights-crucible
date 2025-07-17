@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { useDropzone, FileRejection } from "react-dropzone";
+import { FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,10 +29,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { ADD_ON_COSTS } from "@/lib/billing";
+import { storage } from "@/lib/firebaseClient";
+import { ref, uploadBytesResumable } from "firebase/storage";
 import {
   ArrowRight,
-  Briefcase, // <-- Added Icon
-  DollarSign,
+  Briefcase,
+  CheckCircle,
   FileText,
   Globe,
   Lightbulb,
@@ -40,17 +44,13 @@ import {
   LogIn,
   Mic2,
   Newspaper,
+  Sparkles,
+  Terminal,
   Twitter,
   UploadCloud,
   XCircle,
-  Terminal,
-  Check,
-  CheckCircle,
-  Sparkles,
 } from "lucide-react";
 import { UploadProgressToast } from "../components/UploadProgressToast";
-import { ref, uploadBytesResumable } from "firebase/storage";
-import { storage } from "@/lib/firebaseClient";
 
 // Data Types
 type FeatureConfig = {
@@ -60,7 +60,27 @@ type FeatureConfig = {
 };
 
 type ModelChoice = "universal" | "slam-1";
-type AnalysisPersona = "general" | "consultant"; // <-- New Type
+type AnalysisPersona = "general" | "consultant";
+
+type AddOn = {
+  name: string;
+  cost: number;
+  perFileCost?: number; // Cost per file for this add-on
+};
+
+// ✅ MODIFIED: Updated CostDetails type for more granular breakdown
+type CostDetails = {
+  totalCost: number;
+  breakdown: {
+    totalBaseCost: number; // Sum of base costs across all files/text
+    fileBaseCosts: { fileName?: string; duration: number; cost: number }[]; // Details for each file's base cost
+    addOns: AddOn[];
+    totalAddOnCost: number; // Sum of add-on costs across all files/text
+  };
+  usage: number; // Required (total duration or character count)
+  limitPerCredit: number; // Required
+  unit: string;
+};
 
 type UiStatus =
   | "idle"
@@ -97,10 +117,14 @@ const featureOptions = [
 
 const EnginePage = () => {
   const { user, loading: authLoading } = useAuthStore();
+  const { profile } = useUserProfile();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("paste");
   const [transcript, setTranscript] = useState("");
+  const [fileDurations, setFileDurations] = useState<
+    { name: string; duration: number }[]
+  >([]); // ✅ MODIFIED
   const [featureConfig, setFeatureConfig] = useState<FeatureConfig>({
     run_contextual_briefing: false,
     run_x_thread_generation: false,
@@ -125,7 +149,7 @@ const EnginePage = () => {
   );
   const [filesInFlight, setFilesInFlight] = useState<File[]>([]);
 
-  const [costDetails, setCostDetails] = useState<any | null>(null);
+  const [costDetails, setCostDetails] = useState<CostDetails | null>(null);
 
   useEffect(() => {
     // If there's no active upload toast, do nothing
@@ -206,10 +230,12 @@ const EnginePage = () => {
   const resetState = (tab?: string) => {
     setTranscript("");
     setSelectedFiles([]);
+    setFileDurations([]); // Reset file durations
     setStatus("idle");
     setError(null);
     setFilesUploaded(0);
     setModelChoice("universal");
+    setCostDetails(null); // Reset cost details
     if (tab) setActiveTab(tab);
   };
 
@@ -253,12 +279,18 @@ const EnginePage = () => {
     try {
       let payload = {};
       if (activeTab === "upload") {
-        const durationPromises = selectedFiles.map(getAudioDuration);
-        const durations = await Promise.all(durationPromises);
-        // Send the array of durations, not the summed total
-        payload = { durations: durations };
+        const durationPromises = selectedFiles.map(async (file) => {
+          const duration = await getAudioDuration(file);
+          return { name: file.name, duration: duration };
+        });
+        const durationsWithNames = await Promise.all(durationPromises);
+        setFileDurations(durationsWithNames); // Store durations with names
+        payload = {
+          durations: durationsWithNames.map((d) => d.duration),
+          config: featureConfig,
+        }; // Send only durations to backend
       } else {
-        payload = { character_count: transcript.length };
+        payload = { character_count: transcript.length, config: featureConfig };
       }
 
       const response = await apiClient.post("/check-analysis", payload);
@@ -278,56 +310,55 @@ const EnginePage = () => {
   const handleBulkUploadAndProcess = async (filesToUpload: File[]) => {
     setStatus("uploading");
     setError(null);
-    // All toast management is now handled by the useEffect hook.
 
     try {
-      const uploadPromises = filesToUpload.map((file) => {
-        return new Promise<{ storagePath: string; client_provided_id: string }>(
-          (resolve, reject) => {
-            if (!user) {
-              console.error("Upload attempted without a logged-in user.");
-              return reject(
-                new Error("You must be signed in to upload files.")
-              );
-            }
-            const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
-            const storageRef = ref(storage, filePath);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on(
-              "state_changed",
-              (snapshot) => {
-                const percentCompleted = Math.round(
-                  (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-                );
-                // Update state, which will trigger our useEffect to update the toast
-                setUploadProgress((prev) => ({
-                  ...prev,
-                  [file.name]: percentCompleted,
-                }));
-              },
-              (error) => {
-                console.error(`Upload failed for ${file.name}:`, error);
-                reject(new Error(`Upload failed for ${file.name}.`));
-              },
-              () => {
-                // Update state, which also triggers the useEffect
-                setFilesUploaded((prev) => prev + 1);
-                resolve({
-                  storagePath: filePath,
-                  client_provided_id: file.name,
-                });
-              }
-            );
+      const uploadPromises = filesToUpload.map((file, index) => {
+        return new Promise<{
+          storagePath: string;
+          client_provided_id: string;
+          duration_seconds: number;
+        }>((resolve, reject) => {
+          if (!user) {
+            return reject(new Error("You must be signed in to upload files."));
           }
-        );
+          const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
+          const storageRef = ref(storage, filePath);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const percentCompleted = Math.round(
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+              );
+              setUploadProgress((prev) => ({
+                ...prev,
+                [file.name]: percentCompleted,
+              }));
+            },
+            (error) => {
+              console.error(`Upload failed for ${file.name}:`, error);
+              reject(new Error(`Upload failed for ${file.name}.`));
+            },
+            () => {
+              setFilesUploaded((prev) => prev + 1); // ✅ FIX: Find the duration for this specific file from the state
+              const currentFileDuration =
+                fileDurations.find((d) => d.name === file.name)?.duration || 0;
+              resolve({
+                storagePath: filePath,
+                client_provided_id: file.name,
+                duration_seconds: currentFileDuration, // ✅ Use the retrieved duration
+              });
+            }
+          );
+        });
       });
 
       const uploadedItems = await Promise.all(uploadPromises);
 
-      // The useEffect will handle the "Upload Complete" toast.
       setStatus("processing-batch");
 
+      // The `items` payload now correctly includes `duration_seconds` for each file.
       const processResponse = await apiClient.post("/process-bulk", {
         items: uploadedItems,
         config: { ...featureConfig, analysis_persona: analysisPersona },
@@ -338,10 +369,8 @@ const EnginePage = () => {
         throw new Error("Did not receive a batch ID from the server.");
       }
       setStatus("idle");
-      // The success toast is now handled by the completion logic in our useEffect.
     } catch (err: any) {
       console.error("Bulk upload and process failed:", err);
-      // If the process fails, update the toast to show an error.
       if (uploadToastId) {
         toast.error("Process Failed", {
           id: uploadToastId,
@@ -403,6 +432,9 @@ const EnginePage = () => {
 
   const removeFile = (fileToRemove: File) => {
     setSelectedFiles((prev) => prev.filter((file) => file !== fileToRemove));
+    setFileDurations((prev) =>
+      prev.filter((item) => item.name !== fileToRemove.name)
+    );
     if (selectedFiles.length === 1) {
       resetState(activeTab);
     }
@@ -675,48 +707,88 @@ const EnginePage = () => {
               <CardContent className="p-0">
                 <TooltipProvider>
                   <div className="flex flex-col">
-                    {featureOptions.map((feature, index) => (
-                      <Tooltip key={feature.id} delayDuration={200}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className={`flex items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                              index < featureOptions.length - 1
-                                ? "border-b border-slate-200 dark:border-slate-800"
-                                : ""
-                            }`}
-                          >
-                            <div className="flex items-center space-x-4">
-                              <feature.icon
-                                className={`w-6 h-6 flex-shrink-0 ${feature.color}`}
-                              />
-                              <Label
-                                htmlFor={feature.id}
-                                className="font-semibold text-base cursor-pointer"
-                              >
-                                {feature.title}
-                              </Label>
-                            </div>
-                            <Switch
-                              id={feature.id}
-                              checked={
-                                featureConfig[feature.id as keyof FeatureConfig]
-                              }
-                              onCheckedChange={(c) => {
-                                setFeatureConfig((p) => ({
-                                  ...p,
-                                  [feature.id]: c,
-                                }));
-                                setStatus("idle");
-                              }}
-                              disabled={!canInteract}
+                    {featureOptions.map((feature, index) => {
+                      // Check if the current feature should be disabled for the free plan
+                      const isPaidFeature =
+                        feature.id === "run_contextual_briefing";
+                      const isFeatureDisabled =
+                        isPaidFeature && profile?.plan === "free";
+
+                      const featureElement = (
+                        <div
+                          className={`flex items-center justify-between p-4 transition-colors ${
+                            isFeatureDisabled
+                              ? "opacity-50 cursor-not-allowed" // Visually grey out if disabled
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                          } ${
+                            index < featureOptions.length - 1
+                              ? "border-b border-slate-200 dark:border-slate-800"
+                              : ""
+                          }`}
+                        >
+                          <div className="flex items-center space-x-4">
+                            <feature.icon
+                              className={`w-6 h-6 flex-shrink-0 ${feature.color}`}
                             />
+                            <Label
+                              htmlFor={feature.id}
+                              className={`font-semibold text-base ${
+                                isFeatureDisabled
+                                  ? "cursor-not-allowed"
+                                  : "cursor-pointer"
+                              }`}
+                            >
+                              {feature.title}
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                +{" "}
+                                {
+                                  ADD_ON_COSTS[
+                                    feature.id as keyof typeof ADD_ON_COSTS
+                                  ]
+                                }{" "}
+                                credits
+                              </span>
+                            </Label>
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start">
-                          <p>{feature.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
+                          <Switch
+                            id={feature.id}
+                            checked={
+                              featureConfig[feature.id as keyof FeatureConfig]
+                            }
+                            onCheckedChange={(c) => {
+                              if (isFeatureDisabled) return; // Prevent state change if disabled
+                              setFeatureConfig((p) => ({
+                                ...p,
+                                [feature.id]: c,
+                              }));
+                              setStatus("idle");
+                            }}
+                            // Disable the switch if the user can't interact OR if it's a disabled paid feature
+                            disabled={!canInteract || isFeatureDisabled}
+                          />
+                        </div>
+                      );
+
+                      return (
+                        <Tooltip key={feature.id} delayDuration={200}>
+                          <TooltipTrigger asChild>
+                            {isFeatureDisabled ? (
+                              // If the feature is disabled, wrap it in a Link to the pricing page
+                              <Link href="/pricing">{featureElement}</Link>
+                            ) : (
+                              featureElement
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent side="top" align="start">
+                            <p>
+                              {isFeatureDisabled
+                                ? "This is a premium feature. Click to upgrade."
+                                : feature.description}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
                   </div>
                 </TooltipProvider>
               </CardContent>
@@ -752,57 +824,131 @@ const EnginePage = () => {
 
                 {status === "cost-calculated" && costDetails && (
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                    {/* The main result, big and clear */}
-                    <div className="text-center">
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        This analysis will use
-                      </p>
-                      <p className="text-3xl font-bold text-amber-500">
-                        {costDetails.calculatedCost}
-                        <span className="text-lg font-medium">
-                          {costDetails.calculatedCost > 1
-                            ? " credits"
-                            : " credit"}
-                        </span>
-                      </p>
+                    <div className="text-sm space-y-1">
+                      <h4 className="font-semibold mb-2">Cost Breakdown:</h4>
+
+                      {/* Display individual file base costs for multiple files or single base cost for paste/single upload */}
+                      {activeTab === "upload" &&
+                      costDetails.breakdown.fileBaseCosts.length > 1 ? (
+                        <>
+                          <p className="font-medium text-slate-700 dark:text-slate-300">
+                            Base Analysis (per file):
+                          </p>
+                          {costDetails.breakdown.fileBaseCosts.map(
+                            (fileCost, index) => {
+                              // Ensure we have a corresponding file name from selectedFiles
+                              const fileName =
+                                selectedFiles[index]?.name ||
+                                `File ${index + 1}`;
+                              const durationMinutes = Math.ceil(
+                                fileCost.duration / 60
+                              );
+                              return (
+                                <div
+                                  key={`file-base-${index}`}
+                                  className="flex justify-between pl-4"
+                                >
+                                  <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[calc(100%-80px)]">
+                                    {fileName} ({durationMinutes} min)
+                                  </span>
+                                  <span className="font-medium text-right">
+                                    {fileCost.cost.toFixed(2)} credits
+                                  </span>
+                                </div>
+                              );
+                            }
+                          )}
+                          <div className="flex justify-between font-semibold mt-2">
+                            <span>Total Base Cost:</span>
+                            <span>
+                              {costDetails.breakdown.totalBaseCost.toFixed(2)}{" "}
+                              credits
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        // Original display for single file/paste
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col">
+                            <span className="font-medium">Base Analysis</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              {costDetails.breakdown.totalBaseCost === 0.5
+                                ? "Small job discount"
+                                : costDetails.unit === "audio"
+                                  ? `(${Math.ceil(costDetails.usage / 60)} min / ${
+                                      (costDetails.limitPerCredit / 60).toFixed(
+                                        0
+                                      ) // Ensure whole number for minutes
+                                    } min per credit)`
+                                  : `(${(costDetails.usage / 1000).toFixed(0)}k chars / ${(
+                                      costDetails.limitPerCredit / 1000
+                                    ).toFixed(0)}k chars per credit)`}
+                            </span>
+                          </div>
+                          <span className="font-medium">
+                            {costDetails.breakdown.totalBaseCost.toFixed(2)}{" "}
+                            credits
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Map over selected add-ons with per-file details if applicable */}
+                      {costDetails.breakdown.addOns.length > 0 && (
+                        <>
+                          <p
+                            className={`font-medium ${activeTab === "upload" && selectedFiles.length > 1 ? "mt-4" : ""} text-slate-700 dark:text-slate-300`}
+                          >
+                            Add-on Features:
+                          </p>
+                          {costDetails.breakdown.addOns.map((addOn: AddOn) => (
+                            <div
+                              className="flex justify-between pl-4"
+                              key={addOn.name}
+                            >
+                              <div className="flex flex-col">
+                                <span>{addOn.name}</span>
+                                {activeTab === "upload" &&
+                                  selectedFiles.length > 1 &&
+                                  addOn.perFileCost !== undefined && (
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                                      ({selectedFiles.length} files x{" "}
+                                      {addOn.perFileCost.toFixed(2)}{" "}
+                                      credits/file)
+                                    </span>
+                                  )}
+                              </div>
+                              <span className="font-medium">
+                                + {addOn.cost.toFixed(2)} credits
+                              </span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between font-semibold mt-2">
+                            <span>Total Add-on Cost:</span>
+                            <span>
+                              {costDetails.breakdown.totalAddOnCost.toFixed(2)}{" "}
+                              credits
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {/* The "Why" - only shown if cost is > 1 */}
-                    {costDetails.calculatedCost > 1 && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/50 rounded-md p-2 text-center">
-                        <p className="font-semibold">Here's the breakdown:</p>
-
-                        {/* Special message for multiple files */}
-                        {costDetails.unit === "audio" &&
-                        selectedFiles.length > 1 ? (
-                          <p>
-                            Each of your{" "}
-                            <span className="font-bold text-slate-700 dark:text-slate-300">
-                              {selectedFiles.length} files
-                            </span>{" "}
-                            costs a minimum of 1 credit. Longer files may cost
-                            more.
-                          </p>
-                        ) : (
-                          // The original message for single files or text
-                          <p>
-                            {`Your submission is `}
-                            <span className="font-bold text-slate-700 dark:text-slate-300">
-                              {costDetails.unit === "audio"
-                                ? `${Math.ceil(costDetails.usage / 60)} minutes`
-                                : `${costDetails.usage.toLocaleString()} characters`}
-                            </span>
-                            {`. Our system uses 1 credit per `}
-                            <span className="font-bold text-slate-700 dark:text-slate-300">
-                              {costDetails.unit === "audio"
-                                ? `${costDetails.limitPerCredit / 60} minutes`
-                                : `${costDetails.limitPerCredit.toLocaleString()} characters`}
-                            </span>
-                            {` (or part thereof).`}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    {/* Total Cost */}
+                    <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-800 text-center">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Total Estimated Cost
+                      </p>
+                      <p className="text-3xl font-bold text-amber-500">
+                        {costDetails.totalCost.toFixed(2)}
+                        <span className="text-lg font-medium"> Credits</span>
+                      </p>
+                      {profile && profile.analyses_remaining !== undefined && (
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                          You have {profile.analyses_remaining.toFixed(2)}{" "}
+                          credits remaining.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 

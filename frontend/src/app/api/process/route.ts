@@ -34,8 +34,12 @@ export async function POST(request: NextRequest) {
     const userData = userDoc.data()!;
     const userPlan = userData.plan || "free";
 
-    // 2. Calculate cost using the helper function
-    const calculatedCost = calculateCost(requestBody, userPlan);
+    // ✅ FIX: Create a payload for the billing function with the correct structure.
+    const billingPayload = {
+      character_count: requestBody.transcript?.length || 0,
+    };
+    const config = requestBody.config || {};
+    const calculatedCost = calculateCost(billingPayload, userPlan, config);
 
     // 3. Check and Decrement Correct Amount
     const analysesRemaining = userData.analyses_remaining || 0;
@@ -46,9 +50,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await userDocRef.update({
-      analyses_remaining: FieldValue.increment(-calculatedCost),
-    });
+    if (calculatedCost > 0) {
+      await userDocRef.update({
+        analyses_remaining: FieldValue.increment(-calculatedCost),
+      });
+    }
 
     // 4. Proxy the request to Python
     const pythonApiResponse = await fetch(`${PYTHON_API_URL}/process`, {
@@ -64,9 +70,6 @@ export async function POST(request: NextRequest) {
     });
 
     const responseData = await pythonApiResponse.json();
-
-    // Note: There's no need to revert the decrement if the API fails,
-    // as the analysis credit was consumed by starting the job.
 
     if (!pythonApiResponse.ok) {
       return NextResponse.json(

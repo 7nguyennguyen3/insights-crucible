@@ -3,14 +3,13 @@
 import os
 import json
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Any
 from functools import wraps
 import time
 import random
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.runnables import RunnableConfig
 from google.api_core.exceptions import ResourceExhausted
 from tavily import TavilyClient
@@ -224,50 +223,79 @@ async def generate_contextual_briefing(
         }
 
 
+@retry_with_exponential_backoff
 async def generate_x_thread(
     all_sections_analysis: List[Dict],
     runnable_config: RunnableConfig,
 ) -> List[str]:
     """
-    Generates a single, overall X-thread summarizing the entire analysis
-    by combining insights from all sections.
+    Generates a world-class X-thread from the analysis, engineered for
+    engagement and virality based on a strategic playbook.
     """
-    print("         - [blue]Generating a single overall X (Twitter) thread...[/blue]")
-    # ... (function content is unchanged)
+    print("        - [blue]Generating World-Class X (Twitter) Thread...[/blue]")
+
+    # Context building remains the same
     full_context = ""
     for i, section in enumerate(all_sections_analysis):
         title = section.get("generated_title", f"Section {i+1}")
+        # Taking top 3 summary points per section to keep context manageable
         summary_points = section.get("summary_points", [])[:3]
         full_context += f"## {title}\n"
         for point in summary_points:
             full_context += f"- {point}\n"
         full_context += "\n"
 
-    llm, llm_options = clients.get_llm("best-lite", temperature=0.3)
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.5)
+    # The JsonOutputParser is perfect for our needs.
     parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "You are an expert social media strategist, specializing in creating engaging threads on X (formerly Twitter) from podcast content. "
-                "You will be given an analysis of a full document, broken into sections with titles and key points. Your job is to synthesize this into a single, cohesive, and engaging thread."
-                "Your output must be a JSON object with a single key, 'thread', which contains a list of strings. Each string is a single tweet.\n"
-                "- The first tweet must be a strong, compelling hook that summarizes the main theme.\n"
-                "- Each subsequent tweet should build on the previous one, pulling the most interesting ideas from the provided context.\n"
-                "- Use emojis and good whitespace to make the thread visually appealing and easy to read.\n"
-                "- Use numbering (e.g., 1/, 2/, 3/) to clearly indicate the thread structure.\n"
-                "- Include 2-3 relevant hashtags at the end of the final tweet.\n"
-                "- The last tweet should have a call to action, like asking a question to encourage engagement.\n"
-                "{format_instructions}",
+                # --- THIS IS THE CRITICAL IMPROVEMENT ---
+                # The new prompt directly encodes the principles from your new research plan.
+                """You are an expert content engineer specializing in creating viral threads on X (formerly Twitter). Your task is to transform the provided analysis into a single, cohesive, world-class thread designed for maximum engagement.
+
+Your output MUST be a JSON object with a single key, 'thread', which contains a list of strings. Each string is a single tweet.
+
+**WORLD-CLASS THREAD DIRECTIVES:**
+
+1.  **THE HOOK (First Tweet):** This is the most critical tweet. It must be engineered to stop the scroll.
+    * **Choose a Hook Archetype:** Select an appropriate formula (e.g., Problem-Solving, Storytelling, Controversial, List-Based, Authority-Building).
+    * **Create a Curiosity Gap:** It must promise value and create an information gap without giving everything away.
+    * **Signal a Thread:** Start or end the hook with "🧵" or "1/".
+
+2.  **NARRATIVE & FLOW:**
+    * **Cohesive Arc:** Structure the thread with a clear beginning, middle, and end (e.g., using Problem-Agitation-Solution or a chronological deep dive). Do not just list facts.
+    * **Progressive Disclosure:** Each tweet must build on the last, revealing information layer by layer. One core idea per tweet.
+    * **Dynamic Pacing:** Vary the tweet length. Use short, punchy one-liners for emphasis and slightly longer tweets for context.
+
+3.  **FORMATTING & STYLE:**
+    * **Readability:** Use ample whitespace and line breaks to make tweets scannable.
+    * **Visual Anchors:** Use emojis sparingly to add personality and break up text. Use numbered or bulleted lists (using • or -) for clarity.
+    * **Shareable Nuggets:** Craft at least one tweet in the middle of the thread to be a self-contained, shareable nugget of wisdom.
+
+4.  **ENGAGEMENT MECHANICS:**
+    * **Embedded Question:** Include one open-ended, thought-provoking question mid-thread to drive replies and conversation.
+    * **Pattern Interrupt:** If appropriate, include an unexpected element like a sudden shift in tone or a personal aside to re-engage the reader.
+
+5.  **THE CLOSER (Final Tweet):**
+    * **Summarize & Close Loop:** Provide a concise "TL;DR" summary of the thread's core message and tie it back to the promise made in the hook.
+    * **Compelling CTA:** End with a clear, specific Call to Action. Ask a question, encourage a retweet, or prompt a follow.
+    * **Hashtags:** Include 2-3 relevant hashtags at the very end.
+
+{format_instructions}
+""",
             ),
             (
                 "human",
-                "Based on the following analysis of a full document, create an engaging X thread.\n\n"
+                "Based on the following document analysis, create an engaging, world-class X thread using the principles of content engineering.\n\n"
                 "--- ANALYSIS ---\n{analysis_context}\n--- END ANALYSIS ---",
             ),
         ]
     )
+
     chain = prompt | llm | parser
 
     try:
@@ -280,50 +308,83 @@ async def generate_x_thread(
         )
         return result.get("thread", [])
     except Exception as e:
-        print(f"         - [red]Error generating overall X thread: {e}[/red]")
+        print(f"        - [red]Error generating overall X thread: {e}[/red]")
         return []
 
 
+@retry_with_exponential_backoff
 async def generate_blog_post(
     all_sections_analysis: List[Dict],
     runnable_config: RunnableConfig,
-) -> str:
+) -> Dict[str, Any]:
     """
-    Generates a blog post from the analysis.
+    Generates a world-class blog post from the analysis as a structured JSON object,
+    based on a comprehensive content strategy blueprint.
     """
-    print("         - [blue]Generating Blog Post Draft...[/blue]")
-    # ... (function content is unchanged)
+    print("        - [blue]Generating World-Class Blog Post Draft...[/blue]")
+
+    # Context building remains the same
     full_context = ""
     for i, section in enumerate(all_sections_analysis):
-        title = section.get("generated_title", f"Section {i+1}")
-        summary = "\n".join(section.get("summary_points", []))
+        title = section.get("generated_title") or section.get(
+            "section_title", f"Section {i+1}"
+        )
+        summary_list = (
+            section.get("summary_points")
+            or section.get("client_pain_points")
+            or section.get("strategic_opportunities", [])
+        )
+        summary = "\n".join([f"- {point}" for point in summary_list])
         full_context += f"## {title}\n\n{summary}\n\n"
 
-    llm, llm_options = clients.get_llm("best-lite", temperature=0.3)
-    parser = StrOutputParser()
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.4)
+    # The JsonOutputParser is perfect for our needs.
+    parser = JsonOutputParser()
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "You are an expert content writer, skilled at turning outlines and bullet points into engaging blog posts. "
-                "You will be given a structured analysis of a podcast or document. Your task is to synthesize this into a well-written, human-readable article. "
-                "Use the section titles as H2 headings. Weave the summary points into coherent paragraphs. Start with a compelling introduction and end with a thoughtful conclusion. "
-                "Maintain a professional yet accessible tone.",
+                """You are an expert content strategist...
+
+**JSON CONTENT BLOCK SCHEMA:**
+Each block object in the 'content' array must have a 'type' key. Supported types are:
+- 'heading': `{{ "type": "heading", "level": 2 | 3, "text": "..." }}`
+- 'paragraph': `{{ "type": "paragraph", "text": "..." }}`
+- 'list': `{{ "type": "list", "style": "unordered" | "ordered", "items": ["...", "..."] }}`
+- 'quote': `{{ "type": "quote", "text": "A powerful, citable quote.", "author": "Source/Expert" }}`
+- 'visual_suggestion': `{{ "type": "visual_suggestion", "description": "..." }}`
+- 'cta': `{{ "type": "cta", "text": "..." }}`
+
+**WORLD-CLASS CONTENT DIRECTIVES:**
+1.  **Strategic Goal:** This post must be the definitive resource on the topic. It should aim to build trust and solve a real problem, not just attract clicks.
+2.  **Headline & Intro:** The main `title` must be intriguing and benefit-driven. The first one or two paragraphs must hook the reader using a formula like PAS (Problem-Agitate-Solution) or by creating a strong information gap.
+3.  **Tone & Readability:** Adopt an authentic, authoritative, yet conversational tone. **Crucially, use short paragraphs (2-3 sentences max).** Bold key phrases to make the content highly scannable.
+4.  **Depth & Originality:** Weave the analysis points into a comprehensive and persuasive narrative. Don't just list facts. Provide actionable advice and unique perspectives.
+5.  **Structure & Flow:** Use the section titles from the analysis as H2 headings. Guide the reader logically from introduction to conclusion.
+6.  **Visuals as Assets:** Proactively insert `visual_suggestion` blocks where a custom graphic, chart, or annotated screenshot would enhance comprehension or act as a "citation magnet" to attract backlinks. Do NOT suggest generic stock photos.
+7.  **Engagement & CTA:** Conclude with a strong summary paragraph followed by a specific, compelling `cta` block that drives a clear next step or a thought-provoking question to encourage interaction.
+
+{format_instructions}
+""",
             ),
             (
                 "human",
-                "Please generate a blog post from the following content analysis:\n\n--- ANALYSIS ---\n{analysis_context}\n--- END ANALYSIS ---",
+                "Using the principles of world-class content creation, generate a structured JSON blog post from the following content analysis:\n\n--- ANALYSIS ---\n{analysis_context}\n--- END ANALYSIS ---",
             ),
         ]
     )
+
     chain = prompt | llm | parser
 
     try:
         return await chain.ainvoke(
-            {"analysis_context": full_context},
+            {
+                "analysis_context": full_context,
+                "format_instructions": parser.get_format_instructions(),
+            },
             config=runnable_config,
         )
     except Exception as e:
-        print(f"         - [red]Error generating blog post: {e}[/red]")
-        return "Error: Could not generate blog post."
+        print(f"        - [red]Error generating blog post: {e}[/red]")
+        return {"error": "Could not generate blog post.", "details": str(e)}

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import React from "react";
 import { FaTwitter } from "react-icons/fa6";
-import { EditableField } from "./EditableField"; // Assuming it's in the same folder
+import { EditableField } from "./EditableField";
 
 interface XThreadDisplayProps {
   thread: string[];
@@ -31,12 +31,7 @@ export const XThreadDisplay: React.FC<XThreadDisplayProps> = ({
 }) => {
   return (
     <div className="bg-white dark:bg-slate-900/70 rounded-lg shadow-md border border-slate-200 dark:border-slate-800">
-      <Accordion
-        type="single"
-        collapsible
-        defaultValue="x-thread"
-        className="w-full"
-      >
+      <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="x-thread" className="border-b-0">
           <AccordionTrigger className="p-6 text-left hover:no-underline">
             <div className="flex items-center space-x-3 w-full">

@@ -101,8 +101,8 @@ const MarketingHomePage = () => {
             start strategizing.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button href="/signup" variant="primary">
-              Get 5 Free Analyses
+            <Button href="/auth?tab=signup" variant="primary">
+              Get 5 Free Analysis Credits
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button href="/pricing" variant="secondary">
@@ -254,7 +254,7 @@ const MarketingHomePage = () => {
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
               Sign up in seconds and get{" "}
               <span className="font-semibold text-blue-600 dark:text-blue-400">
-                5 full analyses for free
+                5 full analysis credits for free
               </span>{" "}
               to experience the depth and quality of our insights firsthand. No
               credit card required.
@@ -275,10 +275,10 @@ const MarketingHomePage = () => {
             Ready to Unlock Your Content's Potential?
           </h2>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-            Sign up now and get your first 5 analyses for free.
+            Sign up now and get your first 5 analysis credits for free.
           </p>
           <div className="mt-8">
-            <Button href="/signup" variant="primary">
+            <Button href="/auth?tab=signup" variant="primary">
               Get Started for Free
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

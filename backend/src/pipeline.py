@@ -16,14 +16,12 @@ from nltk.tokenize import word_tokenize
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain.output_parsers import OutputFixingParser
-from langchain_google_genai import ChatGoogleGenerativeAI
 from rich import print
 from rich.panel import Panel
 from tavily import TavilyClient
 from firebase_admin import firestore
 from functools import wraps
 from google.api_core.exceptions import ResourceExhausted
-from google.cloud import storage as gcs_storage
 from langchain_core.runnables import RunnableConfig
 
 from src import clients

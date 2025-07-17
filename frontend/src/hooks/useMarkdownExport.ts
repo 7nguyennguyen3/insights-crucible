@@ -8,6 +8,7 @@ import {
   Contradiction,
   GlobalContextualBriefingPayload,
   Viewpoint,
+  BlogBlock,
 } from "@/app/_global/interface";
 import { generateReportBlueprint } from "@/app/utils/reportGenerator";
 
@@ -95,7 +96,45 @@ const generateMarkdown = (data: JobData): string => {
 
       case "blog_post":
         md += `## Generated Blog Post\n\n`;
-        md += `${formatMarkdownContent(part.content)}\n\n`;
+        const blogPost = part.content; // part.content is now a BlogPostData object
+
+        if (blogPost && blogPost.title) {
+          // Add the blog post's main title as an H3
+          md += `### ${blogPost.title}\n\n`;
+
+          // Process each content block from the array
+          blogPost.content.forEach((block: BlogBlock) => {
+            switch (block.type) {
+              case "heading":
+                // Use #### for h2, ##### for h3 to maintain report hierarchy
+                const headingLevel = (block.level || 2) + 2;
+                md += `${"#".repeat(headingLevel)} ${block.text}\n\n`;
+                break;
+              case "paragraph":
+                md += `${block.text}\n\n`;
+                break;
+              case "list":
+                (block.items || []).forEach((item) => {
+                  md += `- ${item}\n`;
+                });
+                md += "\n";
+                break;
+              case "quote":
+                md += `> ${block.text}`;
+                if (block.author) {
+                  md += `\n> — ${block.author}`;
+                }
+                md += `\n\n`;
+                break;
+              case "cta":
+                md += `**➡️ Call to Action:** ${block.text}\n\n`;
+                break;
+              case "visual_suggestion":
+                md += `*[💡 Visual Suggestion: ${block.description}]*\n\n`;
+                break;
+            }
+          });
+        }
         break;
 
       case "x_thread":
@@ -127,6 +166,33 @@ const generateMarkdown = (data: JobData): string => {
             md += `**Summary Points:**\n`;
             (s.summary_points ?? []).forEach((p) => (md += `- ${p}\n`));
             md += `\n`;
+
+            // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
+            if (s.actionable_advice?.length > 0) {
+              md += `**Actionable Advice:**\n`;
+              (s.actionable_advice ?? []).forEach(
+                (advice) => (md += `- ${advice}\n`)
+              );
+              md += `\n`; // Add space after this section
+            }
+
+            if (s.notable_quotes?.length > 0) {
+              md += `**Notable Quotes:**\n`;
+              (s.notable_quotes ?? []).forEach(
+                (quote) => (md += `> "${quote}"\n`)
+              );
+              md += `\n`; // Add space after this section
+            }
+
+            if (s.questions_and_answers?.length > 0) {
+              md += `**Questions & Answers:**\n`;
+              (s.questions_and_answers ?? []).forEach((qa) => {
+                md += `**Q:** ${qa.question}\n`;
+                md += `**A:** ${qa.answer}\n\n`;
+              });
+              md += `\n`; // Add space after this section
+            }
+            // --- END REPLACEMENT / ADDITION ---
           }
         });
         break;

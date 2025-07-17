@@ -1,3 +1,4 @@
+//src/app/utils/reportGenerator.ts
 import { JobData } from "@/app/_global/interface";
 
 // This function creates a structured "blueprint" of the report.

@@ -44,12 +44,12 @@ const faqData = [
       {
         q: "How does the analysis allowance work?",
         // ✅ UPDATED: Replaced 'credits' with 'analyses'.
-        a: "Each analysis you run costs a minimum of 1 from your allowance. The Free plan includes 3 analyses per month. Paid plans (Charter/Pro) come with a more generous allowance of 25 analyses per month.",
+        a: "Each analysis you run costs a minimum of 1 from your allowance. The Free plan includes 3 analysis credits per month. Paid plans (Charter/Pro) come with a more generous allowance of 25 analysis credits per month.",
       },
       {
-        q: "Do my unused analyses roll over?",
+        q: "Do my unused analysis credits roll over?",
         // ✅ UPDATED: Clearer policy for free vs. paid.
-        a: "For paid plans, yes! Unused analyses roll over to the next month. For the Free plan, the allowance resets to 3 new analyses at the beginning of each calendar month and does not roll over.",
+        a: "For paid plans, yes! Unused analysis credits roll over to the next month. For the Free plan, the allowance resets to 3 new analysis credits at the beginning of each calendar month and does not roll over.",
       },
       {
         q: "How do I upgrade or manage my plan?",

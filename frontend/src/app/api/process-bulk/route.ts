@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     const requestBody = await request.json();
     // Cast the items array to your new type
     const items: ProcessItem[] = requestBody.items || [];
+    const config = requestBody.config || {};
 
     const userDocRef = db.collection("saas_users").doc(userId);
     const userDoc = await userDocRef.get();
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     // 2. Calculate total cost with explicit types
     const totalCalculatedCost = items.reduce(
       (total: number, item: ProcessItem) => {
-        return total + calculateCost(item, userPlan);
+        return total + calculateCost(item, userPlan, config);
       },
       0
     );
@@ -53,8 +54,8 @@ export async function POST(request: NextRequest) {
     if (analysesRemaining < totalCalculatedCost) {
       return NextResponse.json(
         {
-          error: "Insufficient Analyses Remaining",
-          detail: `This batch requires ${totalCalculatedCost} analyses, but you only have ${analysesRemaining} left.`,
+          error: "Insufficient Analysis Credit Remaining",
+          detail: `This batch requires ${totalCalculatedCost} analysis credit, but you only have ${analysesRemaining} left.`,
         },
         { status: 402 }
       );

@@ -8,7 +8,9 @@ import {
   Slide,
   Contradiction,
   GlobalContextualBriefingPayload, // Import this
-  Viewpoint, // Import this
+  Viewpoint,
+  BlogPostData,
+  BlogBlock, // Import this
 } from "@/app/_global/interface";
 import { generateReportBlueprint } from "@/app/utils/reportGenerator";
 
@@ -171,16 +173,49 @@ const generatePdfDocument = (data: JobData) => {
           isBold: true,
           spaceAfter: 8,
         });
-        const blogLines = part.content.split("\n");
-        blogLines.forEach((line: string) => {
-          if (line.startsWith("### ")) {
-            addText(line.substring(4), { size: 12, isBold: true });
-          } else if (line.startsWith("## ")) {
-            addText(line.substring(3), { size: 13, isBold: true });
-          } else {
-            addText(line);
-          }
-        });
+
+        // Assert the correct type for the blog post object
+        const blogPost = part.content as BlogPostData;
+
+        if (blogPost && blogPost.title) {
+          // Add the blog post's main title
+          addText(blogPost.title, { size: 13, isBold: true, spaceAfter: 8 });
+
+          // Process each content block from the array
+          blogPost.content.forEach((block: BlogBlock) => {
+            switch (block.type) {
+              case "heading":
+                addText(block.text, {
+                  size: block.level === 2 ? 12 : 11, // Different sizes for H2/H3
+                  isBold: true,
+                });
+                break;
+              case "paragraph":
+                // The addText helper already provides default spacing
+                addText(block.text);
+                break;
+              case "list":
+                (block.items || []).forEach((item: string) => {
+                  addText(item, { isListItem: true });
+                });
+                y += 5; // Add a little extra vertical space after a list
+                break;
+              case "quote":
+                addText(`" ${block.text} "`);
+                if (block.author) {
+                  addText(`— ${block.author}`);
+                }
+                y += 5;
+                break;
+              case "cta":
+                addText(`➡️ Call to Action: ${block.text}`, { isBold: true });
+                break;
+              case "visual_suggestion":
+                addText(`[💡 Visual Suggestion: ${block.description}]`);
+                break;
+            }
+          });
+        }
         y += 10;
         break;
 
@@ -237,6 +272,33 @@ const generatePdfDocument = (data: JobData) => {
             (s.summary_points ?? []).forEach((p) =>
               addText(p, { isListItem: true })
             );
+
+            // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
+            if (s.actionable_advice?.length > 0) {
+              addText("Actionable Advice", { isBold: true, spaceAfter: 6 });
+              (s.actionable_advice ?? []).forEach((advice) =>
+                addText(advice, { isListItem: true })
+              );
+              y += 5; // Add space after this section
+            }
+
+            if (s.notable_quotes?.length > 0) {
+              addText("Notable Quotes", { isBold: true, spaceAfter: 6 });
+              (s.notable_quotes ?? []).forEach((quote) =>
+                addText(`"${quote}"`, { isListItem: true })
+              );
+              y += 5; // Add space after this section
+            }
+
+            if (s.questions_and_answers?.length > 0) {
+              addText("Questions & Answers", { isBold: true, spaceAfter: 6 });
+              (s.questions_and_answers ?? []).forEach((qa) => {
+                addText(`Q: ${qa.question}`, { isBold: true });
+                addText(`A: ${qa.answer}`, { spaceAfter: 6 });
+              });
+              y += 5; // Add space after this section
+            }
+            // --- END REPLACEMENT / ADDITION ---
           }
           y += 10;
         });

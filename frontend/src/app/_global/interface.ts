@@ -99,6 +99,8 @@ export interface Slide {
   slide_bullets: string[];
 }
 
+// ++ ADD: Define the new shape for the entire blog post object
+
 // --- DEFINE THE 'CONSULTANT' ANALYSIS STRUCTURE ---
 export interface ConsultantAnalysisSection extends BaseAnalysisSection {
   id: string;
@@ -146,7 +148,7 @@ export interface JobData {
   };
 
   // Optional generated content that can exist on any job type
-  generated_blog_post?: string;
+  generated_blog_post?: BlogPostData;
   generated_overall_x_thread?: string[];
 
   generated_slide_outline?: Slide[];
@@ -155,4 +157,51 @@ export interface JobData {
 export interface JobDataWithShare extends JobData {
   isPublic?: boolean;
   publicShareId?: string;
+}
+
+interface HeadingBlock {
+  type: "heading";
+  level: number;
+  text: string;
+}
+
+interface ParagraphBlock {
+  type: "paragraph";
+  text: string;
+}
+
+interface ListBlock {
+  type: "list";
+  style: "unordered" | "ordered";
+  items: string[];
+}
+
+interface QuoteBlock {
+  type: "quote";
+  text: string;
+  author?: string;
+}
+
+interface VisualSuggestionBlock {
+  type: "visual_suggestion";
+  description: string;
+}
+
+interface CtaBlock {
+  type: "cta";
+  text: string;
+}
+
+// This is the new, more powerful BlogBlock type.
+export type BlogBlock =
+  | HeadingBlock
+  | ParagraphBlock
+  | ListBlock
+  | QuoteBlock
+  | VisualSuggestionBlock
+  | CtaBlock;
+
+export interface BlogPostData {
+  title: string;
+  content: BlogBlock[];
 }

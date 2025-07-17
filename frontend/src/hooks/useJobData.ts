@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import apiClient from "@/lib/apiClient";
 import {
   AnalysisSection,
+  BlogPostData,
   ContextualBriefing,
   Contradiction,
   GeneralAnalysisSection,
@@ -390,7 +391,8 @@ export const useJobData = (jobId: string) => {
     []
   );
 
-  const handleBlogPostChange = useCallback((newContent: string) => {
+  const handleBlogPostChange = useCallback((newContent: BlogPostData) => {
+    // CHANGE 'string' to 'BlogPostData'
     setDraftData(
       produce((draft) => {
         if (draft) {

@@ -6,6 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
+// -- NEW: Import ReactMarkdown and its GFM plugin
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 interface EditableFieldProps {
   isEditing: boolean;
   value: string;
@@ -31,9 +35,6 @@ export const EditableField: React.FC<EditableFieldProps> = ({
     onChange(e.target.value);
   };
 
-  // --- THIS IS THE FIX ---
-  // This stops the click from "bubbling up" to the AccordionTrigger
-  // when the user is trying to edit the text.
   const handleWrapperClick = (e: React.MouseEvent) => {
     if (isEditing) {
       e.stopPropagation();
@@ -46,7 +47,7 @@ export const EditableField: React.FC<EditableFieldProps> = ({
     return (
       <div
         className="flex items-center gap-2 w-full"
-        onClick={handleWrapperClick} // Add the click handler here
+        onClick={handleWrapperClick}
       >
         {isTextarea ? (
           <Textarea
@@ -80,12 +81,21 @@ export const EditableField: React.FC<EditableFieldProps> = ({
     );
   }
 
-  // Display mode
+  // --- NEW DISPLAY MODE LOGIC ---
+  // When not editing, render the value using ReactMarkdown to process formatting.
   return (
-    <div className={className}>
-      {value || (
-        <span className="text-slate-400">{placeholder || "Empty"}</span>
-      )}
+    <div
+      className={`prose prose-slate dark:prose-invert max-w-none ${className}`}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          // Override the default <p> tag to avoid extra margins in a tweet
+          p: ({ node, ...props }) => <span {...props} />,
+        }}
+      >
+        {value || placeholder || ""}
+      </ReactMarkdown>
     </div>
   );
 };

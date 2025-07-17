@@ -53,9 +53,9 @@ export const WelcomeEmail = ({ userEmail, userName }: WelcomeEmailProps) => {
           </Text>
           <Text style={paragraph}>
             Your account is ready, and you're all set to start transforming your
-            content. You have <strong>5 complimentary analyses</strong> on your{" "}
-            <strong>free plan</strong> to help you get acquainted with the power
-            of AI-driven insights.
+            content. You have <strong>5 complimentary analysis credit</strong>{" "}
+            on your <strong>free plan</strong> to help you get acquainted with
+            the power of AI-driven insights.
           </Text>
           <Section style={btnContainer}>
             <Button

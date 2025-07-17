@@ -3,7 +3,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
-import { calculateCost, TIER_LIMITS } from "@/lib/billing"; // 1. Import from billing.ts
+import { TIER_LIMITS, ADD_ON_COSTS } from "@/lib/billing";
+
+type AddOnKey = keyof typeof ADD_ON_COSTS;
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,18 +28,112 @@ export async function POST(request: NextRequest) {
     const userPlan = userData.plan || "free";
     const userCredits = userData.analyses_remaining || 0;
 
-    // 3. Calculate the required credits using the helper function
-    const { durations, character_count } = await request.json();
-    let calculatedCost = 0;
+    // 3. Destructure the full request body
+    const { durations, character_count, config } = await request.json();
 
-    if (Array.isArray(durations)) {
-      // For a batch of audio files, sum the cost of each one
-      calculatedCost = durations.reduce((total: number, duration: number) => {
-        return total + calculateCost({ duration_seconds: duration }, userPlan);
-      }, 0);
+    const limits =
+      TIER_LIMITS[userPlan as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
+
+    let totalCost = 0;
+    let totalBaseCost = 0;
+    let totalAddOnCost = 0;
+    let totalUsage = 0;
+    let unit = "";
+    let limit_per_credit = 0;
+
+    // ✅ MODIFIED: Capture individual file costs for better breakdown
+    const fileBaseCostsBreakdown: {
+      fileName?: string;
+      duration: number;
+      cost: number;
+    }[] = [];
+    const addOnsBreakdown: {
+      name: string;
+      cost: number;
+      perFileCost?: number;
+    }[] = []; // Add perFileCost for clarity
+
+    if (Array.isArray(durations) && durations.length > 0) {
+      unit = "audio";
+      limit_per_credit = limits.audio_seconds_per_credit;
+      const numberOfFiles = durations.length;
+
+      // Calculate total base cost by iterating through each file's duration
+      for (const duration of durations) {
+        totalUsage += duration;
+        let fileBaseCost = 0;
+        if (duration > 0 && duration < limit_per_credit * 0.5) {
+          fileBaseCost = 0.5; // Apply 50% rule per file
+        } else {
+          fileBaseCost = Math.ceil(duration / limit_per_credit);
+        }
+        totalBaseCost += fileBaseCost;
+        fileBaseCostsBreakdown.push({ duration: duration, cost: fileBaseCost }); // Store individual file costs
+      }
+
+      // Calculate total add-on cost by multiplying by the number of files
+      if (config) {
+        for (const key of Object.keys(ADD_ON_COSTS)) {
+          const featureKey = key as AddOnKey;
+          if (config[featureKey]) {
+            const singleCost = ADD_ON_COSTS[featureKey];
+            const totalFeatureCost = singleCost * numberOfFiles;
+            totalAddOnCost += totalFeatureCost;
+
+            const readableName = featureKey
+              .replace(/run_|_generation/g, " ")
+              .replace(/_/g, " ")
+              .replace("x thread", "X/Twitter Thread")
+              .trim()
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+
+            // The breakdown shows the total cost for this add-on across all files
+            addOnsBreakdown.push({
+              name: readableName,
+              cost: totalFeatureCost,
+              perFileCost: singleCost, // Store per-file add-on cost
+            });
+          }
+        }
+      }
+      totalCost = totalBaseCost + totalAddOnCost;
     } else if (typeof character_count === "number") {
-      // For a single text analysis
-      calculatedCost = calculateCost({ character_count }, userPlan);
+      // This logic for single text files remains the same
+      unit = "text";
+      limit_per_credit = limits.chars_per_credit;
+      totalUsage = character_count;
+
+      if (totalUsage > 0 && totalUsage < limit_per_credit * 0.5) {
+        totalBaseCost = 0.5;
+      } else {
+        totalBaseCost = Math.ceil(totalUsage / limit_per_credit);
+      }
+      fileBaseCostsBreakdown.push({
+        duration: totalUsage,
+        cost: totalBaseCost,
+      }); // For single text, treat it as one item
+
+      if (config) {
+        for (const key of Object.keys(ADD_ON_COSTS)) {
+          const featureKey = key as AddOnKey;
+          if (config[featureKey]) {
+            const cost = ADD_ON_COSTS[featureKey];
+            totalAddOnCost += cost;
+            const readableName = featureKey
+              .replace(/run_|_generation/g, " ")
+              .replace(/_/g, " ")
+              .replace("x thread", "X/Twitter Thread")
+              .trim()
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+            addOnsBreakdown.push({
+              name: readableName,
+              cost: cost,
+              perFileCost: cost,
+            });
+          }
+        }
+      }
+      totalCost = totalBaseCost + totalAddOnCost;
     } else {
       return NextResponse.json(
         { error: "Invalid request body." },
@@ -45,38 +141,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Check if user has enough credits (no changes here)
-    if (userCredits < calculatedCost) {
+    // 4. Check if user has enough credits
+    if (userCredits < totalCost) {
       return NextResponse.json(
         {
           error: "Insufficient Credits",
-          detail: `This job requires ${calculatedCost} analysis credits, but you only have ${userCredits}.`,
+          detail: `This job requires ${totalCost} analysis credits, but you only have ${userCredits}.`,
         },
         { status: 402 }
       );
     }
 
-    // 5. If they have enough, return the calculated cost for confirmation
-    const limits =
-      TIER_LIMITS[userPlan as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
-
+    // 5. If they have enough, return the new, detailed payload
     const responsePayload = {
-      message: "Credit check successful.",
-      calculatedCost: calculatedCost,
-      usage: 0,
-      limitPerCredit: 0,
-      unit: "",
+      totalCost: totalCost,
+      breakdown: {
+        totalBaseCost: totalBaseCost, // Rename for clarity on frontend
+        fileBaseCosts: fileBaseCostsBreakdown, // ✅ NEW: individual file base costs
+        addOns: addOnsBreakdown,
+        totalAddOnCost: totalAddOnCost, // ✅ NEW: total add-on cost
+      },
+      usage: totalUsage,
+      limitPerCredit: limit_per_credit,
+      unit: unit,
     };
-
-    if (Array.isArray(durations)) {
-      responsePayload.usage = durations.reduce((a, b) => a + b, 0);
-      responsePayload.limitPerCredit = limits.audio_seconds_per_credit;
-      responsePayload.unit = "audio";
-    } else if (typeof character_count === "number") {
-      responsePayload.usage = character_count;
-      responsePayload.limitPerCredit = limits.chars_per_credit;
-      responsePayload.unit = "text";
-    }
 
     return NextResponse.json(responsePayload);
   } catch (error) {

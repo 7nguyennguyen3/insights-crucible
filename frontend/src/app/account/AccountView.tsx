@@ -206,7 +206,7 @@ export function AccountView() {
             My Account
           </h1>
           <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
-            View your plan details, remaining analyses, and job history.
+            View your plan details, remaining analysis credits, and job history.
           </p>
         </header>
 
@@ -241,7 +241,7 @@ export function AccountView() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Analyses Remaining</Label>
+                  <Label>Analyses Credit Remaining</Label>
                   <div className="text-5xl font-bold text-slate-900 dark:text-slate-100 h-12 flex items-center">
                     {isProfileLoading ? (
                       <Skeleton className="h-12 w-24" />
@@ -369,7 +369,7 @@ export function AccountView() {
                 )}
                 <div className="w-full space-y-4 pt-4 border-t">
                   <Label htmlFor="quantity" className="font-semibold">
-                    Purchase One-Time Analyses
+                    Purchase One-Time Analysis Credit
                   </Label>
                   <div className="flex items-center gap-2">
                     <Button
@@ -419,7 +419,7 @@ export function AccountView() {
                     ) : (
                       <>
                         <PackagePlus className="mr-2 h-4 w-4" /> Purchase{" "}
-                        {quantity} Analyses
+                        {quantity} Analysis Credits
                       </>
                     )}
                   </Button>
