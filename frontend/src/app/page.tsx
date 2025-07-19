@@ -208,7 +208,7 @@ const MarketingHomePage = () => {
       </section>
 
       {/* NEW: Added Social Proof / Testimonials Section */}
-      <section className="py-20 md:py-24 bg-white dark:bg-slate-900">
+      {/* <section className="py-20 md:py-24 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
@@ -242,10 +242,10 @@ const MarketingHomePage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* --- PRICING TEASER (Unchanged) --- */}
-      <section className="py-20 md:py-24">
+      <section className="py-20 md:py-24 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center bg-slate-100 dark:bg-slate-800/50 p-10 rounded-2xl border border-slate-200 dark:border-slate-700">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
