@@ -1,12 +1,39 @@
-// src/app/api/auth/signup/route.ts
+// Final code for src/app/api/auth/signup/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 
 import { Resend } from "resend";
 import { render } from "@react-email/render";
 import WelcomeEmail from "@/app/emails/WelcomeEmail";
+import VerificationEmail from "@/app/emails/VerificationEmail";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+const getInitialCredits = () => {
+  const promoEndDateString = process.env.NEXT_PUBLIC_PROMO_END_DATE; // e.g., "09/01"
+  const promoCredits = parseInt(
+    process.env.NEXT_PUBLIC_PROMO_CREDITS || "10",
+    10
+  );
+  const defaultCredits = parseInt(
+    process.env.NEXT_PUBLIC_DEFAULT_CREDITS || "5",
+    10
+  );
+
+  if (promoEndDateString && promoEndDateString.includes("/")) {
+    const [month, day] = promoEndDateString.split("/");
+    const currentYear = new Date().getFullYear();
+    const promoEndDate = new Date(`${currentYear}-${month}-${day}T00:00:00Z`);
+    const now = new Date();
+
+    if (now < promoEndDate) {
+      return promoCredits;
+    }
+  }
+
+  return defaultCredits;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,34 +53,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Create user in Firebase Authentication
     const userRecord = await auth.createUser({
       email,
       password,
       displayName: name,
     });
+    // ADDED THIS LINE
+    const creditsToGive = getInitialCredits();
 
-    // 2. Create user document in Firestore
     await db.collection("saas_users").doc(userRecord.uid).set({
       uid: userRecord.uid,
       email: userRecord.email,
       name: userRecord.displayName,
       createdAt: new Date().toISOString(),
       plan: "free",
-      analyses_remaining: 5,
+      analyses_remaining: creditsToGive,
+      welcomeEmailSent: false,
     });
 
     try {
-      // Render the React email component to an HTML string
-      // AWAIT THE RENDER FUNCTION HERE
-      const emailHtml = await render(
-        <WelcomeEmail userEmail={email} userName={name} />
+      const actionCodeSettings = {
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/actions`,
+        handleCodeInApp: true,
+      };
+      const signInLink = await auth.generateSignInWithEmailLink(
+        email,
+        actionCodeSettings
       );
 
-      // Send the email
+      const emailHtml = await render(
+        <VerificationEmail userName={name} verificationLink={signInLink} />
+      );
+
       await resend.emails.send({
-        from: "Jimmy from Insights Crucible <onboarding@insightscrucible.com>", // Ensure this domain is verified in Resend
-        to: [email], // Send the email to the new user's email address
+        from: "Jimmy from Insights Crucible <onboarding@insightscrucible.com>",
+        to: [email],
         subject: "Welcome to Insights Crucible!",
         html: emailHtml,
         replyTo: "jimmy@insightscrucible.com",
@@ -74,10 +108,7 @@ export async function POST(request: NextRequest) {
     console.error("SIGNUP ERROR:", error);
 
     let errorMessage = "An unexpected error occurred during sign up.";
-
-    // Safely check if the error is a Firebase error object
     if (typeof error === "object" && error !== null && "code" in error) {
-      // Firebase Auth error code for email already in use
       if ((error as { code: string }).code === "auth/email-already-in-use") {
         errorMessage = "This email address is already in use.";
       }
@@ -85,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to create user", message: errorMessage },
-      { status: 409 } // Use 409 Conflict for an existing user
+      { status: 409 }
     );
   }
 }

@@ -46,6 +46,7 @@ import {
   PackagePlus,
   Plus,
   Minus,
+  Ticket,
 } from "lucide-react";
 import {
   Dialog,
@@ -86,6 +87,8 @@ export function AccountView() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -195,6 +198,34 @@ export function AccountView() {
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 5 && newQuantity <= 100) {
       setQuantity(newQuantity);
+    }
+  };
+
+  const handleRedeemPromo = async () => {
+    if (!promoCode.trim()) {
+      toast.error("Please enter a promo code.");
+      return;
+    }
+    setIsRedeeming(true);
+    try {
+      // This calls the API route you created
+      const response = await apiClient.post("/promo/redeem", {
+        code: promoCode,
+      });
+
+      toast.success("Promo code redeemed!", {
+        description: response.data.message || "Your account has been updated.",
+      });
+
+      await mutateProfile(); // This is KEY: it refreshes user data to show the new plan/credits
+      setPromoCode(""); // Clear the input field on success
+      // You might want to close the dialog here as well
+    } catch (err: any) {
+      toast.error("Redemption Failed", {
+        description: err.response?.data?.error || "Invalid or expired code.",
+      });
+    } finally {
+      setIsRedeeming(false);
     }
   };
 
@@ -428,8 +459,52 @@ export function AccountView() {
                     )}
                   </Button>
                 </div>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                      <Ticket className="mr-2 h-4 w-4" />
+                      Have a promo code?
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Redeem a Promo Code</DialogTitle>
+                      <DialogDescription>
+                        Enter your code below to apply it to your account.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex items-center space-x-2 py-4">
+                      <Input
+                        id="promoCodeInput"
+                        placeholder="e.g. PROUPGRADE"
+                        value={promoCode}
+                        onChange={(e) =>
+                          setPromoCode(e.target.value.toUpperCase())
+                        }
+                        disabled={isRedeeming}
+                      />
+                      <Button
+                        onClick={handleRedeemPromo}
+                        disabled={!promoCode || isRedeeming}
+                      >
+                        {isRedeeming ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Redeem"
+                        )}
+                      </Button>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="ghost">Close</Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/account/settings">
+                  <Link href="/account/setting">
                     <Settings className="mr-2 h-4 w-4" />
                     Profile & Security Settings
                   </Link>

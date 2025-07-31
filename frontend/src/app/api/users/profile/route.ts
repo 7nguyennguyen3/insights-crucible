@@ -1,3 +1,4 @@
+// src/app/api/users/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";

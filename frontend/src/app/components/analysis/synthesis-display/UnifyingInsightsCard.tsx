@@ -22,7 +22,7 @@ export const UnifyingInsightsCard: React.FC<UnifyingInsightsCardProps> = ({
   }
 
   return (
-    <div className="p-6 bg-white dark:bg-slate-900/70 rounded-lg shadow-md">
+    <div className="p-6 bg-white dark:bg-slate-900/70 rounded-lg">
       <h3 className="flex items-center text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
         <Lightbulb className="w-5 h-5 mr-3 text-amber-500" />
         Unifying Insights

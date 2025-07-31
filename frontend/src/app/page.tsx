@@ -12,7 +12,7 @@ import {
   UploadCloud,
   Zap,
 } from "lucide-react";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 // --- Components (Button, FeatureCard, HowItWorksStep) are unchanged ---
 
@@ -53,7 +53,7 @@ const FeatureCard = ({
   title: string;
   description: string;
 }) => (
-  <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 h-full">
+  <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 h-full transition-all duration-300 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-2xl">
     <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-lg mb-4">
       <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
     </div>
@@ -85,16 +85,67 @@ const HowItWorksStep = ({
 );
 
 const MarketingHomePage = () => {
+  const [isPromoActive, setIsPromoActive] = useState(false);
+  const [credits, setCredits] = useState(
+    process.env.NEXT_PUBLIC_DEFAULT_CREDITS || "5"
+  );
+  const [promoDeadlineText, setPromoDeadlineText] = useState("");
+
+  useEffect(() => {
+    const promoEndDateString = process.env.NEXT_PUBLIC_PROMO_END_DATE;
+    if (!promoEndDateString || !promoEndDateString.includes("/")) return;
+
+    const [month, day] = promoEndDateString.split("/");
+    const currentYear = new Date().getFullYear();
+    const promoEndDate = new Date(`${currentYear}-${month}-${day}T00:00:00Z`);
+    const now = new Date();
+
+    if (now < promoEndDate) {
+      setIsPromoActive(true);
+      setCredits(process.env.NEXT_PUBLIC_PROMO_CREDITS || "10");
+
+      const dayOfMonth = promoEndDate.getUTCDate();
+      const getOrdinalSuffix = (d: number) => {
+        if (d > 3 && d < 21) return "th";
+        switch (d % 10) {
+          case 1:
+            return "st";
+          case 2:
+            return "nd";
+          case 3:
+            return "rd";
+          default:
+            return "th";
+        }
+      };
+
+      // ⬇️ FIXED: Added timeZone: 'UTC' to prevent misinterpretation
+      const formattedMonth = new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        timeZone: "UTC",
+      }).format(promoEndDate);
+      setPromoDeadlineText(
+        `${formattedMonth} ${dayOfMonth}${getOrdinalSuffix(dayOfMonth)}`
+      );
+    }
+  }, []);
+
   return (
     <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200">
-      {/* --- HERO SECTION: Sharpened Value Proposition --- */}
       <section className="py-20 md:py-32">
         <div className="container mx-auto px-4 text-center">
-          {/* MODIFIED: More active, benefit-driven headline */}
+          {isPromoActive && (
+            <div className="mb-8 p-4 bg-blue-100 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-800 rounded-lg max-w-2xl mx-auto">
+              <p className="font-semibold text-blue-800 dark:text-blue-200">
+                ✨ Special Offer: Sign up before {promoDeadlineText} and get{" "}
+                {credits} free analyses!
+              </p>
+            </div>
+          )}
+
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 max-w-4xl mx-auto">
             Go from Raw Content to Strategic Insight in Minutes
           </h1>
-          {/* MODIFIED: Sharpened sub-headline focusing on pain and outcome */}
           <p className="mt-6 text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
             Insights Crucible deconstructs your interviews, documents, and audio
             into actionable themes, arguments, and key takeaways. Stop sifting,
@@ -102,7 +153,7 @@ const MarketingHomePage = () => {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button href="/auth?tab=signup" variant="primary">
-              Get 5 Free Analysis Credits
+              Get {credits} Free Analysis Credits
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button href="/pricing" variant="secondary">
@@ -111,31 +162,10 @@ const MarketingHomePage = () => {
           </div>
         </div>
       </section>
-
-      {/* --- Visual Section with Video (Unchanged) --- */}
+      {/* --- Other sections remain unchanged --- */}
       <section className="pb-20 md:pb-32">
-        <div className="container mx-auto px-4">
-          {/* <div className="relative max-w-5xl mx-auto bg-slate-200 dark:bg-slate-800/50 rounded-2xl shadow-2xl border border-slate-300 dark:border-slate-700 p-2 pt-7">
-            <div className="absolute top-2 left-2 flex items-center gap-2 z-10">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            </div>
-            <div className="relative aspect-video w-full overflow-hidden rounded-lg">
-              <iframe
-                src="https://player.vimeo.com/video/1096042314?h=474f12371d&title=0&byline=0&portrait=0&autoplay=1&loop=1&muted=1&controls=0"
-                width="100%"
-                height="100%"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-                className="absolute top-0 left-0 w-full h-full"
-              ></iframe>
-            </div>
-          </div> */}
-        </div>
+        <div className="container mx-auto px-4"></div>
       </section>
-
-      {/* --- HOW IT WORKS SECTION: Simplified Language --- */}
       <section className="py-20 md:py-24 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -152,7 +182,6 @@ const MarketingHomePage = () => {
               title="1. Upload Anything"
               description="Securely upload an audio/video file or paste any text-based content."
             />
-            {/* MODIFIED: More user-friendly descriptions */}
             <HowItWorksStep
               icon={Zap}
               title="2. Initiate Deep Analysis"
@@ -166,10 +195,19 @@ const MarketingHomePage = () => {
           </div>
         </div>
       </section>
+      <section className="relative py-20 md:py-24">
+        {/* Subtle background dot pattern */}
+        <div
+          className="absolute inset-0 bg-repeat bg-center"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 1px 1px, hsla(0, 0%, 71%, 0.15) 1px, transparent 0)",
+            backgroundSize: "1.5rem 1.5rem",
+          }}
+          aria-hidden="true"
+        ></div>
 
-      {/* --- FEATURES SECTION: Refocused on Core Value & New Feature --- */}
-      <section className="py-20 md:py-24">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 relative">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
               Go Beyond Simple Summaries
@@ -179,7 +217,6 @@ const MarketingHomePage = () => {
               you a structured, multi-faceted understanding of it.
             </p>
           </div>
-          {/* MODIFIED: Changed grid to be more responsive and added a 4th feature */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             <FeatureCard
               icon={BrainCircuit}
@@ -191,13 +228,11 @@ const MarketingHomePage = () => {
               title="Argument Deconstruction"
               description="Unpack the core thesis, supporting arguments, and even counter-arguments mentioned within the text."
             />
-            {/* MODIFIED: Renamed for clarity */}
             <FeatureCard
               icon={MessageSquareQuote}
               title="Key Takeaways & Quotes"
               description="Instantly extract notable quotes, key questions, and actionable advice directly from the source material."
             />
-            {/* NEW: Added a dedicated card for the content creation feature */}
             <FeatureCard
               icon={Copy}
               title="One-Click Content Creation"
@@ -207,57 +242,23 @@ const MarketingHomePage = () => {
         </div>
       </section>
 
-      {/* NEW: Added Social Proof / Testimonials Section */}
-      {/* <section className="py-20 md:py-24 bg-white dark:bg-slate-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
-              Trusted by Top Analysts & Consultants
-            </h2>
-            <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-              Professionals rely on Insights Crucible to save time and deliver
-              deeper, higher-quality work.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
-              <blockquote className="text-slate-600 dark:text-slate-300 italic">
-                "This tool saved me at least 10 hours on my last project. The
-                argument deconstruction is a legitimate game-changer that I
-                haven't seen anywhere else."
-              </blockquote>
-              <p className="mt-4 font-semibold text-slate-800 dark:text-slate-200">
-                — Alex Carter, Senior Strategy Consultant
-              </p>
-            </div>
-            <div className="bg-slate-100 dark:bg-slate-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
-              <blockquote className="text-slate-600 dark:text-slate-300 italic">
-                "I can now process a week's worth of user interviews in a single
-                afternoon. Insights Crucible helps me find the 'so what' faster
-                than any other tool I've tried."
-              </blockquote>
-              <p className="mt-4 font-semibold text-slate-800 dark:text-slate-200">
-                — Maria Rodriguez, Lead UX Researcher
-              </p>
-            </div>
-          </div>
-        </div>
-      </section> */}
-
-      {/* --- PRICING TEASER (Unchanged) --- */}
       <section className="py-20 md:py-24 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center bg-slate-100 dark:bg-slate-800/50 p-10 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+          <div className="relative overflow-hidden max-w-4xl mx-auto text-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 p-10 md:p-16 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <Zap
+              className="absolute -right-10 -bottom-10 h-48 w-48 text-blue-500/10"
+              aria-hidden="true"
+            />
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
               Try the Full Power of the Engine, On Us.
             </h2>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-              Sign up in seconds and get{" "}
+              Experience our Insight Engine with no limitations. Your free
+              account comes with{" "}
               <span className="font-semibold text-blue-600 dark:text-blue-400">
-                5 full analysis credits for free
+                {credits} full analysis credits
               </span>{" "}
-              to experience the depth and quality of our insights firsthand. No
-              credit card required.
+              to use on any content you want. No credit card required.
             </p>
             <div className="mt-8">
               <Button href="/pricing" variant="secondary">
@@ -267,18 +268,27 @@ const MarketingHomePage = () => {
           </div>
         </div>
       </section>
+      <section className="relative overflow-hidden py-20 md:py-24">
+        {/* Background Aurora Effect */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-blue-500/10 rounded-full blur-3xl -z-10"
+          aria-hidden="true"
+        ></div>
 
-      {/* --- FINAL CTA (Unchanged) --- */}
-      <section className="py-20 md:py-24">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">
+        <div className="container mx-auto px-4 text-center relative">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-b from-slate-900 to-slate-700 bg-clip-text text-transparent dark:from-white dark:to-slate-400">
             Ready to Unlock Your Content's Potential?
           </h2>
-          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-            Sign up now and get your first 5 analysis credits for free.
+          <p className="mt-6 text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+            Stop sifting through raw data. Start discovering actionable
+            insights. Your first {credits} analyses are on us.
           </p>
           <div className="mt-8">
-            <Button href="/auth?tab=signup" variant="primary">
+            <Button
+              href="/auth?tab=signup"
+              variant="primary"
+              className="shadow-lg hover:shadow-blue-500/20"
+            >
               Get Started for Free
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

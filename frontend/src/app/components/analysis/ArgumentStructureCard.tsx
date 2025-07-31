@@ -5,6 +5,12 @@ import { ArgumentStructure } from "@/app/_global/interface";
 import { Button } from "@/components/ui/button";
 import { Library, PlusCircle, Scale } from "lucide-react";
 import { EditableField } from "./EditableField";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface ArgumentStructureCardProps {
   structure: ArgumentStructure;
@@ -43,99 +49,118 @@ export const ArgumentStructureCard: React.FC<ArgumentStructureCardProps> = ({
   };
 
   return (
-    <div className="mb-12 p-6 bg-white dark:bg-slate-900/70 rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-        Argument & Thesis Breakdown
-      </h2>
-      <p className="text-slate-500 dark:text-slate-400 mb-8">
-        A high-level deconstruction of the document's logical framework.
-      </p>
+    <div className="mb-12">
+      <Accordion type="single" collapsible defaultValue="item-1">
+        <AccordionItem value="item-1" className="border-none">
+          <div className="p-6 bg-white dark:bg-slate-900/70 rounded-lg shadow-md">
+            <AccordionTrigger className="w-full p-0 hover:no-underline">
+              <div className="text-left w-full">
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                  Argument & Thesis Breakdown
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400">
+                  A high-level deconstruction of the document's logical
+                  framework.
+                </p>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-8">
+              {/* Main Thesis */}
+              <div className="mb-6">
+                <h3 className="flex items-center text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+                  <Library className="w-5 h-5 mr-3 text-purple-500" />
+                  Main Thesis
+                </h3>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <EditableField
+                    isEditing={isEditMode}
+                    value={data.main_thesis}
+                    onChange={(value) => onFieldChange("main_thesis", value)}
+                    isTextarea
+                    placeholder="The core argument will be displayed here..."
+                    className="text-slate-700 dark:text-slate-300 leading-relaxed"
+                  />
+                </div>
+              </div>
 
-      {/* Main Thesis */}
-      <div className="mb-6">
-        <h3 className="flex items-center text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-          <Library className="w-5 h-5 mr-3 text-purple-500" />
-          Main Thesis
-        </h3>
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-          <EditableField
-            isEditing={isEditMode}
-            value={data.main_thesis}
-            onChange={(value) => onFieldChange("main_thesis", value)}
-            isTextarea
-            placeholder="The core argument will be displayed here..."
-            className="text-slate-700 dark:text-slate-300 leading-relaxed"
-          />
-        </div>
-      </div>
-
-      {/* Supporting & Counterarguments */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <h4 className="flex items-center text-lg font-semibold mb-3">
-            <Scale className="w-5 h-5 mr-3 text-green-500" />
-            Supporting Arguments
-          </h4>
-          <div className="space-y-2">
-            {data.supporting_arguments.map((arg, index) => (
-              <EditableField
-                key={`support-${index}`}
-                isEditing={isEditMode}
-                value={arg}
-                onChange={(value) =>
-                  onListChange("supporting_arguments", index, value)
-                }
-                onDelete={() => onDeleteItem("supporting_arguments", index)}
-                isTextarea
-                className="text-sm"
-              />
-            ))}
+              {/* Supporting & Counterarguments */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="flex items-center text-lg font-semibold mb-3">
+                    <Scale className="w-5 h-5 mr-3 text-green-500" />
+                    Supporting Arguments
+                  </h4>
+                  <div className="space-y-2">
+                    {data.supporting_arguments.map((arg, index) => (
+                      <EditableField
+                        key={`support-${index}`}
+                        isEditing={isEditMode}
+                        value={arg}
+                        onChange={(value) =>
+                          onListChange("supporting_arguments", index, value)
+                        }
+                        onDelete={() =>
+                          onDeleteItem("supporting_arguments", index)
+                        }
+                        isTextarea
+                        className="text-sm"
+                      />
+                    ))}
+                  </div>
+                  {isEditMode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => onAddItem("supporting_arguments")}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add Argument
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  <h4 className="flex items-center text-lg font-semibold mb-3">
+                    <Scale className="w-5 h-5 mr-3 text-red-500" />
+                    Counterarguments
+                  </h4>
+                  <div className="space-y-2">
+                    {data.counterarguments_mentioned.map((arg, index) => (
+                      <EditableField
+                        key={`counter-${index}`}
+                        isEditing={isEditMode}
+                        value={arg}
+                        onChange={(value) =>
+                          onListChange(
+                            "counterarguments_mentioned",
+                            index,
+                            value
+                          )
+                        }
+                        onDelete={() =>
+                          onDeleteItem("counterarguments_mentioned", index)
+                        }
+                        isTextarea
+                        className="text-sm"
+                      />
+                    ))}
+                  </div>
+                  {isEditMode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => onAddItem("counterarguments_mentioned")}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" /> Add
+                      Counterargument
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </AccordionContent>
           </div>
-          {isEditMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => onAddItem("supporting_arguments")}
-            >
-              <PlusCircle className="h-4 w-4 mr-2" /> Add Argument
-            </Button>
-          )}
-        </div>
-        <div>
-          <h4 className="flex items-center text-lg font-semibold mb-3">
-            <Scale className="w-5 h-5 mr-3 text-red-500" />
-            Counterarguments
-          </h4>
-          <div className="space-y-2">
-            {data.counterarguments_mentioned.map((arg, index) => (
-              <EditableField
-                key={`counter-${index}`}
-                isEditing={isEditMode}
-                value={arg}
-                onChange={(value) =>
-                  onListChange("counterarguments_mentioned", index, value)
-                }
-                onDelete={() =>
-                  onDeleteItem("counterarguments_mentioned", index)
-                }
-                isTextarea
-                className="text-sm"
-              />
-            ))}
-          </div>
-          {isEditMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => onAddItem("counterarguments_mentioned")}
-            >
-              <PlusCircle className="h-4 w-4 mr-2" /> Add Counterargument
-            </Button>
-          )}
-        </div>
-      </div>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };

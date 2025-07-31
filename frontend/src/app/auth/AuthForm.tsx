@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import {
   getAdditionalUserInfo,
@@ -31,7 +31,7 @@ import { FaGoogle } from "react-icons/fa6";
 
 export function AuthForm() {
   const searchParams = useSearchParams();
-  // Read the 'tab' parameter from the URL to set the initial state
+  const router = useRouter(); // ⬅️ ADDED
   const initialTab = searchParams.get("tab") || "signin";
 
   const [name, setName] = useState("");
@@ -43,7 +43,6 @@ export function AuthForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Clear form fields and errors when tab changes
   useEffect(() => {
     setName("");
     setEmail("");
@@ -53,7 +52,6 @@ export function AuthForm() {
 
   const handleSessionLogin = async (idToken: string) => {
     await axios.post("/api/auth/session-login", { idToken });
-    // Use window.location.href for a full page reload to ensure session is read correctly
     window.location.href = "/dashboard";
   };
 
@@ -70,13 +68,9 @@ export function AuthForm() {
       if (activeTab === "signup") {
         // --- Sign-Up Logic ---
         await axios.post("/api/auth/signup", { name, email, password });
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const idToken = await userCredential.user.getIdToken();
-        await handleSessionLogin(idToken);
+        window.localStorage.setItem("emailForSignIn", email);
+        // After successful creation, redirect to the verify page instead of logging in.
+        router.push("/auth/please-verify"); // ⬅️ MODIFIED
       } else {
         // --- Sign-In Logic ---
         const userCredential = await signInWithEmailAndPassword(
@@ -84,6 +78,17 @@ export function AuthForm() {
           email,
           password
         );
+
+        // ⬇️ ADDED: This is the crucial verification check
+        if (!userCredential.user.emailVerified) {
+          setError(
+            "Your email has not been verified. Please check your inbox."
+          );
+          setLoading(false); // Stop loading indicator
+          return; // Stop the function here
+        }
+
+        // If verified, proceed with login
         const idToken = await userCredential.user.getIdToken();
         await handleSessionLogin(idToken);
       }
@@ -94,7 +99,10 @@ export function AuthForm() {
       setError(errorMsg);
       console.error(err);
     } finally {
-      setLoading(false);
+      // Don't set loading to false if we are redirecting from signup
+      if (activeTab !== "signup") {
+        setLoading(false);
+      }
     }
   };
 
