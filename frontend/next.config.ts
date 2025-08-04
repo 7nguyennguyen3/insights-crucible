@@ -5,12 +5,13 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "i.ytimg.com",
-        port: "",
-        pathname: "/**",
+        hostname: "**.ytimg.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.ggpht.com",
       },
     ],
   },
 };
-
 export default nextConfig;

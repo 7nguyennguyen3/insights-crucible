@@ -1,3 +1,4 @@
+// src/ap/api/youtube/metadata/route.ts
 import { getYouTubeVideoId } from "@/app/utils/getYoutubeVideoId";
 import { NextRequest, NextResponse } from "next/server";
 import Innertube from "youtubei.js";
