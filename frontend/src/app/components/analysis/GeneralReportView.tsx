@@ -22,6 +22,7 @@ import {
 import React from "react";
 import { ArgumentStructureCard } from "./ArgumentStructureCard";
 import { EditableField } from "./EditableField";
+import { secondsToHHMMSS } from "@/app/utils/convertTime";
 
 type ItemField = "summary_points" | "actionable_advice" | "notable_quotes";
 
@@ -139,7 +140,8 @@ export const GeneralReportView: React.FC<AnalysisResultsDisplayProps> = ({
                     variant="outline"
                     className="hidden md:block ml-auto mr-2 font-mono whitespace-nowrap self-start"
                   >
-                    {section.start_time} - {section.end_time}
+                    {secondsToHHMMSS(timeStringToSeconds(section.start_time))} -{" "}
+                    {secondsToHHMMSS(timeStringToSeconds(section.end_time))}
                   </Badge>
                 )}
             </div>

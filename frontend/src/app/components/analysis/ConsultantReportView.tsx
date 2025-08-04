@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { ConsultantAnalysisSection } from "../../_global/interface";
 import { EditableField } from "./EditableField";
+import { secondsToHHMMSS } from "@/app/utils/convertTime";
 
 type ConsultantItemField =
   | "client_pain_points"
@@ -227,7 +228,8 @@ export const ConsultantReportView: React.FC<AnalysisResultsDisplayProps> = (
                   variant="outline"
                   className="hidden md:block ml-auto mr-2 font-mono whitespace-nowrap self-start"
                 >
-                  {section.start_time} - {section.end_time}
+                  {secondsToHHMMSS(timeStringToSeconds(section.start_time))} -{" "}
+                  {secondsToHHMMSS(timeStringToSeconds(section.end_time))}
                 </Badge>
               )}
             </div>

@@ -39,6 +39,7 @@ import {
   ArrowRight,
   Briefcase,
   CheckCircle,
+  Clock,
   FileText,
   Globe,
   Lightbulb,
@@ -55,10 +56,10 @@ import {
 } from "lucide-react";
 import { UploadProgressToast } from "../components/UploadProgressToast";
 
-// --- ADDED --- Type for video details
 type VideoDetails = {
   title: string;
   thumbnailUrl: string;
+  duration: string; // To hold the ISO 8601 duration string
 };
 
 // Data Types
@@ -124,6 +125,32 @@ const featureOptions = [
     color: "text-green-500",
   },
 ];
+
+const parseAndFormatDuration = (isoDuration: string) => {
+  const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+  const matches = isoDuration.match(regex);
+
+  if (!matches) return "0:00";
+
+  const hours = parseInt(matches[1] || "0", 10);
+  const minutes = parseInt(matches[2] || "0", 10);
+  const seconds = parseInt(matches[3] || "0", 10);
+
+  // Seconds are always padded to two digits.
+  const ss = String(seconds).padStart(2, "0");
+
+  if (hours > 0) {
+    // Hours are the leading unit, so they are not padded.
+    const hh = String(hours);
+    // Minutes are not the leading unit, so they get padded.
+    const mm = String(minutes).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  } else {
+    // Minutes are the leading unit, so they are not padded.
+    const mm = String(minutes);
+    return `${mm}:${ss}`;
+  }
+};
 
 const EnginePage = () => {
   const { user, loading: authLoading } = useAuthStore();
@@ -645,12 +672,21 @@ const EnginePage = () => {
                           alt={videoDetails.title}
                           width={120}
                           height={90}
-                          className="rounded-md object-cover"
+                          className="rounded-md object-cover flex-shrink-0"
                         />
                         <div className="flex-1">
-                          <h4 className="font-semibold text-lg leading-tight">
+                          <h4 className="font-semibold text-lg leading-tight mb-1">
                             {videoDetails.title}
                           </h4>
+                          <div
+                            className="flex items-center text-sm font-bold
+                           text-slate-500 dark:text-slate-400"
+                          >
+                            <Clock className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                            <span>
+                              {parseAndFormatDuration(videoDetails.duration)}
+                            </span>
+                          </div>
                           <p className="text-sm text-green-600 dark:text-green-400 mt-2">
                             <CheckCircle className="inline w-4 h-4 mr-1" />
                             Transcript loaded. Ready for analysis.
