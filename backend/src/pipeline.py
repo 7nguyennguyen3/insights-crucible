@@ -18,6 +18,7 @@ from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain.output_parsers import OutputFixingParser
 from rich import print
 from rich.panel import Panel
+from rich.progress import Progress
 from tavily import TavilyClient
 from firebase_admin import firestore
 from functools import wraps
@@ -121,6 +122,32 @@ def segment_monologue_with_word_timestamps(
     return sections
 
 
+def _get_dynamic_words_per_section(total_characters: int) -> int:
+    """
+    Calculates the target number of words per section based on total character count.
+    Heuristic: 150 Words Per Minute.
+    """
+    # Set a default value first
+    words_per_section = 4 * 150  # 600 words (default for content < 30 mins)
+
+    # Character count equivalents based on 750 chars/min
+    if total_characters > 135000:  # > 3 hours
+        words_per_section = 15 * 150  # 2250 words
+    elif total_characters > 90000:  # > 2 hours
+        words_per_section = 10 * 150  # 1500 words
+    elif total_characters > 45000:  # > 1 hour
+        words_per_section = 7 * 150  # 1050 words
+    elif total_characters > 22500:  # > 30 mins
+        words_per_section = 6 * 150  # 900 words
+
+    # Log the decision before returning
+    print(
+        f"  -> Text length is {total_characters:,} characters. Using dynamic section size of {words_per_section} words."
+    )
+
+    return words_per_section
+
+
 def _get_normalized_cache_key(entity_name: str) -> str:
     """
     Creates a standardized, robust cache key from an entity name.
@@ -135,6 +162,34 @@ def _get_normalized_cache_key(entity_name: str) -> str:
     stemmed_tokens = [stemmer.stem(token) for token in tokens]
     # 3. Join: Create a stable key -> "larg-compani"
     return "-".join(stemmed_tokens)
+
+
+def normalize_youtube_transcript(transcript_data: List[Dict]) -> List[Dict]:
+    """
+    Converts a raw YouTube transcript object into the canonical format.
+    YouTube format: [{'text': '...', 'start': 1.23, 'duration': 4.56}, ...]
+    """
+    canonical_transcript = []
+    if not isinstance(transcript_data, list):
+        print("[bold red]ERROR: YouTube transcript data is not a list.[/bold red]")
+        return []
+
+    for item in transcript_data:
+        start_seconds = item.get("start", 0)
+        duration = item.get("duration", 0)
+        end_seconds = start_seconds + duration
+        canonical_transcript.append(
+            {
+                "speaker_id": "Speaker A",  # YouTube transcripts don't have speaker info
+                "start_seconds": int(start_seconds),
+                "end_seconds": int(end_seconds),
+                "text": item.get("text", ""),
+            }
+        )
+    print(
+        f"[green]✓ Normalized YouTube transcript into {len(canonical_transcript)} canonical utterances.[/green]"
+    )
+    return canonical_transcript
 
 
 def retry_with_exponential_backoff(func):
@@ -648,23 +703,23 @@ def merge_short_canonical_sections(
     for i, current_section in enumerate(sections):
         if temp_buffer:
             # Merge the buffered section with the current one by extending the list
-            print(
-                f"  - [blue]Merging buffered section into current section #{i + 1}...[/blue]"
-            )
+            # print(
+            #     f"  - [blue]Merging buffered section into current section #{i + 1}...[/blue]"
+            # )
             current_section = temp_buffer + current_section
             temp_buffer = None
 
         duration = get_section_duration(current_section)
 
         if duration < min_duration_seconds and i < len(sections) - 1:
-            print(
-                f"  - [cyan]Buffering short section #{i + 1} (duration: {duration}s) to merge forward.[/cyan]"
-            )
+            # print(
+            #     f"  - [cyan]Buffering short section #{i + 1} (duration: {duration}s) to merge forward.[/cyan]"
+            # )
             temp_buffer = current_section
         else:
-            print(
-                f"  - [green]Keeping section #{i + 1} (duration: {duration}s).[/green]"
-            )
+            # print(
+            #     f"  - [green]Keeping section #{i + 1} (duration: {duration}s).[/green]"
+            # )
             processed_sections.append(current_section)
 
     if temp_buffer:
@@ -1510,29 +1565,19 @@ Your output must be a JSON object with the following keys:
         return {}
 
 
-async def generate_argument_structure(
-    all_sections_content: str, runnable_config: RunnableConfig
+async def generate_intermediate_summary(
+    analysis_chunk: List[Dict], runnable_config: RunnableConfig
 ) -> Dict:
     """
-    Performs a "Pass 2" analysis on the full document text to deconstruct
-    its logical structure for a general audience.
-
-    Args:
-        all_sections_content: A single string containing all the text from the document.
-        runnable_config: The LangChain runnable configuration for tracking.
-
-    Returns:
-        A dictionary containing the document's logical structure.
+    Takes a chunk of 3-5 detailed section analyses and synthesizes them
+    into a single, higher-level summary object. This is the "Reduce L1" step.
     """
     print(
-        Panel(
-            "[bold cyan]🏛️ Argument Structure Analysis Initiated[/bold cyan]\n"
-            "   - Deconstructing the document's logical framework...",
-            title="[bold]Pass 2: Argument Structure[/bold]",
-            border_style="cyan",
-            expand=False,
-        )
+        f"  - [magenta]Generating intermediate summary for a chunk of {len(analysis_chunk)} sections...[/magenta]"
     )
+
+    # Consolidate the chunk of analyses into a JSON string for the prompt
+    consolidated_chunk_context = json.dumps(analysis_chunk, indent=2)
 
     llm, llm_options = clients.get_llm("best-lite", temperature=0.1)
     parser = JsonOutputParser()
@@ -1541,7 +1586,78 @@ async def generate_argument_structure(
         [
             (
                 "system",
-                """You are an expert in rhetoric and logical analysis. Your task is to read the following document and deconstruct its core argument. Identify the author's primary thesis, the main points they use to support it, and any counterarguments they acknowledge or address.
+                """You are an expert analyst. You will be given a JSON object containing the analysis of a few consecutive sections from a larger document. 
+Your task is to synthesize these sections into a single, concise summary object.
+
+Based ONLY on the provided JSON context, you must extract the following:
+- 'main_thesis': A single sentence stating the central argument of THIS CHUNK.
+- 'supporting_arguments': A list of the key points used to build the case within THIS CHUNK.
+- 'counterarguments_mentioned': A list of opposing viewpoints mentioned within THIS CHUNK.
+
+Your output must be a single, valid JSON object.
+{format_instructions}""",
+            ),
+            (
+                "human",
+                """Please analyze the following consolidated analysis chunk and extract the required information.
+
+--- ANALYSIS CHUNK (JSON) ---
+{chunk_context}
+--- END ANALYSIS CHUNK ---""",
+            ),
+        ]
+    )
+
+    chain = prompt | llm | parser
+
+    try:
+        summary_result = await chain.ainvoke(
+            {
+                "chunk_context": consolidated_chunk_context,
+                "format_instructions": parser.get_format_instructions(),
+            },
+            config=runnable_config,
+        )
+        return summary_result
+    except Exception as e:
+        print(
+            f"[bold red]Error generating intermediate summary for chunk: {e}. Skipping chunk.[/bold red]"
+        )
+        return {}
+
+
+async def generate_argument_structure(
+    # MODIFICATION 1: Change the input from raw text to the list of section analyses.
+    all_sections_analysis: List[Dict],
+    runnable_config: RunnableConfig,
+) -> Dict:
+    """
+    Performs a "Pass 2" analysis on the COMBINED SECTION ANALYSES to deconstruct
+    its logical structure for a general audience.
+    """
+    print(
+        Panel(
+            "[bold cyan]🏛️ Argument Structure Analysis Initiated[/bold cyan]\n"
+            "  - Deconstructing the document's logical framework...",
+            title="[bold]Pass 2: Argument Structure[/bold]",
+            border_style="cyan",
+            expand=False,
+        )
+    )
+
+    # MODIFICATION 2: Convert the structured analysis data to a JSON string.
+    # This is more robust and memory-friendly than joining raw text.
+    consolidated_context = json.dumps(all_sections_analysis, indent=2)
+
+    llm, llm_options = clients.get_llm("best-lite", temperature=0.1)
+    parser = JsonOutputParser()
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                # MODIFICATION 3: Update the prompt to tell the LLM it's receiving a JSON analysis, not raw text.
+                """You are an expert in rhetoric and logical analysis. You have been given a structured JSON containing a section-by-section analysis of a document. Your task is to deconstruct the core argument of the original document based on this analysis. Identify the primary thesis, supporting points, and any counterarguments.
 
 Your output must be a JSON object with the following keys:
 - 'main_thesis': A single, clear sentence stating the central argument or primary message of the entire text.
@@ -1551,11 +1667,11 @@ Your output must be a JSON object with the following keys:
             ),
             (
                 "human",
-                """Please analyze the following document and extract its argument structure.
+                """Please analyze the following consolidated analysis and extract the original document's argument structure.
 
---- DOCUMENT ---
-{full_document_text}
---- END DOCUMENT ---""",
+--- CONSOLIDATED ANALYSIS (JSON) ---
+{structured_analysis}
+--- END ANALYSIS ---""",
             ),
         ]
     )
@@ -1565,7 +1681,8 @@ Your output must be a JSON object with the following keys:
     try:
         argument_results = await chain.ainvoke(
             {
-                "full_document_text": all_sections_content,
+                # MODIFICATION 4: Pass the consolidated JSON context to the prompt.
+                "structured_analysis": consolidated_context,
                 "format_instructions": parser.get_format_instructions(),
             },
             config=runnable_config,
@@ -1617,20 +1734,57 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             return
 
         db_manager.update_job_status(
-            user_id, job_id, "PROCESSING", "Step 1/7: Preparing analysis..."
+            user_id, job_id, "PROCESSING", "Step 2/7: Preparing transcript..."
         )
         request_data = job_doc.get("request_data", {})
         config = request_data.get("config", {})
+        transcript_id = request_data.get("transcript_id")
+        storage_path = request_data.get("storagePath")
+        raw_transcript_text = request_data.get("transcript")
+        transcription_result = None
         canonical_transcript = []
 
-        # Step 2: Input Acquisition & Normalization
         # Step 2: Input Acquisition & Normalization
         storage_path = request_data.get("storagePath")
         transcription_result = (
             None  # Will hold the full AssemblyAI result if applicable
         )
 
-        if storage_path:
+        if transcript_id:
+            print(
+                f"INFO:     Job {job_id} is a YouTube job. Fetching cached transcript..."
+            )
+            db_manager.log_progress(
+                user_id, job_id, "Fetching cached YouTube transcript..."
+            )
+
+            # --- START: MODIFIED LOGIC ---
+            cached_data = db_manager.get_cached_transcript(transcript_id)
+
+            if not cached_data:
+                raise ValueError(
+                    f"Cached transcript for ID {transcript_id} not found or expired."
+                )
+
+            raw_youtube_transcript = cached_data.get("structured_transcript")
+
+            if isinstance(raw_youtube_transcript, list):
+                # This is the new path for structured transcripts
+                canonical_transcript = normalize_youtube_transcript(
+                    raw_youtube_transcript
+                )
+            elif isinstance(raw_youtube_transcript, str):
+                # This is the fallback for plain text transcripts
+                canonical_transcript = await preprocess_and_normalize_transcript(
+                    raw_youtube_transcript
+                )
+            else:
+                raise ValueError(
+                    f"Cached transcript for ID {transcript_id} has an invalid format."
+                )
+            # --- END: MODIFIED LOGIC ---
+
+        elif storage_path:
             db_manager.update_job_status(
                 user_id, job_id, "PROCESSING", "Step 2/7: Transcribing audio file..."
             )
@@ -1711,65 +1865,82 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         runnable_config = RunnableConfig(callbacks=[token_tracker])
 
         sections = []
+        num_sections = 0
 
-        total_duration_seconds = (
-            canonical_transcript[-1].get("end_seconds", 0)
-            if canonical_transcript
-            else 0
-        )
-
-        dynamic_min_duration = 240  # Default to 4 minutes
-
-        if total_duration_seconds < 900:  # Less than 15 minutes
-            dynamic_min_duration = 240  # Use 4-minute sections
-        elif total_duration_seconds > 3600:  # More than 1 hour
-            dynamic_min_duration = 360  # Use 6-minute sections
-
-        print(
-            f"[cyan]Content length is {total_duration_seconds // 60} minutes. Using dynamic section target of ~{dynamic_min_duration // 60} minutes.[/cyan]"
-        )
-
-        # Determine if we have a single, long utterance from an audio file
+        # This check is for audio files that result in one long monologue
         is_long_single_utterance = (
             storage_path
+            and transcription_result.get("words")
             and len(canonical_transcript) == 1
             and len(canonical_transcript[0].get("text", "").split()) > 150
         )
 
+        # This check is for any transcript that has valid timestamps
+        has_timestamps = (
+            canonical_transcript and canonical_transcript[-1].get("end_seconds", 0) > 0
+        )
+
         if is_long_single_utterance:
-            # --- NEW HIGH-PRECISION LOGIC ---
+            print(
+                "[cyan]Long monologue detected. Using high-precision word-level segmentation...[/cyan]"
+            )
             sections = segment_monologue_with_word_timestamps(
                 transcription_result["words"], words_per_section=750
             )
-        else:
+            num_sections = len(sections)
+
+        elif has_timestamps:
             print(
-                "[cyan]Timestamped transcript detected. Running standard segmentation...[/cyan]"
+                "[cyan]Timestamped transcript detected. Running AI-powered semantic segmentation...[/cyan]"
+            )
+            total_duration_seconds = canonical_transcript[-1]["end_seconds"]
+
+            # Your dynamic duration logic for timed content
+            dynamic_min_duration = 240  # Default: 4 minutes
+            if total_duration_seconds > 10800:
+                dynamic_min_duration = 900
+            elif total_duration_seconds > 7200:
+                dynamic_min_duration = 600
+            elif total_duration_seconds > 3600:
+                dynamic_min_duration = 420
+            elif total_duration_seconds > 1800:
+                dynamic_min_duration = 360
+
+            print(
+                f"  -> Content length is ~{total_duration_seconds // 60} minutes. Using target section size of ~{dynamic_min_duration // 60} minutes."
             )
 
-            # If it's a long single utterance, split it into sentences first
-            if is_long_single_utterance:
-                sections = segment_monologue_with_word_timestamps(
-                    canonical_transcript[0], words_per_section=750
-                )
-            else:
-                # This part remains the same for multi-speaker transcripts
-                print(
-                    "[cyan]Timestamped transcript detected. Running standard segmentation...[/cyan]"
-                )
-                transcript_for_segmentation = canonical_transcript
-                boundary_indices = await find_semantic_topic_boundaries_with_ai(
-                    transcript_for_segmentation, runnable_config, user_id, job_id
-                )
-                if not boundary_indices or 0 not in boundary_indices:
-                    boundary_indices.insert(0, 0)
-                raw_sections = create_sections_from_canonical(
-                    transcript_for_segmentation, boundary_indices
-                )
-                sections = merge_short_canonical_sections(
-                    raw_sections, min_duration_seconds=dynamic_min_duration
-                )
-        sections = [s for s in sections if s]
-        num_sections = len(sections)
+            boundary_indices = await find_semantic_topic_boundaries_with_ai(
+                canonical_transcript, runnable_config, user_id, job_id
+            )
+            if 0 not in boundary_indices:
+                boundary_indices.insert(0, 0)
+
+            raw_sections = create_sections_from_canonical(
+                canonical_transcript, boundary_indices
+            )
+            sections = merge_short_canonical_sections(
+                raw_sections, min_duration_seconds=dynamic_min_duration
+            )
+            num_sections = len(sections)
+
+        else:
+            # This correctly handles the PLAIN TEXT case
+            print(
+                "[cyan]Plain text detected. Using dynamic word-count segmentation...[/cyan]"
+            )
+
+            full_text = " ".join([utt.get("text", "") for utt in canonical_transcript])
+            total_chars = len(full_text)
+
+            words_per_section = _get_dynamic_words_per_section(total_chars)
+
+            sections = segment_by_word_count(
+                full_text, words_per_section=words_per_section
+            )
+            num_sections = len(sections)
+
+        sections = [s for s in sections if s]  # Clean out any empty sections
 
         timing_metrics["segmentation_s"] = time.monotonic() - start_segmentation
         db_manager.log_progress(
@@ -1777,25 +1948,30 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             job_id,
             f"✓ Transcript segmented into {num_sections} substantive sections.",
         )
-
         # Step 4 (Pass 1): Analyze Sections in Parallel for Extraction
         log_msg = f"Step 5/7: Analyzing {num_sections} section{'s' if num_sections != 1 else ''} in parallel..."
         print(f"[magenta]\n{log_msg}[/magenta]")
         db_manager.update_job_status(user_id, job_id, "PROCESSING", log_msg)
 
+        semaphore = asyncio.Semaphore(8)
+
+        async def process_with_semaphore(section, i):
+            """Wrapper to acquire semaphore before running the task."""
+            async with semaphore:
+                return await _process_single_section(
+                    section=section,
+                    section_index=i,
+                    user_id=user_id,
+                    job_id=job_id,
+                    config=config,
+                    runnable_config=runnable_config,
+                    full_canonical_transcript=canonical_transcript,
+                    persona=persona,
+                )
+
         start_section_analysis = time.monotonic()
         analysis_tasks = [
-            _process_single_section(
-                section=section,
-                section_index=i,
-                user_id=user_id,
-                job_id=job_id,
-                config=config,
-                runnable_config=runnable_config,
-                full_canonical_transcript=canonical_transcript,
-                persona=persona,
-            )
-            for i, section in enumerate(sections)
+            process_with_semaphore(section, i) for i, section in enumerate(sections)
         ]
         section_processing_results = await asyncio.gather(*analysis_tasks)
         for res in section_processing_results:
@@ -1810,15 +1986,10 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         ]
         timing_metrics["section_analysis_s"] = time.monotonic() - start_section_analysis
 
-        all_section_analyses = [
-            res["full_analysis"]
-            for res in section_processing_results
-            if res and res.get("full_analysis")
-        ]
-
         # Step 4.5 (Pass 2): Perform Meta-Synthesis Across All Sections
         synthesis_results = {}
         argument_structure_results = {}
+        pass_2_data = {}
 
         if all_section_analyses:
             # For the consultant, run the deep synthesis
@@ -1840,22 +2011,59 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             elif persona == "general":
                 start_argument_analysis = time.monotonic()
                 # Consolidate the text from all sections for this analysis
-                full_text_content = "\n\n".join(
-                    "\n".join(f"{utt['speaker_id']}: {utt['text']}" for utt in section)
-                    for section in sections
+
+                print(
+                    Panel(
+                        "[bold cyan]🧠 Initiating Map-Reduce for Argument Structure[/bold cyan]\n  1. (Map) Summarize section chunks in parallel.\n  2. (Reduce) Synthesize summaries into final argument.",
+                        title="[bold]Pass 2: Map-Reduce[/bold]",
+                        border_style="cyan",
+                        expand=False,
+                    )
                 )
-                argument_structure_results = await generate_argument_structure(
-                    full_text_content, runnable_config
+
+                chunk_size = 5  # Process 5 section analyses at a time
+                analysis_chunks = [
+                    all_section_analyses[i : i + chunk_size]
+                    for i in range(0, len(all_section_analyses), chunk_size)
+                ]
+                print(
+                    f"[cyan]Pass 2: Grouped {len(all_section_analyses)} section analyses into {len(analysis_chunks)} chunks.[/cyan]"
                 )
+
+                # 2. Process chunks in parallel to get intermediate summaries
+                summary_tasks = [
+                    generate_intermediate_summary(chunk, runnable_config)
+                    for chunk in analysis_chunks
+                ]
+                intermediate_summaries = await asyncio.gather(*summary_tasks)
+
+                # Filter out any chunks that may have failed
+                valid_summaries = [s for s in intermediate_summaries if s]
+
+                print(
+                    f"  [green]✓ Phase 1 (Map) Complete: Generated {len(valid_summaries)} intermediate summaries.[/green]"
+                )
+
+                # 3. Perform the final synthesis on the intermediate summaries
+                if valid_summaries:
+                    argument_structure_results = await generate_argument_structure(
+                        valid_summaries,
+                        runnable_config,  # Pass the SUMMARIES, not the original analyses
+                    )
+                else:
+                    print(
+                        "[bold red]Argument analysis skipped: No valid intermediate summaries were generated.[/bold red]"
+                    )
+                    argument_structure_results = {}
+
                 timing_metrics["argument_analysis_s"] = (
                     time.monotonic() - start_argument_analysis
                 )
+
                 db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
                     job_id
                 ).update({"argument_structure": argument_structure_results})
-                db_manager.log_progress(
-                    user_id, job_id, "✓ Argument structure analysis complete."
-                )
+
                 pass_2_data = argument_structure_results
 
         if config.get("run_contextual_briefing") and all_section_analyses:

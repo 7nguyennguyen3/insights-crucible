@@ -33,6 +33,8 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { ADD_ON_COSTS } from "@/lib/billing";
 import { storage } from "@/lib/firebaseClient";
 import { ref, uploadBytesResumable } from "firebase/storage";
+// --- ADDED ---
+import Image from "next/image";
 import {
   ArrowRight,
   Briefcase,
@@ -49,8 +51,15 @@ import {
   Twitter,
   UploadCloud,
   XCircle,
+  Youtube, // Added YouTube icon
 } from "lucide-react";
 import { UploadProgressToast } from "../components/UploadProgressToast";
+
+// --- ADDED --- Type for video details
+type VideoDetails = {
+  title: string;
+  thumbnailUrl: string;
+};
 
 // Data Types
 type FeatureConfig = {
@@ -65,26 +74,27 @@ type AnalysisPersona = "general" | "consultant";
 type AddOn = {
   name: string;
   cost: number;
-  perFileCost?: number; // Cost per file for this add-on
+  perFileCost?: number;
 };
 
-// ✅ MODIFIED: Updated CostDetails type for more granular breakdown
 type CostDetails = {
   totalCost: number;
   breakdown: {
-    totalBaseCost: number; // Sum of base costs across all files/text
-    fileBaseCosts: { fileName?: string; duration: number; cost: number }[]; // Details for each file's base cost
+    totalBaseCost: number;
+    fileBaseCosts: { fileName?: string; duration: number; cost: number }[];
     addOns: AddOn[];
-    totalAddOnCost: number; // Sum of add-on costs across all files/text
+    totalAddOnCost: number;
   };
-  usage: number; // Required (total duration or character count)
-  limitPerCredit: number; // Required
+  usage: number;
+  limitPerCredit: number;
   unit: string;
 };
 
 type UiStatus =
   | "idle"
   | "files-selected"
+  | "fetching-metadata"
+  | "metadata-fetched"
   | "checking"
   | "cost-calculated"
   | "uploading"
@@ -120,19 +130,18 @@ const EnginePage = () => {
   const { profile } = useUserProfile();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState("paste");
+  // --- MODIFIED --- Default tab is now youtube
+  const [activeTab, setActiveTab] = useState("youtube");
   const [transcript, setTranscript] = useState("");
   const [fileDurations, setFileDurations] = useState<
     { name: string; duration: number }[]
-  >([]); // ✅ MODIFIED
+  >([]);
   const [featureConfig, setFeatureConfig] = useState<FeatureConfig>({
     run_contextual_briefing: false,
     run_x_thread_generation: false,
     run_blog_post_generation: false,
   });
   const [modelChoice, setModelChoice] = useState<ModelChoice>("universal");
-
-  // --- ADDED: New state for analysis persona selection ---
   const [analysisPersona, setAnalysisPersona] =
     useState<AnalysisPersona>("general");
 
@@ -148,16 +157,17 @@ const EnginePage = () => {
     null
   );
   const [filesInFlight, setFilesInFlight] = useState<File[]>([]);
-
   const [costDetails, setCostDetails] = useState<CostDetails | null>(null);
 
+  // --- ADDED --- You already added these states
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [videoDetails, setVideoDetails] = useState<VideoDetails | null>(null);
+  const [isFetchingYouTube, setIsFetchingYouTube] = useState(false);
+  const [transcriptId, setTranscriptId] = useState<string | null>(null);
+
   useEffect(() => {
-    // If there's no active upload toast, do nothing
     if (!uploadToastId || filesInFlight.length === 0) return;
-
     const isComplete = filesUploaded === filesInFlight.length;
-
-    // Re-render the toast with the latest progress using the same ID
     toast.custom(
       () => (
         <UploadProgressToast
@@ -168,13 +178,11 @@ const EnginePage = () => {
       ),
       {
         id: uploadToastId,
-        duration: isComplete ? 5000 : Infinity, // Keep open until complete
+        duration: isComplete ? 5000 : Infinity,
       }
     );
 
-    // When all files are uploaded, show the final success message and clean up
     if (isComplete) {
-      // Use toast.custom for the final message to get full styling control
       toast.custom(
         () => (
           <div className="w-80 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
@@ -192,7 +200,7 @@ const EnginePage = () => {
               className="w-full"
               onClick={() => {
                 router.push("/dashboard");
-                toast.dismiss(uploadToastId); // Dismiss toast on click
+                toast.dismiss(uploadToastId);
               }}
             >
               Go to Dashboard
@@ -201,11 +209,9 @@ const EnginePage = () => {
         ),
         {
           id: uploadToastId,
-          duration: 10000, // Let it stay on screen for 10 seconds
+          duration: 10000,
         }
       );
-
-      // Reset state for the next upload batch
       setUploadToastId(null);
       setFilesInFlight([]);
     }
@@ -230,13 +236,70 @@ const EnginePage = () => {
   const resetState = (tab?: string) => {
     setTranscript("");
     setSelectedFiles([]);
-    setFileDurations([]); // Reset file durations
+    setFileDurations([]);
     setStatus("idle");
     setError(null);
     setFilesUploaded(0);
     setModelChoice("universal");
-    setCostDetails(null); // Reset cost details
+    setCostDetails(null);
+    setTranscriptId(null);
+    setYoutubeUrl("");
+    setVideoDetails(null);
     if (tab) setActiveTab(tab);
+  };
+
+  const handleFetchYouTubeMetadata = async () => {
+    if (!youtubeUrl.trim()) return;
+
+    setStatus("fetching-metadata");
+    setError(null);
+    setVideoDetails(null);
+
+    try {
+      const response = await apiClient.post("/youtube/metadata", {
+        youtubeUrl,
+      });
+      setVideoDetails(response.data);
+      setStatus("metadata-fetched"); // Move to the next state
+    } catch (err: any) {
+      const errorMsg =
+        err.response?.data?.error || "Failed to fetch video details.";
+      toast.error("Fetch Failed", { description: errorMsg });
+      setError(errorMsg);
+      setStatus("failed");
+    }
+  };
+
+  const handleYouTubeProcess = async () => {
+    setStatus("processing-batch");
+    setError(null);
+    try {
+      const response = await apiClient.post("/process", {
+        totalCost: costDetails?.totalCost,
+        transcript_id: transcriptId,
+        config: { ...featureConfig, analysis_persona: analysisPersona },
+        model_choice: modelChoice,
+      });
+
+      if (response.data.job_id) {
+        toast.success("Analysis started successfully!", {
+          description: "You can track its progress on your dashboard.",
+          action: {
+            label: "Go to Dashboard",
+            onClick: () => router.push("/dashboard"),
+          },
+        });
+        resetState(activeTab);
+      } else {
+        throw new Error("Did not receive a job ID from the server.");
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err.response?.data?.detail || "Failed to start processing job.";
+      toast.error("Submission Failed", { description: errorMsg });
+      setError(errorMsg);
+      setStatus("failed");
+    }
   };
 
   const handleTextProcess = async () => {
@@ -244,8 +307,9 @@ const EnginePage = () => {
     setError(null);
     try {
       const response = await apiClient.post("/process", {
+        totalCost: costDetails?.totalCost,
         transcript,
-        config: { ...featureConfig, analysis_persona: analysisPersona }, // <-- MODIFIED
+        config: { ...featureConfig, analysis_persona: analysisPersona },
         model_choice: "universal",
       });
       if (response.data.job_id) {
@@ -270,29 +334,50 @@ const EnginePage = () => {
   };
 
   const handleCostCalculation = async () => {
-    if (!isReadyForAnalysis) return;
+    if (activeTab === "youtube") {
+      if (!videoDetails) return; // Don't run if metadata hasn't been fetched
+      setStatus("checking");
+      setError(null);
 
+      try {
+        const response = await apiClient.post("/check-analysis", {
+          youtubeUrl,
+          config: featureConfig,
+        });
+        setCostDetails(response.data);
+        setTranscriptId(response.data.transcript_id); // Save the transcript ID
+        setStatus("cost-calculated");
+      } catch (err: any) {
+        const errorMsg =
+          err.response?.data?.detail || "An unexpected error occurred.";
+        toast.error("Check Failed", { description: errorMsg });
+        setError(errorMsg);
+        setStatus("failed");
+      }
+      return; // Stop the function here for the YouTube case
+    }
+
+    if (!isReadyForAnalysis) return;
     setStatus("checking");
     setError(null);
     setCostDetails(null);
-
     try {
       let payload = {};
+      // --- MODIFIED --- Logic now primarily relies on the paste tab or upload tab
       if (activeTab === "upload") {
         const durationPromises = selectedFiles.map(async (file) => {
           const duration = await getAudioDuration(file);
           return { name: file.name, duration: duration };
         });
         const durationsWithNames = await Promise.all(durationPromises);
-        setFileDurations(durationsWithNames); // Store durations with names
+        setFileDurations(durationsWithNames);
         payload = {
           durations: durationsWithNames.map((d) => d.duration),
           config: featureConfig,
-        }; // Send only durations to backend
+        };
       } else {
         payload = { character_count: transcript.length, config: featureConfig };
       }
-
       const response = await apiClient.post("/check-analysis", payload);
       setCostDetails(response.data);
       setStatus("cost-calculated");
@@ -310,7 +395,6 @@ const EnginePage = () => {
   const handleBulkUploadAndProcess = async (filesToUpload: File[]) => {
     setStatus("uploading");
     setError(null);
-
     try {
       const uploadPromises = filesToUpload.map((file, index) => {
         return new Promise<{
@@ -324,7 +408,6 @@ const EnginePage = () => {
           const filePath = `uploads/${user.uid}/${Date.now()}-${file.name}`;
           const storageRef = ref(storage, filePath);
           const uploadTask = uploadBytesResumable(storageRef, file);
-
           uploadTask.on(
             "state_changed",
             (snapshot) => {
@@ -341,30 +424,26 @@ const EnginePage = () => {
               reject(new Error(`Upload failed for ${file.name}.`));
             },
             () => {
-              setFilesUploaded((prev) => prev + 1); // ✅ FIX: Find the duration for this specific file from the state
+              setFilesUploaded((prev) => prev + 1);
               const currentFileDuration =
                 fileDurations.find((d) => d.name === file.name)?.duration || 0;
               resolve({
                 storagePath: filePath,
                 client_provided_id: file.name,
-                duration_seconds: currentFileDuration, // ✅ Use the retrieved duration
+                duration_seconds: currentFileDuration,
               });
             }
           );
         });
       });
-
       const uploadedItems = await Promise.all(uploadPromises);
-
       setStatus("processing-batch");
-
-      // The `items` payload now correctly includes `duration_seconds` for each file.
       const processResponse = await apiClient.post("/process-bulk", {
+        totalCost: costDetails?.totalCost,
         items: uploadedItems,
         config: { ...featureConfig, analysis_persona: analysisPersona },
         model_choice: modelChoice,
       });
-
       if (!processResponse.data.batch_id) {
         throw new Error("Did not receive a batch ID from the server.");
       }
@@ -383,34 +462,27 @@ const EnginePage = () => {
   };
 
   const handleProcessConfirmation = () => {
-    if (activeTab === "paste") {
+    if (transcriptId) {
+      handleYouTubeProcess();
+    } else if (activeTab === "paste") {
       handleTextProcess();
     } else {
       const filesToUpload = [...selectedFiles];
-      setFilesInFlight(filesToUpload); // Track the files for the useEffect
-
-      // Reset progress state for the new batch
+      setFilesInFlight(filesToUpload);
       setFilesUploaded(0);
       setUploadProgress({});
-
-      // Create the initial toast and get its ID
       const toastId = toast.custom(
         () => (
           <UploadProgressToast
             files={filesToUpload}
-            progress={{}} // Initial empty progress
-            filesUploaded={0} // Initial zero files uploaded
+            progress={{}}
+            filesUploaded={0}
           />
         ),
-        { duration: Infinity } // Keep it open until we manually update/dismiss it
+        { duration: Infinity }
       );
-
-      setUploadToastId(toastId); // Save the ID to state, which triggers our useEffect
-
-      // Start the upload process in the background
+      setUploadToastId(toastId);
       handleBulkUploadAndProcess(filesToUpload);
-
-      // Immediately reset the main UI to unblock the user
       resetState(activeTab);
     }
   };
@@ -454,11 +526,19 @@ const EnginePage = () => {
   const isWorking =
     status === "processing-batch" ||
     status === "uploading" ||
-    status === "checking";
+    status === "checking" ||
+    isFetchingYouTube; // Added fetching youtube status
   const canInteract = !isWorking && !!user;
+
+  const isChecking = status === "checking";
+
+  // --- MODIFIED --- `isReadyForAnalysis` now focuses on the "paste" or "upload" tabs being ready.
+  // The YouTube tab is just a way to populate the paste tab.
   const isReadyForAnalysis =
     (activeTab === "paste" && transcript.trim() !== "") ||
-    (activeTab === "upload" && selectedFiles.length > 0);
+    (activeTab === "upload" && selectedFiles.length > 0) ||
+    (activeTab === "youtube" && !!videoDetails);
+
   const selectedFeatureCount =
     Object.values(featureConfig).filter(Boolean).length;
 
@@ -503,7 +583,7 @@ const EnginePage = () => {
               <CardHeader>
                 <CardTitle className="text-2xl">Choose Input</CardTitle>
                 <CardDescription>
-                  Start by uploading files or pasting a transcript.
+                  Start with a YouTube URL, paste a transcript, or upload files.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -512,21 +592,80 @@ const EnginePage = () => {
                   className="w-full"
                   onValueChange={resetState}
                 >
-                  <TabsList className="grid w-full grid-cols-2">
+                  {/* --- MODIFIED --- TabsList is now 3 columns */}
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="youtube" disabled={!user}>
+                      <Youtube className="w-4 h-4 mr-2" />
+                      YouTube URL
+                    </TabsTrigger>
                     <TabsTrigger value="paste" disabled={!user}>
                       <FileText className="w-4 h-4 mr-2" />
-                      Paste Transcript (Single)
+                      Paste Transcript
                     </TabsTrigger>
                     <TabsTrigger value="upload" disabled={!user}>
                       <UploadCloud className="w-4 h-4 mr-2" />
-                      Upload Files (Bulk)
+                      Upload Files
                     </TabsTrigger>
                   </TabsList>
+                  {/* --- ADDED --- New TabsContent for YouTube */}
+                  <TabsContent value="youtube" className="pt-4 space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Textarea
+                        id="youtube-url"
+                        placeholder={
+                          user
+                            ? "https://www.youtube.com/watch?v=..."
+                            : "Please sign in to enable."
+                        }
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        disabled={!canInteract}
+                        className="flex-grow"
+                        rows={1}
+                      />
+                      <Button
+                        onClick={handleFetchYouTubeMetadata} // Use the new metadata function
+                        disabled={
+                          !canInteract ||
+                          !youtubeUrl.trim() ||
+                          status === "fetching-metadata"
+                        }
+                      >
+                        {status === "fetching-metadata" ? ( // Show loader for this state
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Fetch Video" // Update label
+                        )}
+                      </Button>
+                    </div>
+                    {videoDetails && (
+                      <div className="mb-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-start space-x-4">
+                        <Image
+                          src={videoDetails.thumbnailUrl}
+                          alt={videoDetails.title}
+                          width={120}
+                          height={90}
+                          className="rounded-md object-cover"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-lg leading-tight">
+                            {videoDetails.title}
+                          </h4>
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                            <CheckCircle className="inline w-4 h-4 mr-1" />
+                            Transcript loaded. Ready for analysis.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
                   <TabsContent value="paste" className="pt-4">
+                    {/* --- ADDED --- Video details preview in the paste tab */}
+
                     <Textarea
                       placeholder={
                         user
-                          ? "Paste your full transcript here..."
+                          ? "Paste your full transcript here, or fetch one from a YouTube URL..."
                           : "Please sign in to enable."
                       }
                       className="min-h-[200px] max-h-[400px] text-base border-2 focus-visible:ring-blue-500"
@@ -534,11 +673,14 @@ const EnginePage = () => {
                       onChange={(e) => {
                         setTranscript(e.target.value);
                         setStatus("idle");
+                        setVideoDetails(null); // Clear video details if user manually edits
                       }}
                       disabled={!canInteract}
                     />
                   </TabsContent>
+
                   <TabsContent value="upload" className="pt-4">
+                    {/* Your existing upload UI - no changes needed here */}
                     <div className="space-y-4">
                       <div
                         {...getRootProps()}
@@ -628,7 +770,7 @@ const EnginePage = () => {
               </CardContent>
             </Card>
 
-            {/* --- ADDED: New Card for Step 2 --- */}
+            {/* Other cards remain unchanged */}
             <Card className="shadow-lg border-2 border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 dark:border-blue-800">
               <CardHeader>
                 <CardTitle className="text-2xl flex items-center gap-2">
@@ -641,7 +783,6 @@ const EnginePage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* All the inner content (RadioGroup, Labels, etc.) remains exactly the same. */}
                 <RadioGroup
                   value={analysisPersona}
                   onValueChange={(value: "general" | "consultant") =>
@@ -650,7 +791,6 @@ const EnginePage = () => {
                   className="grid grid-cols-1 md:grid-cols-2 gap-4"
                   disabled={!canInteract}
                 >
-                  {/* --- General Report Option --- */}
                   <Label
                     htmlFor="general"
                     className="flex flex-col items-start space-x-3 p-4 rounded-lg border bg-white dark:bg-slate-900 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20"
@@ -662,7 +802,6 @@ const EnginePage = () => {
                       </div>
                       <RadioGroupItem value="general" id="general" />
                     </div>
-                    {/* ✅ NEW DESCRIPTION */}
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-8">
                       A comprehensive, chronological breakdown. Extracts key
                       points, quotes, and action items, making it perfect for
@@ -670,7 +809,6 @@ const EnginePage = () => {
                     </p>
                   </Label>
 
-                  {/* --- Consultant Workbench Option --- */}
                   <Label
                     htmlFor="consultant"
                     className="flex flex-col items-start space-x-3 p-4 rounded-lg border bg-white dark:bg-slate-900 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20"
@@ -682,7 +820,6 @@ const EnginePage = () => {
                       </div>
                       <RadioGroupItem value="consultant" id="consultant" />
                     </div>
-                    {/* ✅ NEW DESCRIPTION */}
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-8">
                       Transforms insights into a compelling narrative. Organizes
                       ideas into thematic, presentation-ready slides with
@@ -694,7 +831,6 @@ const EnginePage = () => {
               </CardContent>
             </Card>
 
-            {/* --- MODIFIED: Renumbered to Step 3 --- */}
             <Card className="shadow-lg dark:bg-slate-900/70">
               <CardHeader>
                 <CardTitle className="text-2xl">
@@ -708,7 +844,6 @@ const EnginePage = () => {
                 <TooltipProvider>
                   <div className="flex flex-col">
                     {featureOptions.map((feature, index) => {
-                      // Check if the current feature should be disabled for the free plan
                       const isPaidFeature =
                         feature.id === "run_contextual_briefing";
                       const isFeatureDisabled =
@@ -718,7 +853,7 @@ const EnginePage = () => {
                         <div
                           className={`flex items-center justify-between p-4 transition-colors ${
                             isFeatureDisabled
-                              ? "opacity-50 cursor-not-allowed" // Visually grey out if disabled
+                              ? "opacity-50 cursor-not-allowed"
                               : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
                           } ${
                             index < featureOptions.length - 1
@@ -756,14 +891,13 @@ const EnginePage = () => {
                               featureConfig[feature.id as keyof FeatureConfig]
                             }
                             onCheckedChange={(c) => {
-                              if (isFeatureDisabled) return; // Prevent state change if disabled
+                              if (isFeatureDisabled) return;
                               setFeatureConfig((p) => ({
                                 ...p,
                                 [feature.id]: c,
                               }));
                               setStatus("idle");
                             }}
-                            // Disable the switch if the user can't interact OR if it's a disabled paid feature
                             disabled={!canInteract || isFeatureDisabled}
                           />
                         </div>
@@ -773,7 +907,6 @@ const EnginePage = () => {
                         <Tooltip key={feature.id} delayDuration={200}>
                           <TooltipTrigger asChild>
                             {isFeatureDisabled ? (
-                              // If the feature is disabled, wrap it in a Link to the pricing page
                               <Link href="/pricing">{featureElement}</Link>
                             ) : (
                               featureElement
@@ -795,7 +928,6 @@ const EnginePage = () => {
             </Card>
           </div>
 
-          {/* Right Sidebar Column */}
           <div className="lg:col-span-1 lg:sticky top-24 space-y-6">
             <Card className="shadow-2xl dark:bg-slate-900/70">
               <CardHeader>
@@ -808,10 +940,12 @@ const EnginePage = () => {
                 <h4 className="font-semibold">Your Selections:</h4>
                 <ul className="list-disc list-inside text-slate-500 dark:text-slate-400 text-sm space-y-1">
                   <li>
-                    Source:{" "}
-                    {activeTab === "paste"
-                      ? "Pasted Text"
-                      : `${selectedFiles.length} File(s)`}
+                    Source: {/* --- MODIFIED --- Source display logic */}
+                    {videoDetails
+                      ? "YouTube Video"
+                      : activeTab === "paste"
+                        ? "Pasted Text"
+                        : `${selectedFiles.length} File(s)`}
                   </li>
                   <li>
                     Persona:{" "}
@@ -826,8 +960,6 @@ const EnginePage = () => {
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
                     <div className="text-sm space-y-1">
                       <h4 className="font-semibold mb-2">Cost Breakdown:</h4>
-
-                      {/* Display individual file base costs for multiple files or single base cost for paste/single upload */}
                       {activeTab === "upload" &&
                       costDetails.breakdown.fileBaseCosts.length > 1 ? (
                         <>
@@ -836,7 +968,6 @@ const EnginePage = () => {
                           </p>
                           {costDetails.breakdown.fileBaseCosts.map(
                             (fileCost, index) => {
-                              // Ensure we have a corresponding file name from selectedFiles
                               const fileName =
                                 selectedFiles[index]?.name ||
                                 `File ${index + 1}`;
@@ -867,7 +998,6 @@ const EnginePage = () => {
                           </div>
                         </>
                       ) : (
-                        // Original display for single file/paste
                         <div className="flex justify-between items-start">
                           <div className="flex flex-col">
                             <span className="font-medium">Base Analysis</span>
@@ -875,14 +1005,8 @@ const EnginePage = () => {
                               {costDetails.breakdown.totalBaseCost === 0.5
                                 ? "Small job discount"
                                 : costDetails.unit === "audio"
-                                  ? `(${Math.ceil(costDetails.usage / 60)} min / ${
-                                      (costDetails.limitPerCredit / 60).toFixed(
-                                        0
-                                      ) // Ensure whole number for minutes
-                                    } min per credit)`
-                                  : `(${(costDetails.usage / 1000).toFixed(0)}k chars / ${(
-                                      costDetails.limitPerCredit / 1000
-                                    ).toFixed(0)}k chars per credit)`}
+                                  ? `(${Math.ceil(costDetails.usage / 60)} min / ${(costDetails.limitPerCredit / 60).toFixed(0)} min per credit)`
+                                  : `(${(costDetails.usage / 1000).toFixed(0)}k chars / ${(costDetails.limitPerCredit / 1000).toFixed(0)}k chars per credit)`}
                             </span>
                           </div>
                           <span className="font-medium">
@@ -891,8 +1015,6 @@ const EnginePage = () => {
                           </span>
                         </div>
                       )}
-
-                      {/* Map over selected add-ons with per-file details if applicable */}
                       {costDetails.breakdown.addOns.length > 0 && (
                         <>
                           <p
@@ -932,8 +1054,6 @@ const EnginePage = () => {
                         </>
                       )}
                     </div>
-
-                    {/* Total Cost */}
                     <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-800 text-center">
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         Total Estimated Cost
@@ -951,22 +1071,16 @@ const EnginePage = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Progress Bar for uploads */}
                 {status === "uploading" && (
                   <div className="w-full bg-slate-200 rounded-full h-2.5 dark:bg-slate-700">
                     <div
                       className="bg-blue-600 h-2.5 rounded-full"
                       style={{
-                        width: `${
-                          (filesUploaded / selectedFiles.length) * 100
-                        }%`,
+                        width: `${(filesUploaded / selectedFiles.length) * 100}%`,
                       }}
                     ></div>
                   </div>
                 )}
-
-                {/* Error message display */}
                 {error && (
                   <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
@@ -976,39 +1090,75 @@ const EnginePage = () => {
                 )}
               </CardContent>
               <CardFooter className="flex-col space-y-2">
-                {/* The button is now dynamic based on the UI status */}
-                {status !== "cost-calculated" ? (
-                  <Button
-                    size="lg"
-                    className="w-full"
-                    onClick={handleCostCalculation}
-                    disabled={!canInteract || !isReadyForAnalysis || isWorking}
-                  >
-                    {isWorking && (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    )}
-                    {isWorking ? "Checking..." : "Check Requirements"}
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={handleProcessConfirmation}
-                  >
-                    Confirm & Run Analysis
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                )}
+                {status === "cost-calculated" ||
+                status === "processing-batch" ? (
+                  <>
+                    <Button
+                      size="lg"
+                      className={`w-full ${
+                        status === "processing-batch"
+                          ? "bg-gray-500 cursor-not-allowed"
+                          : "bg-green-600 hover:bg-green-700"
+                      }`}
+                      onClick={handleProcessConfirmation}
+                      disabled={status === "processing-batch"}
+                    >
+                      {status === "processing-batch" ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Starting Analysis…
+                        </>
+                      ) : (
+                        <>
+                          Confirm & Run Analysis
+                          <ArrowRight className="ml-2 w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
 
-                {status === "failed" && (
-                  <Button
-                    size="lg"
-                    className="w-full"
-                    variant="secondary"
-                    onClick={() => resetState(activeTab)}
-                  >
-                    Start Over
-                  </Button>
+                    {/* ← Inserted helper text here */}
+                    {status === "processing-batch" && (
+                      <p className="mt-1 text-sm text-slate-500">
+                        ⏳ Queuing your analysis—this only takes a moment.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="lg"
+                      className="w-full"
+                      onClick={handleCostCalculation}
+                      disabled={
+                        !canInteract || !isReadyForAnalysis || isChecking
+                      }
+                    >
+                      {isChecking ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Estimating…
+                        </>
+                      ) : (
+                        "Check Cost"
+                      )}
+                    </Button>
+
+                    {isChecking && (
+                      <p className="mt-1 text-sm text-slate-500">
+                        ⏳ Just a sec while we get this ready…
+                      </p>
+                    )}
+                    {status === "failed" && (
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        variant="secondary"
+                        onClick={() => resetState(activeTab)}
+                      >
+                        Start Over
+                      </Button>
+                    )}
+                  </>
                 )}
               </CardFooter>
             </Card>

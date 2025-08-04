@@ -24,6 +24,7 @@ class AnalysisRequest(BaseModel):
     transcript: Optional[str] = None
     duration_seconds: Optional[float] = None  # For audio estimates
     storagePath: Optional[str] = None  # For audio processing
+    transcript_id: Optional[str] = None
 
     @field_validator("model_choice")
     @classmethod
@@ -39,24 +40,26 @@ class AnalysisRequest(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def check_exclusive_inputs(cls, data: Any) -> Any:
-        """
-        Your existing validator is excellent. It ensures that exactly one
-        of the primary input types is provided. No changes needed here.
-        """
         if isinstance(data, dict):
+            # ✅ ADD 'transcript_id' TO THIS LIST
             inputs_provided = sum(
                 1
-                for key in ["transcript", "duration_seconds", "storagePath"]
+                for key in [
+                    "transcript",
+                    "duration_seconds",
+                    "storagePath",
+                    "transcript_id",
+                ]
                 if key in data and data.get(key)
             )
 
             if inputs_provided == 0:
                 raise ValueError(
-                    "A valid input (transcript, duration_seconds, or storagePath) is required."
+                    "A valid input (transcript, duration_seconds, storagePath, or transcript_id) is required."
                 )
             if inputs_provided > 1:
                 raise ValueError(
-                    "Please provide only one input type: transcript, duration_seconds, or storagePath."
+                    "Please provide only one input type: transcript, duration_seconds, storagePath, or transcript_id."
                 )
         return data
 
@@ -170,3 +173,13 @@ class BulkProcessResponse(BaseModel):
     batch_id: str
     jobs: List[BulkProcessResponseItem]
     message: str
+
+
+class TranscriptDetailRequest(BaseModel):
+    video_id: str
+
+
+class TranscriptDetailResponse(BaseModel):
+    transcript_id: str
+    character_count: int
+    title: str

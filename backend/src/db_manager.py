@@ -3,7 +3,7 @@ import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud import storage as gcs_storage
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from rich import print
 from google.api_core.exceptions import NotFound
 
@@ -295,3 +295,19 @@ def delete_gcs_file(storage_path: str):
         print(
             f"[bold red]CRITICAL: Failed to delete GCS file {storage_path}: {e}[/bold red]"
         )
+
+
+def get_cached_transcript(transcript_id: str) -> Optional[Dict]:  # Return a Dict now
+    """Retrieves and deletes a cached transcript from the pending_transcripts collection."""
+    if db is None:
+        return None
+
+    doc_ref = db.collection("pending_transcripts").document(transcript_id)
+    doc = doc_ref.get()
+
+    if doc.exists:
+        transcript_data = doc.to_dict()  # Get the whole document
+        doc_ref.delete()
+        print(f"INFO:     Retrieved and deleted cached transcript {transcript_id}")
+        return transcript_data  # Return all data
+    return None

@@ -28,7 +28,7 @@ app = FastAPI(
 # Define the origins that are allowed to connect
 origins = [
     "http://localhost:3000",
-    "https://your-production-frontend.com",  # Remember to change this
+    "https://www.insightscrucible.com",  # Remember to change this
 ]
 
 # Add the CORS middleware to allow cross-origin requests from your frontend

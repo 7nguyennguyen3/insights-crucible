@@ -38,6 +38,7 @@ type AddOnKey = keyof typeof ADD_ON_COSTS;
  * @param featureConfig An object showing which add-ons are enabled.
  * @returns The calculated total cost in analysis credits.
  */
+
 export function calculateCost(
   inputs: {
     duration_seconds?: number;

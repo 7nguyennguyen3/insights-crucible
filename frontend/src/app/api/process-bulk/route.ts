@@ -4,18 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { FieldValue } from "firebase-admin/firestore";
-import { calculateCost } from "@/lib/billing";
 
 const PYTHON_API_URL =
   process.env.PYTHON_API_URL || "http://127.0.0.1:8000/api";
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
-
-// Define a type for the items in the request body for clarity
-interface ProcessItem {
-  duration_seconds?: number;
-  character_count?: number;
-  // you can add other item properties here if needed, like 'storagePath'
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,9 +21,7 @@ export async function POST(request: NextRequest) {
     const userId = decodedToken.uid;
 
     const requestBody = await request.json();
-    // Cast the items array to your new type
-    const items: ProcessItem[] = requestBody.items || [];
-    const config = requestBody.config || {};
+    const { totalCost, ...jobDetails } = requestBody; // ✅ Get totalCost
 
     const userDocRef = db.collection("saas_users").doc(userId);
     const userDoc = await userDocRef.get();
@@ -39,31 +29,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
     const userData = userDoc.data()!;
-    const userPlan = userData.plan || "free";
     const analysesRemaining = userData.analyses_remaining || 0;
 
-    // 2. Calculate total cost with explicit types
-    const totalCalculatedCost = items.reduce(
-      (total: number, item: ProcessItem) => {
-        return total + calculateCost(item, userPlan, config);
-      },
-      0
-    );
+    // 2. ❌ REMOVED: Internal cost calculation is no longer needed.
 
-    // 3. Check and Decrement Correct Amount
-    if (analysesRemaining < totalCalculatedCost) {
+    // 3. Check and Decrement Correct Amount using pre-calculated cost
+    if (typeof totalCost !== "number") {
       return NextResponse.json(
-        {
-          error: "Insufficient Analysis Credit Remaining",
-          detail: `This batch requires ${totalCalculatedCost} analysis credit, but you only have ${analysesRemaining} left.`,
-        },
+        { error: "Invalid request: totalCost is missing." },
+        { status: 400 }
+      );
+    }
+
+    if (analysesRemaining < totalCost) {
+      return NextResponse.json(
+        { error: "Insufficient Credits" },
         { status: 402 }
       );
     }
 
-    if (totalCalculatedCost > 0) {
+    if (totalCost > 0) {
       await userDocRef.update({
-        analyses_remaining: FieldValue.increment(-totalCalculatedCost),
+        analyses_remaining: FieldValue.increment(-totalCost),
       });
     }
 
@@ -76,15 +63,17 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         user_id: userId,
-        items: requestBody.items,
-        config: requestBody.config,
-        model_choice: requestBody.model_choice,
+        ...jobDetails, // Pass items, config, etc.
       }),
     });
 
     const responseData = await pythonApiResponse.json();
 
     if (!pythonApiResponse.ok) {
+      // If Python fails, refund the credits
+      await userDocRef.update({
+        analyses_remaining: FieldValue.increment(totalCost),
+      });
       return NextResponse.json(
         { error: "Error from bulk analysis service", details: responseData },
         { status: pythonApiResponse.status }
