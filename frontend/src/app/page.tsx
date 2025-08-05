@@ -12,6 +12,7 @@ import {
   UploadCloud,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 import React, { useState, useEffect } from "react";
 
 // --- Components (Button, FeatureCard, HowItWorksStep) are unchanged ---
@@ -151,14 +152,31 @@ const MarketingHomePage = () => {
             into actionable themes, arguments, and key takeaways. Stop sifting,
             start strategizing.
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button href="/auth?tab=signup" variant="primary">
+          <div className="mt-10 flex flex-col sm:flex-row items-center sm:items-start justify-center gap-4 sm:gap-6">
+            {/* Primary "Get Credits" Button */}
+            <Button
+              href="/auth?tab=signup"
+              variant="primary"
+              className="w-full sm:w-auto max-w-[300px]"
+            >
               Get {credits} Free Analysis Credits
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button href="/pricing" variant="secondary">
-              View Plans
-            </Button>
+
+            {/* Group for Demo Button and its text */}
+            <div className="flex flex-col w-full sm:w-auto">
+              <Link href="/demo">
+                <p
+                  className="inline-flex items-center max-w-[300px]
+                justify-center px-6 py-3 font-semibold rounded-md shadow-sm transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 text-slate-800 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 focus:ring-slate-500 w-full sm:w-auto"
+                >
+                  Try an Interactive Demo
+                </p>
+              </Link>
+              <p className="mt-2 text-sm text-center  text-slate-500 dark:text-slate-400 underline">
+                No sign-up required.
+              </p>
+            </div>
           </div>
         </div>
       </section>

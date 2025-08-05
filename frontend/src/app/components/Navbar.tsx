@@ -79,6 +79,7 @@ const Navbar = () => {
   const logoHref = "/";
 
   const renderDesktopMenu = () => {
+    // This function remains unchanged
     if (!isMounted) {
       return (
         <div className="flex items-center gap-2">
@@ -119,7 +120,7 @@ const Navbar = () => {
               className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-white"
             >
               <span className="sr-only">Open user menu</span>
-              <UserCircle className="h-6 w-6 text-black dark:text-slate-400 dark:hover:text-slate-200" />
+              <UserCircle className="h-8 w-8 text-black dark:text-slate-400 dark:hover:text-slate-200" />
             </button>
             <div
               className={`
@@ -188,15 +189,18 @@ const Navbar = () => {
       );
     }
 
-    // --- UPDATED LINKS FOR LOGGED-OUT USERS ---
     return (
       <div className="flex items-center gap-2">
-        <Link href="/roadmap">
-          <Button variant="ghost">Roadmap</Button>
+        <Link href="/demo">
+          <Button variant="ghost">Demo</Button>
         </Link>
         <Link href="/pricing">
           <Button variant="ghost">Pricing</Button>
         </Link>
+        <Link href="/roadmap">
+          <Button variant="ghost">Roadmap</Button>
+        </Link>
+        <div className="border-l border-slate-200 dark:border-slate-700 h-6 mx-2"></div>
         <Link href="/auth">
           <Button variant="ghost">Sign In</Button>
         </Link>
@@ -207,94 +211,117 @@ const Navbar = () => {
     );
   };
 
+  // ====================================================================
+  // ===== RENDER MOBILE MENU - THIS IS THE ONLY SECTION I'VE CHANGED =====
+  // ====================================================================
   const renderMobileMenu = () => {
     return (
       <div ref={mobilePanelRef} className="md:hidden">
-        <div className="space-y-1 px-2 pt-2 pb-3 sm:px-3">
+        {/* Use a flex column with consistent gap for better spacing */}
+        <div className="flex flex-col gap-1 px-2 pt-2 pb-4 sm:px-3">
           {user ? (
             <>
-              <div className="flex flex-col gap-2 mt-5">
-                <Link href="/engine" onClick={closeAllMenus}>
-                  <Button className="w-full justify-start mb-2 bg-blue-600 hover:bg-blue-700 max-w-[200px]">
-                    <Zap className="h-5 w-5 mr-3" /> Launch Engine
-                  </Button>
-                </Link>
-                <Link href="/dashboard" onClick={closeAllMenus}>
-                  <Button
-                    variant={"outline"}
-                    className="w-full justify-start mb-2 max-w-[200px]"
-                  >
-                    <LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard
-                  </Button>
-                </Link>
-              </div>
+              {/* Logged-in user links */}
+              <Link href="/engine" onClick={closeAllMenus}>
+                <Button className="w-full justify-start text-base bg-blue-600 hover:bg-blue-700 h-12">
+                  <Zap className="h-5 w-5 mr-3" /> Launch Engine
+                </Button>
+              </Link>
+              <Link href="/dashboard" onClick={closeAllMenus} className="my-2">
+                <Button
+                  variant={"outline"}
+                  className="w-full justify-start text-base h-12"
+                >
+                  <LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard
+                </Button>
+              </Link>
+
+              {/* A separator for visual clarity */}
+              <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
 
               <Link
                 href="/account"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <User2 className="h-5 w-5 mr-3" /> Account
+                <User2 className="h-5 w-5 mr-3 text-slate-500" /> Account
               </Link>
               <Link
                 href="/account/setting"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Settings className="h-5 w-5 mr-3" /> Setting
+                <Settings className="h-5 w-5 mr-3 text-slate-500" /> Setting
               </Link>
               <Link
                 href="/roadmap"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Map className="h-5 w-5 mr-3" /> Roadmap
+                <Map className="h-5 w-5 mr-3 text-slate-500" /> Roadmap
               </Link>
               <Link
                 href="/pricing"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-2 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Tags className="h-5 w-5 mr-3" /> Pricing
+                <Tags className="h-5 w-5 mr-3 text-slate-500" /> Pricing
               </Link>
-              <div className="border-t border-slate-200 dark:border-slate-700 !my-2"></div>
+
+              <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
+
               <button
                 onClick={handleSignOut}
-                className="w-full text-left flex items-center px-3 py-2 text-base font-medium rounded-md text-red-600 dark:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="w-full text-left flex items-center px-3 py-3 text-base font-medium rounded-md text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
               >
                 <LogOut className="h-5 w-5 mr-3" /> Sign Out
               </button>
             </>
           ) : (
-            <div className="mt-5">
+            <>
+              {/* Logged-out user links */}
+              <Link
+                href="/demo"
+                onClick={closeAllMenus}
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Demo
+              </Link>
               <Link
                 href="/pricing"
                 onClick={closeAllMenus}
-                className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Pricing
               </Link>
               <Link
                 href="/roadmap"
                 onClick={closeAllMenus}
-                className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Roadmap
               </Link>
-              <div className="flex flex-col gap-2">
-                <Link href="/auth" onClick={closeAllMenus} className="">
+
+              {/* Sign in/up buttons with a separator above */}
+              <div
+                className="border-t border-slate-200 dark:border-slate-700 
+              pt-4 mt-2 flex flex-col gap-2"
+              >
+                <Link href="/auth" onClick={closeAllMenus}>
                   <Button
                     variant={"outline"}
-                    className="w-full mt-2 max-w-[200px]"
+                    className="w-full text-base h-11 max-w-[400px]"
                   >
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/auth?tab=signup" onClick={closeAllMenus}>
-                  <Button className="w-full mt-2 max-w-[200px]">Sign Up</Button>
+                  <Button className="w-full text-base h-11  max-w-[400px] mt-2">
+                    Sign Up
+                  </Button>
                 </Link>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -302,10 +329,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav
-      className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg 
-    border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50"
-    >
+    <nav className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -326,30 +350,37 @@ const Navbar = () => {
           <div className="hidden md:flex md:items-center">
             {renderDesktopMenu()}
           </div>
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center gap-2">
+            {" "}
+            {/* Added gap-2 for spacing between bell and menu icon */}
             {user && <NotificationBell />}
             <button
               ref={mobileMenuTriggerRef}
               id="mobile-menu-button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-black hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              className="inline-flex items-center justify-center p-2 rounded-md text-black dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
               aria-expanded={isMobileMenuOpen}
             >
               <span className="sr-only">Open main menu</span>
               {isMobileMenuOpen ? (
                 <X className="block h-6 w-6" aria-hidden="true" />
               ) : (
-                <Menu className="block h-6 w-6 " aria-hidden="true" />
+                <Menu className="block h-6 w-6" aria-hidden="true" />
               )}
             </button>
           </div>
         </div>
       </div>
-      {isMobileMenuOpen && (
-        <div className="md:hidden" id="mobile-menu">
-          {renderMobileMenu()}
-        </div>
-      )}
+
+      {/* Added transition classes for a smooth dropdown effect */}
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden md:hidden ${
+          isMobileMenuOpen ? "max-h-screen" : "max-h-0"
+        }`}
+        id="mobile-menu"
+      >
+        {renderMobileMenu()}
+      </div>
     </nav>
   );
 };

@@ -68,7 +68,7 @@ const PricingPage = () => {
       description: "For trying out the core features of our platform.",
       features: [
         {
-          text: "3 analysis credits per month",
+          text: "5 analysis credits per month",
           value: "Credits reset on the 1st of each month (PT).",
           locked: false,
         },
@@ -108,7 +108,6 @@ const PricingPage = () => {
           tooltip: "1 credit = 90 mins audio or 125k characters.",
           locked: false,
         },
-        { text: "Generate Blog Posts", locked: false },
         { text: "5-Angle Perspective Analysis", locked: false },
         { text: "A genuine voice in our product roadmap", locked: false },
       ],
@@ -485,7 +484,7 @@ const PricingPage = () => {
                   <br />
                   <br />
                   analysis credit for the <b>Free plan do not roll over.</b> You
-                  receive a fresh grant of 3 analysis credits on the first day
+                  receive a fresh grant of 5 analysis credits on the first day
                   of each calendar month.
                 </p>
               </div>
@@ -500,7 +499,7 @@ const PricingPage = () => {
                   15th).
                   <br />
                   <br />
-                  <b>Free Plan:</b> You receive 3 new analysis credit on the 1st
+                  <b>Free Plan:</b> You receive 5 new analysis credit on the 1st
                   day of every calendar month, based on Pacific Time (PT).
                 </p>
               </div>

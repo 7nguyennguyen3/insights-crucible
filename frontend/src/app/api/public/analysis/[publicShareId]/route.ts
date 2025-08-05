@@ -61,6 +61,7 @@ export async function GET(
       synthesis_results: jobData.synthesis_results || null,
       argument_structure: jobData.argument_structure || null,
       generated_slide_outline: jobData.generated_slide_outline || null,
+      global_contextual_briefing: jobData.global_contextual_briefing || null,
     };
 
     return NextResponse.json(publicData);
