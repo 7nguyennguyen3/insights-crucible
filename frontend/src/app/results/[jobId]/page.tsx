@@ -89,6 +89,9 @@ const ResultsPage = () => {
     handleXThreadAddItem,
     handleXThreadChange,
     handleXThreadDeleteItem,
+    handleAddEntity,
+    handleDeleteEntity,
+    handleEntityChange,
   } = useJobData(jobId);
 
   // --- 2. Call your other hooks, passing in values from useJobData ---
@@ -250,6 +253,9 @@ const ResultsPage = () => {
                 onAddItem={handleAddItem}
                 onDeleteItem={handleDeleteItem}
                 onItemChange={handleItemChange}
+                onAddEntity={handleAddEntity}
+                onDeleteEntity={handleDeleteEntity}
+                onEntityChange={handleEntityChange}
               />
               {jobData.generated_slide_outline && (
                 <div className="mt-12">
@@ -275,6 +281,9 @@ const ResultsPage = () => {
               onDeleteItem={handleDeleteItem}
               onItemChange={handleItemChange}
               onQaChange={handleQaChange}
+              onAddEntity={handleAddEntity}
+              onDeleteEntity={handleDeleteEntity}
+              onEntityChange={handleEntityChange}
             />
           )}
         </div>

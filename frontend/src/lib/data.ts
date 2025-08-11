@@ -163,7 +163,7 @@ export const PRIVACY_POLICY_JSON = {
       heading: "10. Contact Us",
       description:
         "If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:",
-      email: "privacy@insightscrucible.com",
+      email: "jimmy@insightscrucible.com",
       company: "Embercore LLC",
       address: "1401 21st ST #5866",
       city: "Sacramento",

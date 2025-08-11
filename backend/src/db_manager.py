@@ -250,10 +250,13 @@ def refund_analysis_credit(user_id: str, amount: int = 1):
     Refunds a specified number of analysis credits to a user.
     """
     try:
-        user_doc_ref = db.collection("saas_users").doc(user_id)
+        user_doc_ref = db.collection("saas_users").document(user_id)
         user_doc_ref.update({"analyses_remaining": firestore.Increment(amount)})
         log_progress(
             user_id, None, f"✅ Successfully refunded {amount} analysis credit."
+        )
+        print(
+            f"[bold green]CRITICAL: Successfully refunded {amount} analysis credit for user {user_id}: {e}[/bold green]"
         )
     except Exception as e:
         print(

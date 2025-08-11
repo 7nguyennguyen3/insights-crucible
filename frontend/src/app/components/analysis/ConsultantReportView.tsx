@@ -13,6 +13,7 @@ import React from "react";
 import {
   AlertTriangle,
   HelpCircle,
+  Info,
   Lightbulb,
   MessageSquareQuote,
   PlusCircle,
@@ -49,6 +50,14 @@ interface AnalysisResultsDisplayProps {
     field: "executive_summary" | "section_title",
     value: any
   ) => void;
+  onEntityChange?: (
+    sectionId: string,
+    index: number,
+    field: "name" | "explanation",
+    value: string
+  ) => void;
+  onAddEntity?: (sectionId: string) => void;
+  onDeleteEntity?: (sectionId: string, index: number) => void;
 }
 
 const timeStringToSeconds = (timeStr: string): number => {
@@ -174,7 +183,14 @@ const SectionRenderer: React.FC<{
 export const ConsultantReportView: React.FC<AnalysisResultsDisplayProps> = (
   props
 ) => {
-  const { results, isEditMode, onFieldChange } = props;
+  const {
+    results,
+    isEditMode,
+    onFieldChange,
+    onEntityChange = () => {},
+    onAddEntity = () => {},
+    onDeleteEntity = () => {},
+  } = props;
   const sortedResults = [...results].sort((a, b) => {
     if (a.start_time === "N/A" || !a.start_time) return 1;
     if (b.start_time === "N/A" || !b.start_time) return -1;
@@ -280,6 +296,73 @@ export const ConsultantReportView: React.FC<AnalysisResultsDisplayProps> = (
                 sectionId={section.id}
                 {...props}
               />
+
+              {section.entities && section.entities.length > 0 && (
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="key-concepts" className="border-b-0">
+                      <AccordionTrigger className="hover:no-underline p-0">
+                        <h4 className="flex items-center text-md font-semibold text-slate-700 dark:text-slate-300">
+                          <Info className="w-4 h-4 mr-3 text-sky-500" />
+                          Key Concepts
+                        </h4>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4 pb-0">
+                        <div className="space-y-4 pl-7">
+                          {section.entities.map((entity, i) => (
+                            <div key={`entity-${section.id}-${i}`}>
+                              <EditableField
+                                isEditing={isEditMode}
+                                value={entity.name}
+                                onChange={(newValue) =>
+                                  onEntityChange(
+                                    section.id,
+                                    i,
+                                    "name",
+                                    newValue
+                                  )
+                                }
+                                onDelete={
+                                  isEditMode
+                                    ? () => onDeleteEntity(section.id, i)
+                                    : undefined
+                                }
+                                placeholder="Enter concept name..."
+                                className="font-semibold text-slate-800 dark:text-slate-200"
+                              />
+                              <EditableField
+                                isEditing={isEditMode}
+                                value={entity.explanation}
+                                onChange={(newValue) =>
+                                  onEntityChange(
+                                    section.id,
+                                    i,
+                                    "explanation",
+                                    newValue
+                                  )
+                                }
+                                isTextarea
+                                placeholder="Enter explanation..."
+                                className="text-slate-600 dark:text-slate-400 mt-1"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        {isEditMode && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 ml-7"
+                            onClick={() => onAddEntity(section.id)}
+                          >
+                            <PlusCircle className="h-4 w-4 mr-2" /> Add Concept
+                          </Button>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              )}
             </div>
           </AccordionContent>
         </AccordionItem>

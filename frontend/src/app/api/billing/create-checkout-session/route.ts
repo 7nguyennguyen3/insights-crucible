@@ -1,17 +1,19 @@
+//src/app/api/billing/create-checkout-session
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 
-// ✅ THIS WAS MISSING: Import the Charter Member plan ID
+// Import all your necessary Price IDs
 const proPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID;
-const charterMemberPriceId =
-  process.env.NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID;
+const starterPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID; // ✅ ADD THIS
 const analysisPackPriceId =
   process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID;
 
-// ✅ THIS WAS MISSING: Validation for the charter plan
-if (!proPlanPriceId || !charterMemberPriceId || !analysisPackPriceId) {
+// Validate the required environment variables
+if (!proPlanPriceId || !starterPlanPriceId || !analysisPackPriceId) {
+  // ✅ UPDATE THIS
   throw new Error(
     "Missing Stripe Price ID environment variables. Please check your .env.local file."
   );
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ✅ THIS LOGIC IS CRITICAL: An array to hold all subscription IDs
-    const subscriptionPriceIds = [proPlanPriceId, charterMemberPriceId];
+    const subscriptionPriceIds = [proPlanPriceId, starterPlanPriceId];
 
     // ✅ THIS LOGIC IS CRITICAL: Check if the incoming price is in the array
     const mode = subscriptionPriceIds.includes(priceId)
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
       line_items: [
         {
           price: priceId,
-          quantity: quantity || 1,
+          quantity: quantity || 25,
         },
       ],
       mode: mode,

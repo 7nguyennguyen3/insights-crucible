@@ -59,74 +59,151 @@ const PricingPage = () => {
   const [contactMessage, setContactMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
 
-  const tiers = [
+  interface Feature {
+    text: string;
+    locked: boolean;
+    value?: string;
+    tooltip?: string;
+  }
+
+  interface Tier {
+    name: string;
+    planId: string;
+    price: { monthly: string; annually: string };
+    price_id: { monthly: string | null; annually: string | null };
+    description: string;
+    features: Feature[]; // Use the Feature interface here
+    isPopular: boolean;
+  }
+
+  const tiers: Tier[] = [
     {
       name: "Free",
       planId: "free",
       price: { monthly: "$0", annually: "$0" },
       price_id: { monthly: null, annually: null },
-      description: "For trying out the core features of our platform.",
+      description: "For trying out the core analysis features of our platform.",
       features: [
         {
           text: "5 analysis credits per month",
-          value: "Credits reset on the 1st of each month (PT).",
+          value:
+            "Credits are non-rolling and reset on the 1st of each month (PT).",
           locked: false,
         },
-        { text: "Generate X/Twitter Threads", locked: false },
-        { text: "Generate Blog Posts", locked: false },
         {
           text: "Standard Analysis Power",
-          tooltip: "1 credit = 60 mins audio or 100k characters.",
+          tooltip:
+            "1 credit processes up to 10 minutes of custom audio file or 100,000 text characters.",
           locked: false,
         },
-        { text: "5-Angle Perspective Analysis", locked: true },
+        // {
+        //   text: "Contextual Briefing",
+        //   tooltip:
+        //     "Upgrade to a paid plan to unlock in-depth analysis of claims and entities.",
+        //   locked: true,
+        // },
       ],
       isPopular: false,
     },
     {
-      name: "Charter Member",
-      planId: "charter",
-      price: { monthly: "$15", annually: "$150" },
+      name: "Starter",
+      planId: "starter",
+      price: { monthly: "$5", annually: "$50" },
       price_id: {
-        monthly: process.env.NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID!,
-        annually: null, // Annual plan not yet available for charter
+        monthly: process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID!,
+        annually: process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_ANNUAL_PRICE_ID!,
       },
-      description: "Limited-time lifetime pricing for our first 100 users.",
+      description:
+        "Perfect for students, freelancers, and individuals with regular analysis needs.",
       features: [
         {
-          text: "25 new analysis credits each month",
-          value: "Added to your balance on your billing date.",
+          text: "30 new analysis credits each month",
+          value: "Added to your balance on your personal billing date.",
           locked: false,
         },
         {
-          text: "Unused analysis credit roll over",
-          value: "Credits never expire with an active plan.",
+          text: "Unused analysis credits roll over",
+          value: "Your credits rollover to the next month.",
+          locked: false,
+        },
+        {
+          text: "Bonus: 5 free credits every month",
+          value:
+            "A free top-up is added to your account on the 1st of each month.",
           locked: false,
         },
         {
           text: "Enhanced Analysis Power",
-          tooltip: "1 credit = 90 mins audio or 125k characters.",
+          tooltip:
+            "1 credit processes up to 15 minutes of custom audio file or 125,000 text characters.",
           locked: false,
         },
-        { text: "5-Angle Perspective Analysis", locked: false },
-        { text: "A genuine voice in our product roadmap", locked: false },
+        // {
+        //   text: "Contextual Briefing",
+        //   tooltip:
+        //     "Enable this feature on any analysis run. May consume additional credits.",
+        //   locked: false,
+        // },
       ],
       isPopular: true,
+    },
+    {
+      name: "Pro",
+      planId: "pro",
+      price: { monthly: "$15", annually: "$150" },
+      price_id: {
+        monthly: process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID!,
+        annually: process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_ANNUAL_PRICE_ID!,
+      },
+      description:
+        "The complete toolkit for professionals and power users who demand more.",
+      features: [
+        {
+          text: "100 new analysis credits each month",
+          value: "Added to your balance on your personal billing date.",
+          locked: false,
+        },
+        {
+          text: "Unused analysis credits roll over",
+          value: "Your credits rollover to the next month.",
+          locked: false,
+        },
+        {
+          text: "Bonus: 5 free credits every month",
+          value:
+            "A free top-up is added to your account on the 1st of each month.",
+          locked: false,
+        },
+        {
+          text: "Maximum Analysis Power",
+          tooltip:
+            "1 credit processes up to 20 minutes of custom audio file or 150,000 text characters.",
+          locked: false,
+        },
+        // {
+        //   text: "Contextual Briefing",
+        //   tooltip:
+        //     "Enable this feature on any analysis run. May consume additional credits.",
+        //   locked: false,
+        // },
+      ],
+      isPopular: false,
     },
     {
       name: "Enterprise",
       planId: "enterprise",
       price: { monthly: "Custom", annually: "Custom" },
       price_id: { monthly: null, annually: null },
-      description: "For businesses and teams with custom needs.",
+      description:
+        "For businesses and teams that require custom solutions and support.",
       features: [
         {
           text: "Custom analysis credit limits & volume discounts",
           locked: false,
         },
-        { text: "Dedicated support & onboarding", locked: false },
-        { text: "Advanced security & compliance", locked: false },
-        { text: "Custom feature development", locked: false },
+        { text: "Priority support & dedicated onboarding", locked: false },
+        { text: "Advanced security & compliance options", locked: false },
+        { text: "Custom feature development available", locked: false },
       ],
       isPopular: false,
     },
@@ -213,27 +290,13 @@ const PricingPage = () => {
 
     // Handle users who ARE signed in
     const currentPlan = profile?.plan || "free";
+    const isPaidUser = currentPlan !== "free";
 
     if (currentPlan === tier.planId) {
-      if (tier.planId === "free") {
-        return { text: "Your Current Plan", action: () => {}, disabled: true };
-      }
       return {
-        text: "Manage Subscription",
+        text: "Your Current Plan",
         action: () => router.push("/account"),
-        disabled: false,
-      };
-    }
-
-    if (tier.planId === "charter") {
-      const priceId = tier.price_id[billingCycle];
-      if (!priceId) {
-        return { text: "Not Available", action: () => {}, disabled: true };
-      }
-      return {
-        text: "Become a Charter Member",
-        action: () => handleCreateCheckout({ priceId: priceId! }),
-        disabled: isCheckoutLoading !== null || currentPlan === "charter",
+        disabled: true,
       };
     }
 
@@ -245,19 +308,32 @@ const PricingPage = () => {
       };
     }
 
-    // Fallback for upgrading from free to a non-charter/enterprise plan
-    if (tier.planId !== "free" && currentPlan === "free") {
-      const priceId = tier.price_id[billingCycle];
-      if (!priceId)
-        return { text: "Not Available", action: () => {}, disabled: true };
+    if (tier.planId === "free") {
+      // A paid user might see the Free plan, button should be disabled
+      return { text: "Your Current Plan", action: () => {}, disabled: true };
+    }
+
+    // Handle all other cases (upgrades/downgrades)
+    const priceId = tier.price_id[billingCycle];
+    if (!priceId) {
+      return { text: "Not Available", action: () => {}, disabled: true };
+    }
+
+    // If user is on a paid plan, show "Switch to" for other paid plans
+    if (isPaidUser) {
       return {
-        text: `Upgrade to ${tier.name}`,
-        action: () => handleCreateCheckout({ priceId }),
-        disabled: isCheckoutLoading !== null,
+        text: `Switch to ${tier.name}`,
+        action: () => router.push("/account"), // Direct to account page to manage subscription
+        disabled: false,
       };
     }
 
-    return { text: tier.name, action: () => {}, disabled: true };
+    // This handles the case where a free user upgrades to Starter or Pro
+    return {
+      text: `Upgrade to ${tier.name}`,
+      action: () => handleCreateCheckout({ priceId }),
+      disabled: isCheckoutLoading !== null,
+    };
   };
 
   return (
@@ -331,112 +407,114 @@ const PricingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20">
           <header className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Join as a Charter Member
+              Find the Plan That's Right for You
             </h1>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              Secure lifetime pricing and help shape the future of our platform.
-              This offer is only available for our first 100 users.
+              Simple, transparent pricing that scales with your needs. No hidden
+              fees.
             </p>
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch mt-12">
-            {tiers.map((tier) => {
-              const buttonState = getButtonState(tier);
-              const price = tier.price[billingCycle];
+            {tiers
+              .filter((tier) => tier.planId !== "enterprise") // This line excludes the Enterprise plan
+              .map((tier) => {
+                const buttonState = getButtonState(tier);
+                const price = tier.price[billingCycle];
 
-              return (
-                <Card
-                  key={tier.planId}
-                  className={`flex flex-col rounded-2xl shadow-lg mx-auto sm:min-w-[300px] ${
-                    tier.isPopular ? "border-2 border-blue-500 relative" : ""
-                  }`}
-                >
-                  {tier.isPopular && (
-                    <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                      <div className="bg-blue-500 text-white text-xs font-semibold px-4 py-1 rounded-full flex items-center gap-1">
-                        <Award className="w-4 h-4 fill-white" />
-                        Charter Offer
+                return (
+                  <Card
+                    key={tier.planId}
+                    className={`flex flex-col rounded-2xl shadow-lg mx-auto sm:min-w-[300px] ${
+                      tier.isPopular ? "border-2 border-blue-500 relative" : ""
+                    }`}
+                  >
+                    {tier.isPopular && (
+                      <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                        <div className="bg-blue-500 text-white text-xs font-semibold px-4 py-1 rounded-full flex items-center gap-1">
+                          <Award className="w-4 h-4" />
+                          Most Popular
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <CardHeader className="pt-10">
-                    <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                    <CardDescription>{tier.description}</CardDescription>
-                    <div className="pt-4">
-                      <span className="text-5xl font-bold tracking-tight">
-                        {price}
-                      </span>
-                      {tier.planId !== "free" &&
-                        tier.planId !== "enterprise" && (
-                          <span className="text-slate-500 dark:text-slate-400">
-                            /month
-                          </span>
-                        )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <ul className="space-y-4">
-                      {tier.features.map((feature, index) => (
-                        <li key={index} className="flex items-start">
-                          {feature.locked ? (
-                            <X className="w-5 h-5 text-red-400 mr-2 shrink-0 mt-1" />
-                          ) : (
-                            <Check className="w-5 h-5 text-green-500 mr-2 shrink-0 mt-1" />
-                          )}
-                          <div className="flex flex-col">
-                            <span
-                              className={`flex items-center ${
-                                feature.locked
-                                  ? "text-muted-foreground line-through"
-                                  : ""
-                              }`}
-                            >
-                              {feature.text}
-                              {feature.tooltip && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <HelpCircle className="w-4 h-4 ml-1.5 text-slate-400 cursor-help" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{feature.tooltip}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
+                    )}
+                    <CardHeader className="pt-10">
+                      <CardTitle className="text-2xl">{tier.name}</CardTitle>
+                      <CardDescription>{tier.description}</CardDescription>
+                      <div className="pt-4">
+                        <span className="text-5xl font-bold tracking-tight">
+                          {price}
+                        </span>
+                        {tier.planId !== "free" &&
+                          tier.planId !== "enterprise" && (
+                            <span className="text-slate-500 dark:text-slate-400">
+                              /month
                             </span>
-                            {feature.value && (
-                              <span className="text-sm text-slate-500 dark:text-slate-400">
-                                {feature.value}
-                              </span>
+                          )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <ul className="space-y-4">
+                        {tier.features.map((feature, index) => (
+                          <li key={index} className="flex items-start">
+                            {feature.locked ? (
+                              <X className="w-5 h-5 text-red-400 mr-2 shrink-0 mt-1" />
+                            ) : (
+                              <Check className="w-5 h-5 text-green-500 mr-2 shrink-0 mt-1" />
                             )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      className={`w-full ${
-                        tier.isPopular && !buttonState.disabled
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : ""
-                      }`}
-                      variant={buttonState.disabled ? "outline" : "default"}
-                      onClick={buttonState.action}
-                      disabled={buttonState.disabled}
-                    >
-                      {isCheckoutLoading &&
-                      (isCheckoutLoading === tier.price_id[billingCycle] ||
-                        (buttonState.text === "Manage Subscription" &&
-                          isCheckoutLoading === "manage")) ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        buttonState.text
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+                            <div className="flex flex-col">
+                              <span
+                                className={`flex items-center ${
+                                  feature.locked
+                                    ? "text-muted-foreground line-through"
+                                    : ""
+                                }`}
+                              >
+                                {feature.text}
+                                {feature.tooltip && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <HelpCircle className="w-4 h-4 ml-1.5 text-slate-400 cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{feature.tooltip}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </span>
+                              {feature.value && (
+                                <span className="text-sm text-slate-500 dark:text-slate-400">
+                                  {feature.value}
+                                </span>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        className={`w-full ${
+                          tier.isPopular && !buttonState.disabled
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : ""
+                        }`}
+                        variant={buttonState.disabled ? "outline" : "default"}
+                        onClick={buttonState.action}
+                        disabled={buttonState.disabled}
+                      >
+                        {isCheckoutLoading &&
+                        (isCheckoutLoading === tier.price_id[billingCycle] ||
+                          (buttonState.text === "Manage Subscription" &&
+                            isCheckoutLoading === "manage")) ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          buttonState.text
+                        )}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
           </div>
           <section className="mt-20 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-8">
@@ -447,7 +525,6 @@ const PricingPage = () => {
                 <h3 className="font-semibold text-lg">
                   What is an "analysis credit" and how are credits used?
                 </h3>
-                {/* FIX: Replaced <p> with <div> to prevent hydration errors */}
                 <div className="text-slate-600 dark:text-slate-400 mt-2">
                   Each file you upload for processing consumes at least one
                   analysis credit. However, the amount of data one credit can
@@ -455,52 +532,54 @@ const PricingPage = () => {
                   paid plans.
                   <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>
-                      <b>Paid Plan:</b> 1 credit can process up to{" "}
-                      <b>75 minutes</b> of audio or <b>125,000</b> text
-                      characters.
+                      <b>Pro Plan:</b> 1 credit can process up to{" "}
+                      <b>20 minutes</b> of custom audio file or <b>150,000</b>{" "}
+                      text characters.
+                    </li>
+                    <li>
+                      <b>Starter Plan:</b> 1 credit can process up to{" "}
+                      <b>15 minutes</b> of custom audio file or <b>125,000</b>{" "}
+                      text characters.
                     </li>
                     <li>
                       <b>Free Plan:</b> 1 credit can process up to{" "}
-                      <b>45 minutes</b> of audio or <b>100,000</b> text
-                      characters.
+                      <b>10 minutes</b> of custom audio file or <b>100,000</b>{" "}
+                      text characters.
                     </li>
                   </ul>
-                  <p className="mt-2">
-                    This means your credits go much further with a Charter or
-                    Pro subscription, allowing you to analyze larger files for
-                    the same credit cost.
-                  </p>
                 </div>
               </div>
               <div>
                 <h3 className="font-semibold text-lg">
-                  Do my monthly analysis credit roll over? 🤔
+                  Do my monthly analysis credits roll over? 🤔
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mt-2">
-                  <b>Yes, for all paid plans.</b> Unused analysis credit from
+                  <b>Yes, for all paid plans.</b> Unused analysis credits from
                   your monthly allowance automatically roll over and are added
-                  to your balance. They never expire as long as your
-                  subscription remains active.
+                  to your balance. Credits also never expire.
                   <br />
                   <br />
-                  analysis credit for the <b>Free plan do not roll over.</b> You
-                  receive a fresh grant of 5 analysis credits on the first day
-                  of each calendar month.
+                  Analysis credits for the <b>
+                    Free plan do not roll over.
+                  </b>{" "}
+                  You receive 5 analysis credits on the first day of each
+                  calendar month.
                 </p>
               </div>
               <div>
                 <h3 className="font-semibold text-lg">
-                  When do I get my new analysis credit? 🗓️
+                  When do I get my new analysis credits? 🗓️
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mt-2">
-                  <b>Charter & Pro Plans:</b> Your analysis credit allowance is
+                  <b>Starter & Pro Plans:</b> Your main credit allowance is
                   added to your account on your personal billing date (e.g., if
                   you subscribe on July 15th, your next credits arrive on August
-                  15th).
+                  15th). You also receive an additional <b>5 bonus credits</b>{" "}
+                  on the 1st of every calendar month.
                   <br />
                   <br />
-                  <b>Free Plan:</b> You receive 5 new analysis credit on the 1st
-                  day of every calendar month, based on Pacific Time (PT).
+                  <b>Free Plan:</b> You receive 5 new analysis credits on the
+                  1st day of every calendar month, based on Pacific Time (PT).
                 </p>
               </div>
               <div>
@@ -510,6 +589,13 @@ const PricingPage = () => {
                   your account dashboard. You'll retain access to all paid
                   features and your rolled-over credits until the end of your
                   current billing period.
+                  <br />
+                  <br />
+                  After your plan expires, you will be moved to our Free plan.
+                  You will keep any remaining credits you have. From that point
+                  on, your credits will no longer roll over, and the monthly
+                  5-credit refresh will only apply once your balance falls below
+                  5.
                 </p>
               </div>
             </div>

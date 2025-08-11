@@ -2,21 +2,21 @@
 
 export const TIER_LIMITS = {
   charter: {
-    audio_seconds_per_credit: 4500,
+    audio_seconds_per_credit: 1200, // 20 minutes
     chars_per_credit: 125000,
   },
   free: {
     // Default plan
-    audio_seconds_per_credit: 2700, // 45min
+    audio_seconds_per_credit: 600, // 10 minutes
     chars_per_credit: 100000,
   },
-  pro: {
-    audio_seconds_per_credit: 4500, // 75min
+  starter: {
+    audio_seconds_per_credit: 900, // 15 minutes
     chars_per_credit: 125000,
   },
-  founder: {
-    audio_seconds_per_credit: 4500, // 2 hours
-    chars_per_credit: 125000,
+  pro: {
+    audio_seconds_per_credit: 1200, // 20 minutes
+    chars_per_credit: 150000,
   },
 };
 
@@ -24,8 +24,8 @@ export const TIER_LIMITS = {
 // The keys MUST match the 'id' of the features from your EnginePage.
 export const ADD_ON_COSTS = {
   run_contextual_briefing: 0.5, // 5-Angle Perspective
-  run_x_thread_generation: 0.25, // X/Twitter Thread
-  run_blog_post_generation: 0.5, // Blog Post
+  run_x_thread_generation: 1, // X/Twitter Thread
+  run_blog_post_generation: 1, // Blog Post
 };
 
 // Define a type for the keys of ADD_ON_COSTS for better type safety.

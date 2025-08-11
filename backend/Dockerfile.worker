@@ -13,11 +13,6 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-# Download the 'punkt' tokenizer data to a standard location inside the image
-RUN python -m nltk.downloader -d /usr/share/nltk_data punkt
-
-# Tell NLTK where to find its data within the container
-ENV NLTK_DATA /usr/share/nltk_data
 
 COPY src/ ./src/
 

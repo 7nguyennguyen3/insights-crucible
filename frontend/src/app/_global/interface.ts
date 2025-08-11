@@ -38,6 +38,11 @@ export interface Notification {
   createdAt: any; // Typically a Firestore Timestamp object, can be typed more strictly if needed
 }
 
+export interface Entity {
+  name: string;
+  explanation: string;
+}
+
 // --- ADDED BACK: Definitions for Contextual Briefing ---
 export interface Viewpoint {
   perspective: string;
@@ -88,10 +93,10 @@ export interface GeneralAnalysisSection extends BaseAnalysisSection {
   actionable_advice: string[];
   notable_quotes: string[];
   questions_and_answers: { question: string; answer: string }[];
-  key_entities: string[];
   verifiable_claims?: string[];
   contextual_briefing?: ContextualBriefing;
   suggested_clips?: Clip[];
+  entities: Entity[];
 }
 
 export interface Slide {
@@ -113,7 +118,7 @@ export interface ConsultantAnalysisSection extends BaseAnalysisSection {
   key_stakeholders_mentioned: string[];
   critical_quotes: string[];
   open_questions: string[];
-  key_entities?: string[];
+  entities?: Entity[];
   contextual_briefing?: ContextualBriefing;
   suggested_clips?: Clip[];
 }

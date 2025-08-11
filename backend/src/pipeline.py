@@ -6,19 +6,17 @@ import random
 import json
 import httpx
 import asyncio
+import math
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
 from langchain.output_parsers import OutputFixingParser
 from rich import print
 from rich.panel import Panel
-from rich.progress import Progress
 from tavily import TavilyClient
 from firebase_admin import firestore
 from functools import wraps
@@ -33,6 +31,7 @@ from src.features import (
     generate_contextual_briefing,
     generate_x_thread,
 )
+
 
 PERSONA_CONFIG = {
     "general": {
@@ -124,44 +123,84 @@ def segment_monologue_with_word_timestamps(
 
 def _get_dynamic_words_per_section(total_characters: int) -> int:
     """
-    Calculates the target number of words per section based on total character count.
-    Heuristic: 150 Words Per Minute.
+    Calculates the ideal number of words per section to achieve a smooth scaling
+    from 1-2 sections for short texts up to a maximum of 12 for very long texts.
+
+    This logic is designed to work with the `segment_by_word_count` function.
+    It determines a target number of sections and then calculates the word count
+    per section needed to divide the total text evenly into that many chunks,
+    preventing the creation of a tiny, leftover final section.
     """
-    # Set a default value first
-    words_per_section = 4 * 150  # 600 words (default for content < 30 mins)
+    # --- Configuration Constants ---
+    # The average number of characters per word. 5.0 is a standard English estimate.
+    CHARS_PER_WORD = 5.0
+    # The minimum number of sections for any text that's long enough to be split.
+    MIN_SECTIONS = 1
+    # The absolute maximum number of sections to create, to avoid overwhelming the user.
+    MAX_SECTIONS = 10
+    # The number of words below which we will not split the text at all (~3 mins of speech).
+    MIN_WORDS_FOR_SPLIT = 1000
+    # The number of words at which we start scaling up the number of sections (~10 mins).
+    SCALE_START_WORDS = 1500
+    # The number of words at which we hit the maximum number of sections (~3 hours).
+    SCALE_END_WORDS = 27000
 
-    # Character count equivalents based on 750 chars/min
-    if total_characters > 135000:  # > 3 hours
-        words_per_section = 15 * 150  # 2250 words
-    elif total_characters > 90000:  # > 2 hours
-        words_per_section = 10 * 150  # 1500 words
-    elif total_characters > 45000:  # > 1 hour
-        words_per_section = 7 * 150  # 1050 words
-    elif total_characters > 22500:  # > 30 mins
-        words_per_section = 6 * 150  # 900 words
+    # 1. Estimate total words from characters.
+    total_words = total_characters / CHARS_PER_WORD
 
-    # Log the decision before returning
-    print(
-        f"  -> Text length is {total_characters:,} characters. Using dynamic section size of {words_per_section} words."
-    )
+    # 2. Handle edge cases for very short texts.
+    # If the text is too short, make the "words_per_section" larger than the text
+    # itself to guarantee it's treated as a single section by the calling function.
+    if total_words < MIN_WORDS_FOR_SPLIT:
+        return int(total_words) + 1  # Ensures only one section is created.
 
-    return words_per_section
+    # 3. Determine the target number of sections using linear scaling.
+    target_sections: float
+    if total_words <= SCALE_START_WORDS:
+        # For texts just long enough to split, use the minimum number of sections.
+        target_sections = float(MIN_SECTIONS)
+    elif total_words >= SCALE_END_WORDS:
+        # For very long texts, clamp to the maximum number of sections.
+        target_sections = float(MAX_SECTIONS)
+    else:
+        # Linearly interpolate the number of sections between the start and end word counts.
+        # This creates a smooth increase in section count as text length grows.
+        progress = (total_words - SCALE_START_WORDS) / (
+            SCALE_END_WORDS - SCALE_START_WORDS
+        )
+        target_sections = MIN_SECTIONS + progress * (MAX_SECTIONS - MIN_SECTIONS)
+
+    # 4. Calculate the words per section needed to hit the target number of sections.
+    # We use math.ceil() on the target sections to determine our final section count.
+    final_num_sections = math.ceil(target_sections)
+
+    # Avoid division by zero, though this case is unlikely with the logic above.
+    if final_num_sections == 0:
+        return int(total_words) + 1
+
+    # By dividing total words by the desired number of sections, we get a chunk size
+    # that ensures all chunks are of nearly equal size.
+    words_per_section = total_words / final_num_sections
+
+    # Return the ceiling of the result to ensure the loop in the calling function
+    # terminates correctly and the last section isn't oversized.
+    return math.ceil(words_per_section)
 
 
 def _get_normalized_cache_key(entity_name: str) -> str:
     """
-    Creates a standardized, robust cache key from an entity name.
-    Example: "Large Companies" -> "larg-compani"
+    Creates a standardized, robust cache key from an entity name without NLTK.
+    Example: "Chief Marketing Officer" -> "chief-marketing-officer"
     """
     if not entity_name:
         return None
-    stemmer = PorterStemmer()
-    # 1. Tokenize: Split the name into words -> ['Large', 'Companies']
-    tokens = word_tokenize(entity_name.lower())
-    # 2. Stem: Reduce each word to its root -> ['larg', 'compani']
-    stemmed_tokens = [stemmer.stem(token) for token in tokens]
-    # 3. Join: Create a stable key -> "larg-compani"
-    return "-".join(stemmed_tokens)
+    # 1. Make it lowercase and remove leading/trailing whitespace.
+    normalized = entity_name.lower().strip()
+    # 2. Replace spaces and other common separators with a hyphen.
+    normalized = re.sub(r"[\s_.]+", "-", normalized)
+    # 3. Remove any characters that aren't letters, numbers, or hyphens.
+    normalized = re.sub(r"[^a-z0-9-]", "", normalized)
+    return normalized
 
 
 def normalize_youtube_transcript(transcript_data: List[Dict]) -> List[Dict]:
@@ -231,16 +270,6 @@ def retry_with_exponential_backoff(func):
     return wrapper
 
 
-def get_timestamp_from_line(line: str) -> Optional[str]:
-    """
-    Extracts the first timestamp (like 0:00 or 12:34:56) from a line.
-    Returns the timestamp string or None if not found.
-    """
-    # This regex handles formats like M:SS, MM:SS, H:MM:SS at the start of a line
-    match = re.search(r"^\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*", line)
-    return match.group(1) if match else None
-
-
 async def find_semantic_topic_boundaries_with_ai(
     canonical_transcript: List[Dict],
     runnable_config: RunnableConfig,
@@ -278,8 +307,7 @@ async def find_semantic_topic_boundaries_with_ai(
                 "Follow these rules:\n"
                 "1. **DO** look for explicit transition phrases (e.g., 'The second reason is...', 'Now, let's talk about...', 'Moving on to...'). These are strong signals for a new section.\n"
                 "2. **DO NOT** create a new section for a brief example or a side story if it only serves to illustrate the *current* main point.\n"
-                "3. **When in doubt, prefer to create a new section.** It is better to have more granular sections than to group unrelated ideas together. Your goal is to maximize clarity for the reader."
-                # --- END OF INSTRUCTIONS ---
+                "3. **Your goal is to identify 3-7 major, high-level talking points.** A new section should only be created when there is a clear and significant shift in the core argument or theme. Avoid creating sections for minor transitions."
                 "\n\n# Example Response Format:\n"
                 # '{"boundary_indices": [0, 15, 42, 75, 110]}'
                 "{format_instructions}",
@@ -313,95 +341,80 @@ async def find_semantic_topic_boundaries_with_ai(
         return []
 
 
-def clean_line_for_analysis(line: str) -> str:
-    return re.sub(r"\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*", " ", line).strip()
-
-
-async def find_boundaries_in_plain_text(
-    full_text: str, runnable_config: RunnableConfig
+async def find_boundaries_with_hybrid_strategy(
+    canonical_transcript: List[Dict],
+    runnable_config: RunnableConfig,
+    user_id: str,
+    job_id: str,
+    char_limit: int = 200000,
 ) -> List[int]:
     """
-    A robust way to find thematic boundaries in large, unstructured text
-    by using a sliding window approach with parallel AI calls.
+    Orchestrates boundary finding using a hybrid strategy.
+
+    - If the transcript is under char_limit, it uses the holistic AI analysis.
+    - If it's over char_limit, it breaks the transcript into large, overlapping
+      chunks and runs the same analysis on each chunk in parallel.
     """
-    print(
-        "[cyan]Using sliding window analysis to find topic boundaries in plain text...[/cyan]"
-    )
+    full_text = "".join([utt.get("text", "") for utt in canonical_transcript])
+    total_chars = len(full_text)
 
-    # 1. Split the entire text into individual lines
-    lines = [line.strip() for line in full_text.split("\n") if line.strip()]
-    if len(lines) < 20:  # Don't bother splitting very short texts
-        return []
-
-    # 2. Define window and step sizes to create overlapping chunks
-    window_size = 100  # Number of lines per chunk
-    step_size = 50  # How many lines to slide forward each time
-
-    windows = []
-    for i in range(0, len(lines), step_size):
-        window_lines = lines[i : i + window_size]
-        if len(window_lines) < 20:  # Skip small trailing windows
-            continue
-        # Each window contains its text and its starting line number (offset)
-        windows.append({"text": "\n".join(window_lines), "offset": i})
-
-    if not windows:
-        return []
-
-    # 3. Define the simple, fast AI task
-    llm, llm_options = clients.get_llm("best-lite", temperature=0.0)
-    parser = JsonOutputParser()
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an expert at finding the single most significant topic change in a block of text. "
-                "The user will provide text with numbered lines (starting from 0). "
-                "Your task is to identify the line number that represents the best place to split the text into two different topics. "
-                "Return a JSON object with a single key 'best_split_line'. The value must be an integer. "
-                "If there is no single logical split point, return -1.\n{format_instructions}",
-            ),
-            ("human", "Here is the text:\n---\n{numbered_text}\n---"),
-        ]
-    )
-    chain = prompt | llm | parser
-
-    # This helper function will be run in parallel for each window
-    async def get_split_point(window):
-        numbered_text = "\n".join(
-            [f"{i}: {line}" for i, line in enumerate(window["text"].split("\n"))]
+    # --- Strategy 1: Holistic Analysis for Manageable Text ---
+    if total_chars <= char_limit:
+        print(
+            f"[green]Transcript is under {char_limit} chars. Using holistic AI analysis...[/green]"
         )
-        try:
-            result = await chain.ainvoke(
-                {
-                    "numbered_text": numbered_text,
-                    "format_instructions": parser.get_format_instructions(),
-                },
-                config=runnable_config,
-            )
+        return await find_semantic_topic_boundaries_with_ai(
+            canonical_transcript, runnable_config, user_id, job_id
+        )
 
-            local_split_line = result.get("best_split_line", -1)
-            # Ensure we have a valid integer before processing
-            if isinstance(local_split_line, int) and local_split_line != -1:
-                # Convert the local line number (e.g., line 10 of the window)
-                # back to a global line number (e.g., line 60 of the document)
-                return window["offset"] + local_split_line
-        except Exception:
-            # If an AI call fails for any reason, just ignore it
-            return -1
-        return -1
-
-    # 4. Run all AI calls concurrently for maximum speed
-    tasks = [get_split_point(w) for w in windows]
-    suggested_boundaries = await asyncio.gather(*tasks)
-
-    # 5. Process the results: filter out non-suggestions, remove duplicates, and sort
-    final_boundaries = sorted(list(set([b for b in suggested_boundaries if b > 0])))
-
+    # --- Strategy 2: Chunking Analysis for Very Large Text ---
     print(
-        f"  - Sliding window analysis suggested {len(final_boundaries)} potential boundaries."
+        f"[yellow]Transcript is over {char_limit} chars. Switching to chunking strategy...[/yellow]"
     )
-    return final_boundaries
+
+    # 1. Simple math to define chunks based on utterance count (approximates char count).
+    # This avoids complex character counting and splitting words.
+    avg_chars_per_utterance = total_chars / len(canonical_transcript)
+    chunk_size_utterances = int(char_limit / avg_chars_per_utterance)
+    overlap_utterances = int(chunk_size_utterances * 0.15)  # 15% overlap
+    step_size_utterances = chunk_size_utterances - overlap_utterances
+
+    # 2. Create the chunks with their starting line number (offset).
+    chunks_with_offsets = []
+    for i in range(0, len(canonical_transcript), step_size_utterances):
+        chunk = canonical_transcript[i : i + chunk_size_utterances]
+        if chunk:
+            chunks_with_offsets.append({"chunk": chunk, "offset": i})
+
+    print(f"  - Broken into {len(chunks_with_offsets)} overlapping chunks.")
+
+    async def analyze_chunk(item):
+        """Helper to run analysis on a chunk and adjust its boundary indices."""
+        chunk = item["chunk"]
+        offset = item["offset"]
+        # Run the same AI analysis you used before, but just on the smaller chunk.
+        relative_indices = await find_semantic_topic_boundaries_with_ai(
+            chunk, runnable_config, user_id, job_id
+        )
+        # Convert the relative line numbers (e.g., line 15 of the chunk)
+        # to absolute line numbers (e.g., line 2515 of the whole transcript).
+        return [offset + index for index in relative_indices]
+
+    # 3. Run the analysis on all chunks in parallel.
+    tasks = [analyze_chunk(item) for item in chunks_with_offsets]
+    results_from_chunks = await asyncio.gather(*tasks)
+
+    # 4. Consolidate all the boundaries into a single, sorted list.
+    all_boundaries = set()
+    for boundary_list in results_from_chunks:
+        for boundary in boundary_list:
+            all_boundaries.add(boundary)
+
+    return sorted(list(all_boundaries))
+
+
+def clean_line_for_analysis(line: str) -> str:
+    return re.sub(r"\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*", " ", line).strip()
 
 
 def parse_and_normalize_time(time_str: str) -> Optional[int]:
@@ -525,52 +538,6 @@ async def preprocess_and_normalize_transcript(raw_text: str) -> List[Dict]:
         f"[green]✓ Preprocessing complete. Created {len(canonical_transcript)} canonical utterance(s).[/green]"
     )
     return canonical_transcript
-
-
-async def segment_plain_text_robustly(
-    raw_text: str, runnable_config: RunnableConfig
-) -> List[List[Dict]]:
-    """
-    Orchestrates a robust segmentation for plain text using a sliding window approach.
-
-    1. Splits text into lines.
-    2. Uses the `find_boundaries_in_plain_text` sliding window function to get reliable boundary line numbers.
-    3. Creates a "virtual" canonical transcript where each line is an utterance.
-    4. Uses the standard `create_sections_from_canonical` to build the final sections.
-    """
-    print("[cyan]🚀 Activating new robust plain-text segmentation flow...[/cyan]")
-
-    lines = [line.strip() for line in raw_text.split("\n") if line.strip()]
-    if not lines:
-        return []
-
-    # 1. Use the superior sliding window method to find boundary indices (line numbers)
-    # This function is already in your code but was not being used for this workflow.
-    boundary_indices = await find_boundaries_in_plain_text(raw_text, runnable_config)
-
-    # 2. Create a "virtual" transcript where each line is treated as a canonical utterance.
-    # This allows us to reuse the existing section creation logic.
-    virtual_transcript = [
-        {"speaker_id": "Narrator", "start_seconds": -1, "end_seconds": -1, "text": line}
-        for i, line in enumerate(lines)
-    ]
-
-    # 3. Ensure the transcript starts from the beginning
-    if 0 not in boundary_indices:
-        boundary_indices.insert(0, 0)
-
-    # 4. Use the standard section creator with the high-quality boundaries
-    print(
-        f"[green]✓ Found {len(boundary_indices)} high-quality boundaries. Creating sections...[/green]"
-    )
-    sections = create_sections_from_canonical(
-        virtual_transcript, sorted(list(set(boundary_indices)))
-    )
-
-    # Optional: Add a merge step to combine very small sections if needed
-    # sections = merge_short_canonical_sections(sections, min_word_count=150) # A word-count based merger would be needed here
-
-    return sections
 
 
 def segment_by_word_count(
@@ -955,7 +922,19 @@ async def filter_entities(
             },
             config=runnable_config,
         )
-        return result.get("key_entities", [])
+
+        print(
+            f"{log_prefix} [blue]DEBUG: LLM result from entity filtering: {result}[/blue]"
+        )
+
+        key_entities_found = result.get("entities", [])
+
+        print(
+            f"{log_prefix} [green]✓ Found {len(key_entities_found)} key entities: {key_entities_found}[/green]"
+        )
+
+        return key_entities_found
+
     except Exception as e:
         print(
             f"{log_prefix} [bold red]CRITICAL: Entity filtering failed even after attempting to fix: {e}[/bold red]"
@@ -1159,8 +1138,9 @@ async def get_context_for_entities(
     tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
     query_gen_prompt = ChatPromptTemplate.from_template(
-        "You are a search expert. Generate a concise, effective search query to find a relevant explanation for the term '{topic}' "
-        "based on the following context.\n\nCONTEXT:\n{context}"
+        "You are a search query generator. Create a single, concise search query to explain the term '{topic}' using the provided context. "
+        "CRITICAL: Your output must be ONLY the search query string. Do not add any explanation, formatting, titles, or introductory text like 'Here is a query:'. The query must be under 50 words.\n\n"
+        "CONTEXT:\n{context}"
     )
     query_gen_chain = query_gen_prompt | llm | StrOutputParser()
     query_gen_tasks = [
@@ -1169,8 +1149,14 @@ async def get_context_for_entities(
     ]
     smart_queries = await asyncio.gather(*query_gen_tasks)
 
+    print(f"{log_prefix} [blue]DEBUG: Generated smart queries: {smart_queries}[/blue]")
+
     search_tasks = [
-        asyncio.to_thread(tavily_client.search, query=query, search_depth="basic")
+        asyncio.to_thread(
+            tavily_client.search,
+            query=query.strip().split("\n")[0][:390],
+            search_depth="basic",
+        )
         for query in smart_queries
         if query and query.strip()
     ]
@@ -1468,12 +1454,30 @@ async def _process_single_section(
     for key, value in entity_costs.items():
         section_cost_metrics[key] = section_cost_metrics.get(key, 0) + value
 
-    # Assemble the final result for this section
+    key_entities_list = analysis_data.get("key_entities", [])
+    explanations_map = context_result.get("explanations", {})
+
+    # Build the new, clean array of objects
+    entities_array = []
+    for entity_name in key_entities_list:
+        entities_array.append(
+            {
+                "name": entity_name,
+                "explanation": explanations_map.get(
+                    entity_name, "No explanation found."
+                ),
+            }
+        )
+
+    # Remove the old, redundant key from the main analysis data
+    analysis_data.pop("key_entities", None)
+
+    # Assemble the final result with the new 'entities' array
     section_result = {
         "start_time": start_time_str,
         "end_time": end_time_str,
         **analysis_data,
-        "context_data": context_result.get("explanations", {}),
+        "entities": entities_array,  # Use the new, clean array
     }
 
     db_manager.save_section_result(user_id, job_id, section_index, section_result)
@@ -1895,22 +1899,29 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             )
             total_duration_seconds = canonical_transcript[-1]["end_seconds"]
 
-            # Your dynamic duration logic for timed content
-            dynamic_min_duration = 240  # Default: 4 minutes
-            if total_duration_seconds > 10800:
-                dynamic_min_duration = 900
-            elif total_duration_seconds > 7200:
-                dynamic_min_duration = 600
-            elif total_duration_seconds > 3600:
-                dynamic_min_duration = 420
-            elif total_duration_seconds > 1800:
-                dynamic_min_duration = 360
+            if total_duration_seconds >= 7200:
+                target_sections = 10
+                dynamic_min_duration = total_duration_seconds // target_sections
+
+            else:
+                dynamic_min_duration = 300  # 5 minutes
+
+                if total_duration_seconds > 6000:  # Over 1h 40m
+                    dynamic_min_duration = 720  # 12 minutes
+                elif total_duration_seconds > 4800:  # Over 1h 20m
+                    dynamic_min_duration = 600  # 10 minutes
+                elif total_duration_seconds > 3600:  # Over 60 minutes
+                    dynamic_min_duration = 540  # 9 minutes
+                elif total_duration_seconds > 2700:  # Over 45 minutes
+                    dynamic_min_duration = 480  # 8 minutes
+                elif total_duration_seconds > 1800:  # Over 30 minutes
+                    dynamic_min_duration = 360  # 6 minutes
 
             print(
                 f"  -> Content length is ~{total_duration_seconds // 60} minutes. Using target section size of ~{dynamic_min_duration // 60} minutes."
             )
 
-            boundary_indices = await find_semantic_topic_boundaries_with_ai(
+            boundary_indices = await find_boundaries_with_hybrid_strategy(
                 canonical_transcript, runnable_config, user_id, job_id
             )
             if 0 not in boundary_indices:
@@ -1953,7 +1964,7 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         print(f"[magenta]\n{log_msg}[/magenta]")
         db_manager.update_job_status(user_id, job_id, "PROCESSING", log_msg)
 
-        semaphore = asyncio.Semaphore(8)
+        semaphore = asyncio.Semaphore(5)
 
         async def process_with_semaphore(section, i):
             """Wrapper to acquire semaphore before running the task."""
@@ -2199,13 +2210,11 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             + (final_cost_metrics.get("assemblyai_audio_seconds", 0) * 0.0003)
         )
 
-        # --- Build the "Golden Record" for your Dashboard ---
         usage_record_data = {
             "userId": user_id,
             "jobId": job_id,
             "type": "audio" if storage_path else "text",
             "persona": persona,
-            # Core Metrics
             "internalCostUSD": round(internal_cost_usd, 6),
             "totalCompletionSeconds": round(timing_metrics["total_job_s"], 2),
             "inputDurationSeconds": request_data.get("duration_seconds", 0),
@@ -2214,15 +2223,13 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
                 for key, value in timing_metrics.items()
                 if key != "total_job_s"  # Avoid duplicating the total
             },
-            # Detailed Breakdown for Deeper Analysis
             "breakdown": {
                 "llm_input_tokens": final_llm_metrics.get("llm_input_tokens", 0),
                 "llm_output_tokens": final_llm_metrics.get("llm_output_tokens", 0),
-                # This now correctly reads the value captured in Step 2
+                "total_llm_requests": final_llm_metrics.get("llm_calls", 0),
                 "assemblyai_seconds": final_cost_metrics.get(
                     "assemblyai_audio_seconds", 0
                 ),
-                # This now uses the correct key for Tavily searches
                 "tavily_searches": final_cost_metrics.get("tavily_searches", 0),
             },
         }
@@ -2265,6 +2272,7 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
                     [
                         f"  - {'LLM Input Tokens':<30}: {final_llm_metrics.get('llm_input_tokens', 0):,}",
                         f"  - {'LLM Output Tokens':<30}: {final_llm_metrics.get('llm_output_tokens', 0):,}",
+                        f"  - {'Total LLM Requests':<30}: {final_llm_metrics.get('llm_calls', 0)}",
                         f"  - {'Tavily Searches':<30}: {final_cost_metrics.get('tavily_searches', 0)}",
                         f"  - {'AssemblyAI Audio':<30}: {final_cost_metrics.get('assemblyai_audio_seconds', 0):.2f}s",
                         "-" * 40,

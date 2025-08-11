@@ -115,13 +115,12 @@ const Navbar = () => {
           <NotificationBell />
 
           <div className="relative" ref={profileMenuRef}>
-            <button
+            <Button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-white"
+              variant={"ghost"}
             >
-              <span className="sr-only">Open user menu</span>
-              <UserCircle className="h-8 w-8 text-black dark:text-slate-400 dark:hover:text-slate-200" />
-            </button>
+              <UserCircle className="scale-150" />
+            </Button>
             <div
               className={`
                                 origin-top-right absolute top-full right-0 mt-2 w-64 rounded-xl shadow-xl bg-white dark:bg-slate-800 ring-1 ring-slate-900/5
@@ -211,9 +210,6 @@ const Navbar = () => {
     );
   };
 
-  // ====================================================================
-  // ===== RENDER MOBILE MENU - THIS IS THE ONLY SECTION I'VE CHANGED =====
-  // ====================================================================
   const renderMobileMenu = () => {
     return (
       <div ref={mobilePanelRef} className="md:hidden">

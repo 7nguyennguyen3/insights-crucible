@@ -1,20 +1,16 @@
-// /api/billing/webhook/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
-
 import { Resend } from "resend";
-import { render } from "@react-email/render";
-import CharterWelcomeEmail from "@/app/emails/CharterWelcomeEmail";
 
+// This set defines which Stripe events our webhook will process.
 const relevantEvents = new Set([
   "checkout.session.completed",
   "invoice.paid",
-  "customer.subscription.updated", // Added
+  "customer.subscription.updated",
   "customer.subscription.deleted",
 ]);
 
@@ -43,7 +39,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // ✨ MODIFICATION: Added idempotency check to prevent processing the same event twice.
+  // Idempotency check: prevent processing the same event twice.
   const eventRef = db.collection("processed_stripe_events").doc(event.id);
   const eventDoc = await eventRef.get();
   if (eventDoc.exists) {
@@ -54,6 +50,7 @@ export async function POST(request: NextRequest) {
   if (relevantEvents.has(event.type)) {
     try {
       switch (event.type) {
+        // --- Handles new subscriptions and one-time purchases ---
         case "checkout.session.completed": {
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
           const customerId = checkoutSession.customer as string;
@@ -73,6 +70,7 @@ export async function POST(request: NextRequest) {
           const userDoc = userQuery.docs[0];
           const userId = userDoc.id;
 
+          // Handle a new subscription
           if (
             checkoutSession.mode === "subscription" &&
             checkoutSession.subscription
@@ -88,102 +86,71 @@ export async function POST(request: NextRequest) {
 
             const priceId = subscription.items.data[0].price.id;
             let plan = "free";
+            let creditsToGrant = 0;
 
-            // Check if the subscription is for the Charter Member plan
+            // UPDATED LOGIC: Check for Starter or Pro plan
             if (
-              priceId ===
-              process.env.NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID
+              priceId === process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID
             ) {
-              plan = "charter";
+              plan = "starter";
+              creditsToGrant = 30;
+            } else if (
+              priceId === process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID
+            ) {
+              plan = "pro";
+              creditsToGrant = 100;
+            }
 
-              // ✨ MODIFICATION: Define base, bonus, and total credits separately for clarity.
-              const baseCredits = 25;
-              const bonusCredits = 5;
-              const totalCreditsToGrant = baseCredits + bonusCredits;
-
-              // Update database and send email for the charter plan
+            if (plan !== "free" && creditsToGrant > 0) {
               await auth.setCustomUserClaims(userId, { plan });
               await userDoc.ref.update({
                 plan: plan,
-                analyses_remaining: FieldValue.increment(totalCreditsToGrant),
+                analyses_remaining: FieldValue.increment(creditsToGrant),
                 nextBillingDate: subscription.items.data[0].current_period_end,
                 cancel_at_period_end: false,
                 subscription_ends_at: null,
               });
               console.log(
-                `✅ User ${userId} subscribed to ${plan} plan, granting ${totalCreditsToGrant} credits.`
+                `✅ User ${userId} subscribed to ${plan} plan, granting ${creditsToGrant} credits.`
               );
-
-              // Logic to send welcome email with the correct props
-              try {
-                const userData = userDoc.data();
-                if (userData?.email) {
-                  // ✨ MODIFICATION: Pass baseCredits and bonusCredits to the email component.
-                  const emailHtml = await render(
-                    <CharterWelcomeEmail
-                      userName={userData.name}
-                      baseCredits={baseCredits}
-                      bonusCredits={bonusCredits}
-                    />
-                  );
-                  await resend.emails.send({
-                    from: "Jimmy from Insights Crucible <onboarding@insightscrucible.com>",
-                    to: [userData.email],
-                    subject: "Thank you for becoming a Charter Member!",
-                    html: emailHtml,
-                  });
-                  console.log(`✅ Welcome email queued for ${userData.email}.`);
-                }
-              } catch (emailError) {
-                console.error(
-                  `Failed to send welcome email for user ${userId}:`,
-                  emailError
-                );
-              }
-
-              try {
-                const notificationsCollectionRef = db.collection(
-                  `saas_users/${userId}/notifications`
-                );
-                await notificationsCollectionRef.add({
-                  message: `Welcome to the Charter Member family! 🎉 You've received ${bonusCredits} 
-                  bonus analysis credits as a token of our appreciation.`,
-                  isRead: false,
-                  link: "/account",
-                  createdAt: FieldValue.serverTimestamp(),
-                });
-                console.log(
-                  `✅ Notification added for user ${userId} regarding ${bonusCredits} bonus credits.`
-                );
-              } catch (notificationError) {
-                console.error(
-                  `❌ Failed to create bonus credit notification for user ${userId}:`,
-                  notificationError
-                );
-              }
+              // TODO: Consider sending a welcome email or in-app notification here.
             }
-
-            // You can add 'else if' blocks here for future plans like the "Pro" plan.
-          } else if (checkoutSession.mode === "payment") {
-            // Your one-time payment logic (which is correct) remains here.
+          }
+          // Handle a one-time credit pack purchase
+          else if (checkoutSession.mode === "payment") {
             const lineItems = await stripe.checkout.sessions.listLineItems(
               checkoutSession.id
             );
-
             const lineItem = lineItems.data[0];
             const priceId = lineItem.price?.id;
 
             if (
               priceId === process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID
             ) {
-              const quantity = lineItem.quantity ?? 0;
+              const baseQuantity = lineItem.quantity ?? 0;
+              let bonusQuantity = 0;
 
-              if (quantity > 0) {
+              // This is our new business logic for tiered bonuses
+              if (baseQuantity === 100) {
+                // Corresponds to the $20 pack
+                bonusQuantity = 20;
+              } else if (baseQuantity === 250) {
+                // Corresponds to the $50 pack
+                bonusQuantity = 75;
+              } else if (baseQuantity === 25) {
+                // Corresponds to the $5 pack
+                bonusQuantity = 3;
+              }
+
+              const totalCreditsToGrant = baseQuantity + bonusQuantity;
+
+              if (totalCreditsToGrant > 0) {
                 await userDoc.ref.update({
-                  analyses_remaining: FieldValue.increment(quantity),
+                  analyses_remaining: FieldValue.increment(totalCreditsToGrant),
                 });
+                // The new console log is more descriptive for easier debugging
                 console.log(
-                  `✅ User ${userId} purchased ${quantity} one-time analyses.`
+                  `✅ User ${userId} purchased ${baseQuantity} credits + ${bonusQuantity} bonus. Total granted: ${totalCreditsToGrant}.`
                 );
               }
             }
@@ -191,6 +158,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        // --- Handles recurring subscription payments (credit refills) ---
         case "invoice.paid": {
           const invoice = event.data.object as Stripe.Invoice;
           const subscriptionId = invoice.lines.data[0]?.subscription as string;
@@ -211,16 +179,24 @@ export async function POST(request: NextRequest) {
               const subscription =
                 await stripe.subscriptions.retrieve(subscriptionId);
 
-              // ✨ MODIFICATION: Refill with 25 base credits for Charter plan renewals.
-              // This logic correctly handles the charter plan. You can add an `else if` for the pro plan later.
-              if (userDoc.data()?.plan === "charter") {
+              const userData = userDoc.data();
+              let creditsToRefill = 0;
+
+              // UPDATED LOGIC: Refill credits based on the user's plan
+              if (userData?.plan === "starter") {
+                creditsToRefill = 30;
+              } else if (userData?.plan === "pro") {
+                creditsToRefill = 100;
+              }
+
+              if (creditsToRefill > 0) {
                 await userDoc.ref.update({
-                  analyses_remaining: FieldValue.increment(25),
+                  analyses_remaining: FieldValue.increment(creditsToRefill),
                   nextBillingDate:
                     subscription.items.data[0].current_period_end,
                 });
                 console.log(
-                  `✅ Refilled 25 credits for charter user ${userDoc.id}.`
+                  `✅ Refilled ${creditsToRefill} credits for ${userData?.plan} user ${userDoc.id}.`
                 );
               }
             }
@@ -228,7 +204,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        // ✨ MODIFICATION: New handler for subscription updates (e.g., cancellation requests).
+        // --- Handles subscription cancellation requests (e.g., user clicks "cancel") ---
         case "customer.subscription.updated": {
           const subscription = event.data.object as Stripe.Subscription;
           const customerId = subscription.customer as string;
@@ -241,15 +217,10 @@ export async function POST(request: NextRequest) {
 
           if (!userQuery.empty) {
             const userDoc = userQuery.docs[0];
-            const updateData: {
-              cancel_at_period_end: boolean;
-              subscription_ends_at: number | null;
-            } = {
+            await userDoc.ref.update({
               cancel_at_period_end: subscription.cancel_at_period_end,
               subscription_ends_at: subscription.cancel_at,
-            };
-
-            await userDoc.ref.update(updateData);
+            });
 
             if (subscription.cancel_at_period_end) {
               console.log(
@@ -264,8 +235,8 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        // --- Handles when a subscription is fully ended and deleted ---
         case "customer.subscription.deleted": {
-          // This logic is now correct, as it runs only when the subscription is truly over.
           const subscription = event.data.object as Stripe.Subscription;
           const customerId = subscription.customer as string;
 
@@ -279,10 +250,10 @@ export async function POST(request: NextRequest) {
             const userDoc = userQuery.docs[0];
             const userId = userDoc.id;
 
+            // Downgrade user to the free plan
             await auth.setCustomUserClaims(userId, { plan: "free" });
             await userDoc.ref.update({
               plan: "free",
-              // Optionally clear subscription-specific fields
               nextBillingDate: null,
               cancel_at_period_end: false,
               subscription_ends_at: null,
@@ -305,7 +276,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // ✨ MODIFICATION: After successful processing, mark the event ID as handled.
+  // After successful processing, mark the event ID as handled.
   await eventRef.set({
     processedAt: FieldValue.serverTimestamp(),
     eventType: event.type,

@@ -595,6 +595,56 @@ export const useJobData = (jobId: string) => {
     );
   }, []);
 
+  const handleEntityChange = useCallback(
+    (
+      sectionId: string,
+      index: number,
+      field: "name" | "explanation",
+      value: string
+    ) => {
+      setDraftData(
+        produce((draft) => {
+          if (!draft) return;
+          const section = draft.results.find((s) => s.id === sectionId);
+          if (section?.entities) {
+            section.entities[index][field] = value;
+          }
+        })
+      );
+    },
+    []
+  );
+
+  const handleAddEntity = useCallback((sectionId: string) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const section = draft.results.find((s) => s.id === sectionId);
+        if (section) {
+          if (!section.entities) {
+            section.entities = [];
+          }
+          section.entities.push({
+            name: "New Concept",
+            explanation: "New explanation...",
+          });
+        }
+      })
+    );
+  }, []);
+
+  const handleDeleteEntity = useCallback((sectionId: string, index: number) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const section = draft.results.find((s) => s.id === sectionId);
+        if (section?.entities) {
+          section.entities.splice(index, 1);
+        }
+      })
+    );
+  }, []);
+
   return {
     // --- Core Data & State ---
     jobData,
@@ -623,6 +673,10 @@ export const useJobData = (jobId: string) => {
     handleDeleteItem,
     handleItemChange,
     handleQaChange,
+
+    handleEntityChange,
+    handleAddEntity,
+    handleDeleteEntity,
 
     // --- Contextual Briefing Handlers ---
     handleContextualBriefingChange,

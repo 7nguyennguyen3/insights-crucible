@@ -30,7 +30,7 @@ const faqData = [
       {
         q: "How do I run my first analysis?",
         // ✅ UPDATED: More precise description of the process.
-        a: "Navigate to the launch engine. You can either paste a transcript or upload a supported audio file (MP3, M4A, WAV). After you provide the content, click 'Check Requirements' to see the analysis cost. If you have enough allowance, you can then confirm to begin processing.",
+        a: "Navigate to the launch engine. You can either paste a transcript or upload a supported audio file (MP3, M4A, WAV). After you provide the content, click 'Check Cost' to see the analysis cost. If you have enough allowance, you can then confirm to begin processing.",
       },
       {
         q: "What file formats do you support?",
@@ -44,12 +44,12 @@ const faqData = [
       {
         q: "How does the analysis allowance work?",
         // ✅ UPDATED: Replaced 'credits' with 'analyses'.
-        a: "Each analysis you run costs a minimum of 1 from your allowance. The Free plan includes 3 analysis credits per month. Paid plans (Charter/Pro) come with a more generous allowance of 25 analysis credits per month.",
+        a: "Each analysis you run costs a minimum of 0.5 to 1 base on size. The Free plan includes 5 analysis credits per month. Paid plans (Starter/Pro) come with more credits per month and receive additional 5 free analysis credits each month.",
       },
       {
         q: "Do my unused analysis credits roll over?",
         // ✅ UPDATED: Clearer policy for free vs. paid.
-        a: "For paid plans, yes! Unused analysis credits roll over to the next month. For the Free plan, the allowance resets to 3 new analysis credits at the beginning of each calendar month and does not roll over.",
+        a: "For paid plans, yes! Unused analysis credits roll over to the next month. For the Free plan, the allowance resets to 5 new analysis credits at the beginning of each calendar month and does not roll over.",
       },
       {
         q: "How do I upgrade or manage my plan?",

@@ -47,6 +47,7 @@ import {
   Plus,
   Minus,
   Ticket,
+  Info,
 } from "lucide-react";
 import {
   Dialog,
@@ -83,7 +84,7 @@ export function AccountView() {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState<string | null>(
     null
   );
-  const [quantity, setQuantity] = useState(5);
+  const [quantity, setQuantity] = useState(25);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -196,7 +197,8 @@ export function AccountView() {
   };
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 5 && newQuantity <= 100) {
+    if (newQuantity >= 25 && newQuantity <= 500) {
+      // Increased max to allow for higher purchases
       setQuantity(newQuantity);
     }
   };
@@ -301,7 +303,7 @@ export function AccountView() {
                 )}
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                {(profile?.plan === "pro" || profile?.plan === "charter") && (
+                {(profile?.plan === "pro" || profile?.plan === "starter") && (
                   <>
                     {profile.cancel_at_period_end ? (
                       <div className="w-full text-center p-4 border border-yellow-300 bg-yellow-50 rounded-md dark:bg-yellow-900/20 dark:border-yellow-700/50 space-y-3">
@@ -382,82 +384,116 @@ export function AccountView() {
                         handleCreateCheckout({
                           priceId:
                             process.env
-                              .NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID!,
+                              .NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID!,
                         })
                       }
                       disabled={!!isCheckoutLoading}
                     >
                       {isCheckoutLoading ===
-                      process.env
-                        .NEXT_PUBLIC_STRIPE_CHARTER_MEMBER_PLAN_PRICE_ID ? (
+                      process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <Sparkles className="mr-2 h-4 w-4" />
                       )}
-                      Upgrade to Charter
+                      Upgrade to Starter Plan
                     </Button>
                   </div>
                 )}
-                <div className="w-full space-y-4 pt-4 border-t">
-                  <Label htmlFor="quantity" className="font-semibold">
-                    Purchase One-Time Analysis Credit
+                <div className="w-full space-y-3 pt-4 border-t">
+                  <Label className="font-semibold">
+                    Purchase One-Time Analysis Credits
                   </Label>
-                  {/* Add this new paragraph for the description */}
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Minimum purchase is 5 credits, maximum is 100.
+                    Need more credits? Choose a pack below. The more you buy,
+                    the more you save!
                   </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleQuantityChange(quantity - 1)}
-                      disabled={quantity <= 5}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      value={quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(parseInt(e.target.value, 10))
-                      }
-                      className="text-center font-bold"
-                      min="5" // Changed from 1 to 5
-                      max="100"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleQuantityChange(quantity + 1)}
-                      disabled={quantity >= 100}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+
+                  {/* Option 1: Starter Pack */}
                   <Button
                     variant="secondary"
-                    className="w-full"
+                    className="w-full justify-between"
                     onClick={() =>
                       handleCreateCheckout({
                         priceId:
                           process.env
                             .NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID!,
-                        quantity: quantity,
+                        quantity: 25, // Base quantity
                       })
                     }
                     disabled={!!isCheckoutLoading}
                   >
-                    {isCheckoutLoading ===
-                    process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <PackagePlus className="mr-2 h-4 w-4" /> Purchase{" "}
-                        {quantity} Analysis Credits
-                      </>
-                    )}
+                    <span className="flex items-center">
+                      25{" "}
+                      <span className="text-green-600 dark:text-green-400 font-bold mx-1">
+                        + 3
+                      </span>{" "}
+                      Bonus Credits
+                    </span>
+                    <span className="font-bold">$5</span>
                   </Button>
+
+                  {/* Option 2: Value Pack */}
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-between"
+                    onClick={() =>
+                      handleCreateCheckout({
+                        priceId:
+                          process.env
+                            .NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID!,
+                        quantity: 100, // Base quantity
+                      })
+                    }
+                    disabled={!!isCheckoutLoading}
+                  >
+                    <span className="flex items-center">
+                      100{" "}
+                      <span className="text-green-600 dark:text-green-400 font-bold mx-1">
+                        + 20
+                      </span>{" "}
+                      Bonus Credits
+                      <Badge className="ml-2">Most Popular</Badge>
+                    </span>
+                    <span className="font-bold">$20</span>
+                  </Button>
+
+                  {/* Option 3: Power Pack */}
+                  <Button
+                    variant="secondary"
+                    className="w-full justify-between"
+                    onClick={() =>
+                      handleCreateCheckout({
+                        priceId:
+                          process.env
+                            .NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID!,
+                        quantity: 250, // Base quantity
+                      })
+                    }
+                    disabled={!!isCheckoutLoading}
+                  >
+                    <span className="flex items-center">
+                      250{" "}
+                      <span className="text-green-600 dark:text-green-400 font-bold mx-1">
+                        + 75
+                      </span>{" "}
+                      Bonus Credits
+                      <Badge
+                        variant="outline"
+                        className="ml-2 border-green-500 text-green-500"
+                      >
+                        Best Value
+                      </Badge>
+                    </span>
+                    <span className="font-bold">$50</span>
+                  </Button>
+
+                  <p
+                    className="text-xs text-slate-500 
+                  dark:text-slate-400 mt-3"
+                  >
+                    <strong>Note:</strong> Checkout shows the base amount. Bonus
+                    credits are added automatically after purchase.
+                  </p>
                 </div>
 
                 <Dialog>

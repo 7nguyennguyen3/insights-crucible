@@ -42,19 +42,17 @@ import {
   Clock,
   FileText,
   Globe,
-  Lightbulb,
   Loader2,
   LogIn,
   Mic2,
   Newspaper,
   Sparkles,
   Terminal,
-  Twitter,
   UploadCloud,
   XCircle,
-  Youtube, // Added YouTube icon
 } from "lucide-react";
 import { UploadProgressToast } from "../components/UploadProgressToast";
+import { FaXTwitter, FaYoutube } from "react-icons/fa6";
 
 type VideoDetails = {
   title: string;
@@ -103,16 +101,16 @@ type UiStatus =
   | "failed";
 
 const featureOptions = [
-  {
-    id: "run_contextual_briefing",
-    icon: Lightbulb,
-    title: "5-Angle Perspective",
-    description: "Performs a deep, contextual analysis on a key claim.",
-    color: "text-amber-500",
-  },
+  // {
+  //   id: "run_contextual_briefing",
+  //   icon: Lightbulb,
+  //   title: "5-Angle Perspective",
+  //   description: "Performs a deep, contextual analysis on a key claim.",
+  //   color: "text-amber-500",
+  // },
   {
     id: "run_x_thread_generation",
-    icon: Twitter,
+    icon: FaXTwitter,
     title: "Generate X/Twitter Thread",
     description: "Creates a ready-to-post thread summarizing the content.",
     color: "text-sky-500",
@@ -622,7 +620,7 @@ const EnginePage = () => {
                   {/* --- MODIFIED --- TabsList is now 3 columns */}
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="youtube" disabled={!user}>
-                      <Youtube className="w-4 h-4 mr-2" />
+                      <FaYoutube className="w-4 h-4 mr-2" />
                       YouTube URL
                     </TabsTrigger>
                     <TabsTrigger value="paste" disabled={!user}>
@@ -716,7 +714,21 @@ const EnginePage = () => {
                   </TabsContent>
 
                   <TabsContent value="upload" className="pt-4">
-                    {/* Your existing upload UI - no changes needed here */}
+                    {/* <Alert className="bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
+                      <Terminal className="h-4 w-4" />
+                      <AlertTitle className="font-semibold">
+                        Feature Temporarily Unavailable
+                      </AlertTitle>
+                      <AlertDescription>
+                        The file upload functionality is being refined to ensure
+                        it's both powerful and cost-effective.
+                        <br />
+                        <span>
+                          For now, please use the <strong>YouTube URL</strong>{" "}
+                          or <strong>Paste Transcript</strong> options.
+                        </span>
+                      </AlertDescription>
+                    </Alert> */}
                     <div className="space-y-4">
                       <div
                         {...getRootProps()}
@@ -951,7 +963,7 @@ const EnginePage = () => {
                           <TooltipContent side="top" align="start">
                             <p>
                               {isFeatureDisabled
-                                ? "This is a premium feature. Click to upgrade."
+                                ? "This feature is coming soon."
                                 : feature.description}
                             </p>
                           </TooltipContent>

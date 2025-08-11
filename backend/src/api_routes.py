@@ -1,4 +1,6 @@
 import os
+import random
+import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,6 +37,53 @@ except KeyError as e:
     raise RuntimeError(
         f"Environment variable {missing} is required but not set. "
         "Please configure DATIMP_USER, DATIMP_PASS, DATIMP_HOST, and DATIMP_PORT."
+    )
+
+
+def fetch_transcript_with_retry(video_id: str, max_retries: int = 7):
+    """
+    Attempts to fetch a YouTube transcript with a smart retry mechanism.
+
+    The first retry is immediate to quickly handle bad initial IPs,
+    while subsequent retries use exponential backoff to handle rate-limiting.
+    """
+    delay = 1  # Initial delay of 1 second for the *second* retry onward
+    for attempt in range(max_retries):
+        try:
+            # This proxy setup creates a new connection for each attempt
+            proxy_url = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
+            api = YouTubeTranscriptApi(
+                proxy_config=GenericProxyConfig(
+                    http_url=proxy_url,
+                    https_url=proxy_url,
+                )
+            )
+
+            print(
+                f"Attempt {attempt + 1}/{max_retries}: Fetching transcript for video {video_id}..."
+            )
+            transcript_list = api.get_transcript(video_id)
+            print(f"Successfully fetched transcript on attempt {attempt + 1}.")
+            return transcript_list  # Success! Return the data.
+
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            if attempt + 1 == max_retries:
+                print("Max retries reached. Raising final exception.")
+                raise e
+
+            # This is the key change: only sleep if it's not the first failure.
+            if attempt > 0:
+                wait_time = delay + random.uniform(0, 1)
+                print(f"Retrying in {wait_time:.2f} seconds...")
+                time.sleep(wait_time)
+                delay *= 2  # Double the delay for the next attempt
+            else:
+                print("First attempt failed, retrying immediately with a new IP...")
+
+    # This fallback should not be reached but is included for safety
+    raise Exception(
+        f"Could not fetch transcript for {video_id} after {max_retries} attempts."
     )
 
 
@@ -145,17 +194,14 @@ async def get_transcript_and_cache(
     """
     Fetches a YouTube transcript through rotating residential proxies,
     caches it in Firestore with a TTL, and returns its details for cost calculation.
+
+    This endpoint now uses a retry mechanism with exponential backoff.
     """
     try:
-        proxy_url = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
-        api = YouTubeTranscriptApi(
-            proxy_config=GenericProxyConfig(
-                http_url=proxy_url,
-                https_url=proxy_url,
-            )
-        )
-        transcript_object = api.fetch(request.video_id)
-        raw_transcript = transcript_object.to_raw_data()
+        # --- MODIFIED LOGIC ---
+        # Call the new helper function that contains the retry loop.
+        raw_transcript = fetch_transcript_with_retry(request.video_id)
+        # --- END MODIFIED LOGIC ---
 
         # Calculate character count
         full_text = " ".join([item["text"] for item in raw_transcript])
@@ -192,9 +238,11 @@ async def get_transcript_and_cache(
             raise ConnectionError("Database client not initialized.")
 
     except Exception as e:
+        # This will now catch the error only after all retries have failed.
         print(
-            f"ERROR: Could not fetch or cache transcript for video {request.video_id}: {e}"
+            f"ERROR: Could not fetch transcript for video {request.video_id} after multiple retries: {e}"
         )
         raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve transcript: {e}"
+            status_code=500,
+            detail=f"Failed to retrieve transcript after multiple retries: {e}",
         )
