@@ -270,149 +270,6 @@ def retry_with_exponential_backoff(func):
     return wrapper
 
 
-async def find_semantic_topic_boundaries_with_ai(
-    canonical_transcript: List[Dict],
-    runnable_config: RunnableConfig,
-    user_id: str,
-    job_id: str,
-) -> List[int]:
-    """
-    Uses an AI model to detect topic shifts and returns the INDICES of the utterances that start new topics.
-    """
-    print("\n[cyan]Finding semantic topic boundaries using AI analysis...[/cyan]")
-    db_manager.log_progress(
-        user_id, job_id, "Finding semantic topic boundaries using AI analysis..."
-    )
-
-    # Create a numbered, simplified version of the transcript for the LLM
-    numbered_transcript = ""
-    for i, utterance in enumerate(canonical_transcript):
-        numbered_transcript += f"INDEX {i}: {utterance['text']}\n\n"
-
-    if not numbered_transcript:
-        return []
-
-    llm, llm_options = clients.get_llm("best-lite", temperature=0.0)
-    parser = JsonOutputParser()
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an expert analyst and content strategist. Your primary task is to break down a long monologue into its core, distinct talking points to make it more digestible. "
-                "The transcript has been provided with an INDEX for each utterance. "
-                "Your output must be a JSON object with a single key: 'boundary_indices', which is a list of integers. "
-                # --- NEW, DETAILED INSTRUCTIONS ---
-                "A 'boundary' is the INDEX where the speaker **pivots to a new, distinct argument, theme, or step-by-step point.** "
-                "Follow these rules:\n"
-                "1. **DO** look for explicit transition phrases (e.g., 'The second reason is...', 'Now, let's talk about...', 'Moving on to...'). These are strong signals for a new section.\n"
-                "2. **DO NOT** create a new section for a brief example or a side story if it only serves to illustrate the *current* main point.\n"
-                "3. **Your goal is to identify 3-7 major, high-level talking points.** A new section should only be created when there is a clear and significant shift in the core argument or theme. Avoid creating sections for minor transitions."
-                "\n\n# Example Response Format:\n"
-                # '{"boundary_indices": [0, 15, 42, 75, 110]}'
-                "{format_instructions}",
-            ),
-            (
-                "human",
-                "Please segment the following transcript into its distinct talking points:\n--- TRANSCRIPT ---\n{numbered_transcript}\n--- END TRANSCRIPT ---",
-            ),
-        ]
-    )
-
-    chain = prompt | llm | parser
-
-    try:
-        result = await chain.ainvoke(
-            {
-                "numbered_transcript": numbered_transcript,
-                "format_instructions": parser.get_format_instructions(),
-            },
-            config=runnable_config,
-        )
-        indices = result.get("boundary_indices", [])
-        # Validate that the output is a list of integers
-        validated_indices = [i for i in indices if isinstance(i, int)]
-        print(
-            f"  - AI suggested {len(validated_indices)} topic boundaries at indices: {validated_indices}"
-        )
-        return validated_indices
-    except Exception as e:
-        print(f"[red]Error finding boundaries: {e}[/red]")
-        return []
-
-
-async def find_boundaries_with_hybrid_strategy(
-    canonical_transcript: List[Dict],
-    runnable_config: RunnableConfig,
-    user_id: str,
-    job_id: str,
-    char_limit: int = 200000,
-) -> List[int]:
-    """
-    Orchestrates boundary finding using a hybrid strategy.
-
-    - If the transcript is under char_limit, it uses the holistic AI analysis.
-    - If it's over char_limit, it breaks the transcript into large, overlapping
-      chunks and runs the same analysis on each chunk in parallel.
-    """
-    full_text = "".join([utt.get("text", "") for utt in canonical_transcript])
-    total_chars = len(full_text)
-
-    # --- Strategy 1: Holistic Analysis for Manageable Text ---
-    if total_chars <= char_limit:
-        print(
-            f"[green]Transcript is under {char_limit} chars. Using holistic AI analysis...[/green]"
-        )
-        return await find_semantic_topic_boundaries_with_ai(
-            canonical_transcript, runnable_config, user_id, job_id
-        )
-
-    # --- Strategy 2: Chunking Analysis for Very Large Text ---
-    print(
-        f"[yellow]Transcript is over {char_limit} chars. Switching to chunking strategy...[/yellow]"
-    )
-
-    # 1. Simple math to define chunks based on utterance count (approximates char count).
-    # This avoids complex character counting and splitting words.
-    avg_chars_per_utterance = total_chars / len(canonical_transcript)
-    chunk_size_utterances = int(char_limit / avg_chars_per_utterance)
-    overlap_utterances = int(chunk_size_utterances * 0.15)  # 15% overlap
-    step_size_utterances = chunk_size_utterances - overlap_utterances
-
-    # 2. Create the chunks with their starting line number (offset).
-    chunks_with_offsets = []
-    for i in range(0, len(canonical_transcript), step_size_utterances):
-        chunk = canonical_transcript[i : i + chunk_size_utterances]
-        if chunk:
-            chunks_with_offsets.append({"chunk": chunk, "offset": i})
-
-    print(f"  - Broken into {len(chunks_with_offsets)} overlapping chunks.")
-
-    async def analyze_chunk(item):
-        """Helper to run analysis on a chunk and adjust its boundary indices."""
-        chunk = item["chunk"]
-        offset = item["offset"]
-        # Run the same AI analysis you used before, but just on the smaller chunk.
-        relative_indices = await find_semantic_topic_boundaries_with_ai(
-            chunk, runnable_config, user_id, job_id
-        )
-        # Convert the relative line numbers (e.g., line 15 of the chunk)
-        # to absolute line numbers (e.g., line 2515 of the whole transcript).
-        return [offset + index for index in relative_indices]
-
-    # 3. Run the analysis on all chunks in parallel.
-    tasks = [analyze_chunk(item) for item in chunks_with_offsets]
-    results_from_chunks = await asyncio.gather(*tasks)
-
-    # 4. Consolidate all the boundaries into a single, sorted list.
-    all_boundaries = set()
-    for boundary_list in results_from_chunks:
-        for boundary in boundary_list:
-            all_boundaries.add(boundary)
-
-    return sorted(list(all_boundaries))
-
-
 def clean_line_for_analysis(line: str) -> str:
     return re.sub(r"\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*", " ", line).strip()
 
@@ -609,108 +466,6 @@ def segment_by_word_count(
     return sections
 
 
-def create_sections_from_canonical(
-    canonical_transcript: List[Dict], boundary_indices: List[int]
-) -> List[List[Dict]]:
-    """
-    Splits a canonical transcript (a list of utterance dicts) into sections (a list of lists of utterance dicts)
-    based on the integer indices of boundary utterances.
-    """
-    if not boundary_indices:
-        return [canonical_transcript]  # Return the whole thing as one section
-
-    sections = []
-    last_index = 0
-    # Ensure indices are sorted and unique
-    for boundary_index in sorted(list(set(boundary_indices))):
-        if boundary_index > last_index:
-            sections.append(canonical_transcript[last_index:boundary_index])
-        last_index = boundary_index
-
-    # Add the final section from the last boundary to the end
-    if last_index < len(canonical_transcript):
-        sections.append(canonical_transcript[last_index:])
-
-    return sections
-
-
-def merge_short_canonical_sections(
-    sections: List[List[Dict]], min_duration_seconds: int = 180
-) -> List[List[Dict]]:
-    """
-    Merges short canonical sections using a HYBRID strategy for best thematic cohesion.
-    Operates on the new canonical format (a list of lists of utterance dicts).
-    """
-    if len(sections) <= 1:
-        return sections
-
-    print(
-        f"\n[cyan]Running HYBRID canonical section merge...[/cyan] (Initial sections: {len(sections)}, Min duration: {min_duration_seconds}s)"
-    )
-
-    def get_section_duration(section: List[Dict]) -> int:
-        """Helper to calculate the duration of a canonical section."""
-        if not section:
-            return 0
-
-        start_time = section[0].get("start_seconds", -1)
-        end_time = section[-1].get("end_seconds", -1)
-
-        if start_time < 0 or end_time < 0:
-            # If a section has no valid timestamps (like our new text chunks),
-            # its duration is effectively zero, forcing it to be merged.
-            return 0
-
-        return abs(end_time - start_time)
-
-    processed_sections = []
-    temp_buffer = None
-
-    # --- PHASE 1: FORWARD-MERGING PASS ---
-    for i, current_section in enumerate(sections):
-        if temp_buffer:
-            # Merge the buffered section with the current one by extending the list
-            # print(
-            #     f"  - [blue]Merging buffered section into current section #{i + 1}...[/blue]"
-            # )
-            current_section = temp_buffer + current_section
-            temp_buffer = None
-
-        duration = get_section_duration(current_section)
-
-        if duration < min_duration_seconds and i < len(sections) - 1:
-            # print(
-            #     f"  - [cyan]Buffering short section #{i + 1} (duration: {duration}s) to merge forward.[/cyan]"
-            # )
-            temp_buffer = current_section
-        else:
-            # print(
-            #     f"  - [green]Keeping section #{i + 1} (duration: {duration}s).[/green]"
-            # )
-            processed_sections.append(current_section)
-
-    if temp_buffer:
-        processed_sections.append(temp_buffer)
-
-    # --- PHASE 2: FINAL BACKWARD-MERGE CLEANUP ---
-    if len(processed_sections) > 1:
-        last_section = processed_sections[-1]
-        duration = get_section_duration(last_section)
-
-        if duration < min_duration_seconds:
-            print(
-                f"  - [yellow]Final Cleanup: Last section is too short ({duration}s). Merging backward.[/yellow]"
-            )
-            short_last_section = processed_sections.pop()
-            # Merge by extending the list of utterances
-            processed_sections[-1].extend(short_last_section)
-
-    print(
-        f"[cyan]Hybrid merge complete.[/cyan] (Final sections: {len(processed_sections)})"
-    )
-    return processed_sections
-
-
 async def analyze_content(
     section_content: str, runnable_config: RunnableConfig, persona: str
 ) -> Dict:
@@ -884,12 +639,12 @@ async def filter_entities(
 ) -> List[str]:
     """
     Phase 2: Filters a list of potential entities down to the most important ones.
-    Enhanced with indexed logging.
+    Enhanced with data validation to handle unexpected LLM output formats.
     """
     if not potential_entities:
         return []
 
-    log_prefix = f"   - [Section {section_index + 1}]"
+    log_prefix = f"  - [Section {section_index + 1}]"
     print(
         f"{log_prefix} [yellow]Phase 2: Filtering {len(potential_entities)} potential entities...[/yellow]"
     )
@@ -929,11 +684,31 @@ async def filter_entities(
 
         key_entities_found = result.get("entities", [])
 
+        # --- NEW VALIDATION LOGIC ---
+        # This block checks the format and fixes it if necessary.
+        validated_entities = []
+        if key_entities_found and isinstance(key_entities_found[0], dict):
+            # This handles the error case where the LLM returns a list of dictionaries
+            print(
+                f"{log_prefix} [yellow]LLM returned a list of dicts. Normalizing to list of strings...[/yellow]"
+            )
+            for item in key_entities_found:
+                # Look for a key that contains the entity name
+                if "entity" in item:
+                    validated_entities.append(item["entity"])
+                elif "name" in item:
+                    validated_entities.append(item["name"])
+        else:
+            # This handles the normal case where the LLM returns a list of strings
+            validated_entities = [
+                entity for entity in key_entities_found if isinstance(entity, str)
+            ]
+
         print(
-            f"{log_prefix} [green]✓ Found {len(key_entities_found)} key entities: {key_entities_found}[/green]"
+            f"{log_prefix} [green]✓ Found {len(validated_entities)} key entities: {validated_entities}[/green]"
         )
 
-        return key_entities_found
+        return validated_entities
 
     except Exception as e:
         print(
@@ -1700,6 +1475,94 @@ Your output must be a JSON object with the following keys:
         return {}
 
 
+def get_dynamic_section_duration(total_duration_seconds: int) -> int:
+    """
+    Calculates the ideal section duration to create between 4 and 10 sections.
+    """
+    # If content is under 15 minutes, don't split it.
+    if total_duration_seconds < 900:
+        return (
+            total_duration_seconds + 1
+        )  # Return a value larger than the total duration
+
+    # Define the desired range for the number of sections
+    min_sections = 3
+    max_sections = 10
+
+    # Define the duration range where scaling should happen
+    scale_start_duration = 1800  # 30 minutes
+    scale_end_duration = 7200  # 2 hours
+
+    target_sections: float
+    if total_duration_seconds <= scale_start_duration:
+        target_sections = float(min_sections)
+    elif total_duration_seconds >= scale_end_duration:
+        target_sections = float(max_sections)
+    else:
+        # Linearly scale the number of sections between the start and end durations
+        progress = (total_duration_seconds - scale_start_duration) / (
+            scale_end_duration - scale_start_duration
+        )
+        target_sections = min_sections + progress * (max_sections - min_sections)
+
+    # Calculate the ideal duration for each section
+    # Using floor ensures we meet or exceed the target number of sections
+    return math.floor(total_duration_seconds / target_sections)
+
+
+def create_sections_by_duration(
+    canonical_transcript: List[Dict], target_duration: int
+) -> List[List[Dict]]:
+    """
+    Splits a canonical transcript into sections of a minimum target duration.
+    This is a pure time-based approach, no AI is used.
+    """
+    print(
+        f"[cyan]🚀 Activating time-based segmentation ({target_duration}s/section)...[/cyan]"
+    )
+    if not canonical_transcript:
+        return []
+
+    sections = []
+    current_section = []
+
+    for utterance in canonical_transcript:
+        current_section.append(utterance)
+
+        # Calculate the duration of the section being built so far
+        section_start_time = current_section[0]["start_seconds"]
+        section_end_time = current_section[-1]["end_seconds"]
+        current_duration = section_end_time - section_start_time
+
+        # If the section has reached the target duration, save it and start a new one
+        if current_duration >= target_duration:
+            sections.append(current_section)
+            current_section = []
+
+    # After the loop, add any remaining utterances as the final section
+    if current_section:
+        # Optional: Merge the last small section with the previous one if it's too short
+        if (
+            sections and len(current_section) < 3
+        ):  # Example: if last section has less than 3 utterances
+            print(
+                "[yellow]Final section is very short. Merging with previous section...[/yellow]"
+            )
+            sections[-1].extend(current_section)
+        else:
+            sections.append(current_section)
+
+    # If no sections were created (because the total duration was less than target_duration)
+    # return the whole transcript as a single section.
+    if not sections:
+        return [canonical_transcript]
+
+    print(
+        f"[green]✓ Transcript successfully split into {len(sections)} time-based sections.[/green]"
+    )
+    return sections
+
+
 async def run_full_analysis(user_id: str, job_id: str, persona: str):
     """
     The main worker function, fully implemented with the robust two-pass
@@ -1895,43 +1758,19 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
 
         elif has_timestamps:
             print(
-                "[cyan]Timestamped transcript detected. Running AI-powered semantic segmentation...[/cyan]"
+                "[cyan]Timestamped transcript detected. Using dynamic time-based segmentation...[/cyan]"
             )
             total_duration_seconds = canonical_transcript[-1]["end_seconds"]
 
-            if total_duration_seconds >= 7200:
-                target_sections = 10
-                dynamic_min_duration = total_duration_seconds // target_sections
-
-            else:
-                dynamic_min_duration = 300  # 5 minutes
-
-                if total_duration_seconds > 6000:  # Over 1h 40m
-                    dynamic_min_duration = 720  # 12 minutes
-                elif total_duration_seconds > 4800:  # Over 1h 20m
-                    dynamic_min_duration = 600  # 10 minutes
-                elif total_duration_seconds > 3600:  # Over 60 minutes
-                    dynamic_min_duration = 540  # 9 minutes
-                elif total_duration_seconds > 2700:  # Over 45 minutes
-                    dynamic_min_duration = 480  # 8 minutes
-                elif total_duration_seconds > 1800:  # Over 30 minutes
-                    dynamic_min_duration = 360  # 6 minutes
+            dynamic_min_duration = get_dynamic_section_duration(total_duration_seconds)
 
             print(
                 f"  -> Content length is ~{total_duration_seconds // 60} minutes. Using target section size of ~{dynamic_min_duration // 60} minutes."
             )
 
-            boundary_indices = await find_boundaries_with_hybrid_strategy(
-                canonical_transcript, runnable_config, user_id, job_id
-            )
-            if 0 not in boundary_indices:
-                boundary_indices.insert(0, 0)
-
-            raw_sections = create_sections_from_canonical(
-                canonical_transcript, boundary_indices
-            )
-            sections = merge_short_canonical_sections(
-                raw_sections, min_duration_seconds=dynamic_min_duration
+            # 2. Create sections directly from the duration. NO AI is called.
+            sections = create_sections_by_duration(
+                canonical_transcript, dynamic_min_duration
             )
             num_sections = len(sections)
 
