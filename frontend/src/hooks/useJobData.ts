@@ -13,6 +13,7 @@ import {
   GeneralAnalysisSection,
   JobData,
   JobDataWithShare,
+  LinkedInPost,
   Slide /*, other interfaces */,
   SynthesisResults,
   Viewpoint,
@@ -72,6 +73,7 @@ export const useJobData = (jobId: string) => {
       updatedGlobalBriefing: draftData.global_contextual_briefing,
       updatedBlogPost: draftData.generated_blog_post,
       updatedXThread: draftData.generated_overall_x_thread,
+      updatedLinkedInPost: draftData.generated_linkedin_post,
     };
 
     try {
@@ -645,6 +647,19 @@ export const useJobData = (jobId: string) => {
     );
   }, []);
 
+  const handleLinkedInPostChange = useCallback(
+    (field: keyof LinkedInPost, value: any) => {
+      setDraftData(
+        produce((draft) => {
+          if (draft?.generated_linkedin_post) {
+            (draft.generated_linkedin_post as any)[field] = value;
+          }
+        })
+      );
+    },
+    []
+  );
+
   return {
     // --- Core Data & State ---
     jobData,
@@ -704,5 +719,7 @@ export const useJobData = (jobId: string) => {
     handleXThreadChange,
     handleXThreadAddItem,
     handleXThreadDeleteItem,
+
+    handleLinkedInPostChange,
   };
 };

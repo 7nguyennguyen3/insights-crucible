@@ -27,6 +27,7 @@ import { ConsultantReportView } from "@/app/components/analysis/ConsultantReport
 import { GeneralReportView } from "@/app/components/analysis/GeneralReportView";
 import { ExecutiveSynthesisView } from "@/app/components/analysis/synthesis-display/ExecutiveSynthesisView";
 import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
+import { LinkedInPostDisplay } from "@/app/components/analysis/LinkedInPostDisplay";
 
 const fetcher = (url: string) => apiClient.get(url).then((res) => res.data);
 
@@ -162,6 +163,16 @@ const PublicSharePage = () => {
               onChange={emptyFunction}
               onAddItem={emptyFunction}
               onDeleteItem={emptyFunction}
+            />
+          </div>
+        )}
+
+        {data.generated_linkedin_post && (
+          <div className="mb-12">
+            <LinkedInPostDisplay
+              post={data.generated_linkedin_post}
+              isEditMode={isEditMode}
+              onChange={emptyFunction}
             />
           </div>
         )}

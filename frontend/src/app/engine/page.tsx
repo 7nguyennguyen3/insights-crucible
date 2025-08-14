@@ -52,7 +52,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { UploadProgressToast } from "../components/UploadProgressToast";
-import { FaXTwitter, FaYoutube } from "react-icons/fa6";
+import { FaLinkedin, FaXTwitter, FaYoutube } from "react-icons/fa6";
 
 type VideoDetails = {
   title: string;
@@ -65,6 +65,7 @@ type FeatureConfig = {
   run_contextual_briefing: boolean;
   run_x_thread_generation: boolean;
   run_blog_post_generation: boolean;
+  run_linkedin_post_generation: boolean;
 };
 
 type ModelChoice = "universal" | "slam-1";
@@ -108,6 +109,14 @@ const featureOptions = [
   //   description: "Performs a deep, contextual analysis on a key claim.",
   //   color: "text-amber-500",
   // },
+  {
+    id: "run_linkedin_post_generation",
+    icon: FaLinkedin, // <-- Use the new icon
+    title: "Generate LinkedIn Post",
+    description:
+      "Creates a professionally formatted post optimized for engagement.",
+    color: "text-blue-600",
+  },
   {
     id: "run_x_thread_generation",
     icon: FaXTwitter,
@@ -165,6 +174,7 @@ const EnginePage = () => {
     run_contextual_briefing: false,
     run_x_thread_generation: false,
     run_blog_post_generation: false,
+    run_linkedin_post_generation: false,
   });
   const [modelChoice, setModelChoice] = useState<ModelChoice>("universal");
   const [analysisPersona, setAnalysisPersona] =
@@ -1192,8 +1202,10 @@ const EnginePage = () => {
                     </Button>
 
                     {isChecking && (
-                      <p className="mt-1 text-sm text-slate-500">
-                        ⏳ Just a sec while we get this ready…
+                      <p className="mt-2 text-center text-sm text-slate-500 dark:text-slate-400">
+                        {activeTab === "youtube"
+                          ? "⏳ Getting your video ready... Please allow up to a minute."
+                          : "⏳ Just a sec while we get this ready…"}
                       </p>
                     )}
                     {status === "failed" && (

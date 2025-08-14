@@ -388,3 +388,100 @@ Each block object in the 'content' array must have a 'type' key. Supported types
     except Exception as e:
         print(f"        - [red]Error generating blog post: {e}[/red]")
         return {"error": "Could not generate blog post.", "details": str(e)}
+
+
+@retry_with_exponential_backoff
+async def generate_linkedin_post(
+    all_sections_analysis: List[Dict],
+    runnable_config: RunnableConfig,
+) -> Dict[str, Any]:
+    """
+    Generates a world-class LinkedIn post from the analysis, engineered for
+    engagement based on the 2025 LinkedIn Content Playbook.
+    """
+    print("        - [blue]Generating World-Class LinkedIn Post...[/blue]")
+
+    # Build a rich context from the analysis for the LLM
+    full_context = ""
+    for i, section in enumerate(all_sections_analysis):
+        title = section.get("generated_title") or section.get(
+            "section_title", f"Section {i+1}"
+        )
+        summary_points = (
+            section.get("summary_points") or section.get("client_pain_points") or []
+        )
+        notable_quotes = section.get("notable_quotes") or section.get(
+            "critical_quotes", []
+        )
+
+        full_context += f"## Topic: {title}\n"
+        full_context += "Key Points:\n"
+        for point in summary_points:
+            full_context += f"- {point}\n"
+        if notable_quotes:
+            full_context += "Notable Quotes:\n"
+            for quote in notable_quotes:
+                full_context += f'- "{quote}"\n'
+        full_context += "\n"
+
+    llm, llm_options = clients.get_llm(
+        "best-lite", temperature=0.5
+    )  # Use a stronger model for creative, nuanced output
+    parser = JsonOutputParser()
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """You are a world-class LinkedIn ghostwriter and content strategist, an expert in the 2025 LinkedIn algorithm. Your task is to transform the provided analysis into a single, compelling LinkedIn post designed for maximum professional engagement.
+
+Your output MUST be a valid JSON object.
+
+**LINKEDIN POST BLUEPRINT (Strictly Adhere to These Rules):**
+
+1.  **Choose an Archetype:** Based on the input analysis, select the MOST appropriate post archetype from this list: Personal Story/Anecdote, Contrarian Take, How-To/Tactical Guide, Industry Insight/Trend Analysis, or Listicle. State which archetype you've chosen in the `archetype_used` field.
+
+2.  **Craft the Hook (First 1-3 Lines):** This is CRITICAL. It must stop the scroll and create a curiosity gap. Use a proven formula (e.g., Pain-Promise, Statistic-Shock, Story-Tease, Contrarian-Challenge).
+
+3.  **Write the Body (Main Text):**
+    * **Readability is Everything:** Use very short paragraphs (1-3 sentences MAXIMUM) and frequent line breaks for whitespace. This is non-negotiable.
+    * **Structure:** Follow the chosen archetype's blueprint (e.g., Hook -> Context -> Conflict -> Resolution -> Lesson for a Story).
+    * **Formatting:** Use bolding to highlight key takeaways. Use emojis purposefully to add personality and guide the reader's eye (e.g., ✅, 💡, 👉).
+
+4.  **The Closer & CTA:**
+    * Conclude with a single sentence that summarizes the core value.
+    * End with an **open-ended, conversational question** to spark meaningful comments. AVOID lazy CTAs like "Thoughts?" or "Agree?".
+
+5.  **Suggest a Visual (The Engagement Multiplier):**
+    * Based on the post content and archetype, provide a specific suggestion for a visual asset in the `visual_suggestion` field.
+    * **Carousel/PDF:** Suggest for "How-To" guides, listicles, or data breakdowns (e.g., "A 5-slide carousel breaking down the key steps."). This maximizes dwell time.
+    * **Single Image:** Suggest for powerful quotes, a shocking statistic, or a personal story (e.g., "A simple, high-quality image with the main quote overlaid.").
+    * **Video:** Suggest for personal anecdotes or major announcements where authenticity is key (e.g., "A short, 60-90 second native video telling this story directly to the camera.").
+
+6.  **Generate Hashtags:**
+    * Provide **3 to 5 hashtags** in the `hashtags` field.
+    * Use the "Balanced Portfolio" method: 1-2 broad hashtags (#Leadership, #Marketing), 1-2 niche hashtags (#B2BContent, #SaaS), and optionally 1 branded hashtag.
+
+{format_instructions}
+""",
+            ),
+            (
+                "human",
+                "Based on the following content analysis, create a structured LinkedIn post JSON object following the blueprint exactly.\n\n--- ANALYSIS ---\n{analysis_context}\n--- END ANALYSIS ---",
+            ),
+        ]
+    )
+
+    chain = prompt | llm | parser
+
+    try:
+        return await chain.ainvoke(
+            {
+                "analysis_context": full_context,
+                "format_instructions": parser.get_format_instructions(),
+            },
+            config=runnable_config,
+        )
+    except Exception as e:
+        print(f"        - [red]Error generating LinkedIn post: {e}[/red]")
+        return {"error": "Could not generate LinkedIn post.", "details": str(e)}

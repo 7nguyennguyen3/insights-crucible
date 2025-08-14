@@ -26,6 +26,7 @@ export const ADD_ON_COSTS = {
   run_contextual_briefing: 0.5, // 5-Angle Perspective
   run_x_thread_generation: 1, // X/Twitter Thread
   run_blog_post_generation: 1, // Blog Post
+  run_linkedin_post_generation: 1,
 };
 
 // Define a type for the keys of ADD_ON_COSTS for better type safety.

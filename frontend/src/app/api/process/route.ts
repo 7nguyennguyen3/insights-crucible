@@ -69,6 +69,14 @@ export async function POST(request: NextRequest) {
       }),
     });
 
+    console.log(
+      "--- DEBUG: Payload sent to Python backend ---",
+      JSON.stringify({
+        user_id: userId,
+        ...jobDetails,
+      })
+    );
+
     const responseData = await pythonApiResponse.json();
 
     if (!pythonApiResponse.ok) {

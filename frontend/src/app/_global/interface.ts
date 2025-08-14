@@ -149,12 +149,14 @@ export interface JobData {
       run_contextual_briefing?: boolean;
       run_x_thread_generation?: boolean;
       run_blog_post_generation?: boolean;
+      run_linkedin_post_generation?: boolean;
     };
   };
 
   // Optional generated content that can exist on any job type
   generated_blog_post?: BlogPostData;
   generated_overall_x_thread?: string[];
+  generated_linkedin_post?: LinkedInPost;
 
   generated_slide_outline?: Slide[];
 }
@@ -209,4 +211,17 @@ export type BlogBlock =
 export interface BlogPostData {
   title: string;
   content: BlogBlock[];
+}
+
+export interface LinkedInPost {
+  archetype_used: string;
+  post_text: string;
+  visual_suggestion: string;
+  hashtags: string[];
+}
+
+export interface LinkedInPostDisplayProps {
+  post: LinkedInPost;
+  isEditMode: boolean;
+  onChange: (field: keyof LinkedInPost, value: any) => void;
 }

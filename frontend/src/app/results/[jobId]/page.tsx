@@ -41,6 +41,7 @@ import { useDocxExport } from "@/hooks/useDocxExport";
 import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
 import { BlogPostDisplay } from "@/app/components/analysis/BlogPostDisplay";
 import { XThreadDisplay } from "@/app/components/analysis/XThreadDisplay";
+import { LinkedInPostDisplay } from "@/app/components/analysis/LinkedInPostDisplay";
 
 const ResultsPage = () => {
   const { loading: authLoading } = useAuthStore();
@@ -92,6 +93,7 @@ const ResultsPage = () => {
     handleAddEntity,
     handleDeleteEntity,
     handleEntityChange,
+    handleLinkedInPostChange,
   } = useJobData(jobId);
 
   // --- 2. Call your other hooks, passing in values from useJobData ---
@@ -235,6 +237,17 @@ const ResultsPage = () => {
               />
             </div>
           )}
+
+          {jobData.generated_linkedin_post && (
+            <div className="mb-12">
+              <LinkedInPostDisplay
+                post={jobData.generated_linkedin_post}
+                isEditMode={isEditMode}
+                onChange={handleLinkedInPostChange}
+              />
+            </div>
+          )}
+
           {/* Step 3: Add the header for the detailed section list */}
           <div className="my-12">
             <h2

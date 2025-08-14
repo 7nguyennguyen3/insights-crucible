@@ -54,6 +54,7 @@ export async function GET(
 
       generated_blog_post: jobData?.generated_blog_post || null,
       generated_overall_x_thread: jobData?.generated_overall_x_thread || null,
+      generated_linkedin_post: jobData?.generated_linkedin_post || null,
 
       // --- FIX: Add this line to pass the config to the frontend ---
       request_data: jobData?.request_data || null,

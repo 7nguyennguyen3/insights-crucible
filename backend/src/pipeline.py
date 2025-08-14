@@ -30,6 +30,7 @@ from src.features import (
     generate_blog_post,
     generate_contextual_briefing,
     generate_x_thread,
+    generate_linkedin_post,
 )
 
 
@@ -53,7 +54,7 @@ PERSONA_CONFIG = {
             "entities": "potential_entities",
             "claims": "potential_verifiable_claims",
         },
-        "final_assets": ["blog_post", "x_thread"],
+        "final_assets": ["x_thread", "blog_post", "linkedin_post"],
     },
     "consultant": {
         "prompt_system": """You are a Senior Consultant at a top-tier firm like McKinsey, Bain, or BCG. Your task is to analyze the following client interview transcript SECTION. 
@@ -73,7 +74,7 @@ Your tone should be professional, concise, and direct. Your output must be a str
             "entities": "key_stakeholders_mentioned",
             "claims": "open_questions",
         },
-        "final_assets": ["slide_deck", "blog_post", "x_thread"],
+        "final_assets": ["slide_deck", "blog_post", "x_thread", "linkedin_post"],
     },
 }
 
@@ -890,7 +891,6 @@ async def get_context_for_entities(
             doc_ref = db_manager.db.collection("entity_cache").document(cache_id)
             doc = doc_ref.get()
             if doc.exists:
-                print(f"{log_prefix}      - CACHE HIT for: '{entity}'")
                 final_explanations[entity] = doc.to_dict().get("explanation")
             else:
                 entities_to_fetch.append(entity)
@@ -1477,19 +1477,13 @@ Your output must be a JSON object with the following keys:
 
 def get_dynamic_section_duration(total_duration_seconds: int) -> int:
     """
-    Calculates the ideal section duration to create between 4 and 10 sections.
+    Calculates the ideal section duration to create between 3 and 10 sections.
     """
-    # If content is under 15 minutes, don't split it.
-    if total_duration_seconds < 900:
-        return (
-            total_duration_seconds + 1
-        )  # Return a value larger than the total duration
+    if total_duration_seconds < 900:  # If content is under 15 minutes
+        return total_duration_seconds + 1
 
-    # Define the desired range for the number of sections
     min_sections = 3
     max_sections = 10
-
-    # Define the duration range where scaling should happen
     scale_start_duration = 1800  # 30 minutes
     scale_end_duration = 7200  # 2 hours
 
@@ -1499,23 +1493,22 @@ def get_dynamic_section_duration(total_duration_seconds: int) -> int:
     elif total_duration_seconds >= scale_end_duration:
         target_sections = float(max_sections)
     else:
-        # Linearly scale the number of sections between the start and end durations
         progress = (total_duration_seconds - scale_start_duration) / (
             scale_end_duration - scale_start_duration
         )
         target_sections = min_sections + progress * (max_sections - min_sections)
 
-    # Calculate the ideal duration for each section
-    # Using floor ensures we meet or exceed the target number of sections
-    return math.floor(total_duration_seconds / target_sections)
+    # --- THE FIX ---
+    # Use ceiling to slightly overestimate, preventing a tiny leftover section.
+    return math.ceil(total_duration_seconds / target_sections)
 
 
 def create_sections_by_duration(
     canonical_transcript: List[Dict], target_duration: int
 ) -> List[List[Dict]]:
     """
-    Splits a canonical transcript into sections of a minimum target duration.
-    This is a pure time-based approach, no AI is used.
+    Splits a canonical transcript into sections of a minimum target duration
+    with intelligent merging for the final section.
     """
     print(
         f"[cyan]🚀 Activating time-based segmentation ({target_duration}s/section)...[/cyan]"
@@ -1528,32 +1521,31 @@ def create_sections_by_duration(
 
     for utterance in canonical_transcript:
         current_section.append(utterance)
-
-        # Calculate the duration of the section being built so far
         section_start_time = current_section[0]["start_seconds"]
         section_end_time = current_section[-1]["end_seconds"]
         current_duration = section_end_time - section_start_time
 
-        # If the section has reached the target duration, save it and start a new one
         if current_duration >= target_duration:
             sections.append(current_section)
             current_section = []
 
-    # After the loop, add any remaining utterances as the final section
+    # --- THE SMARTER MERGING FIX ---
     if current_section:
-        # Optional: Merge the last small section with the previous one if it's too short
-        if (
-            sections and len(current_section) < 3
-        ):  # Example: if last section has less than 3 utterances
+        # Calculate the duration of the final, leftover section
+        final_section_duration = (
+            current_section[-1]["end_seconds"] - current_section[0]["start_seconds"]
+        )
+
+        # If the last section is very short (e.g., < 50% of target), merge it backward
+        if sections and final_section_duration < (target_duration * 0.5):
             print(
-                "[yellow]Final section is very short. Merging with previous section...[/yellow]"
+                f"[yellow]Final section is very short ({final_section_duration}s). Merging with previous section...[/yellow]"
             )
             sections[-1].extend(current_section)
         else:
             sections.append(current_section)
+    # --- END FIX ---
 
-    # If no sections were created (because the total duration was less than target_duration)
-    # return the whole transcript as a single section.
     if not sections:
         return [canonical_transcript]
 
@@ -2023,6 +2015,19 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
             ).update({"generated_overall_x_thread": x_thread})
             db_manager.log_progress(
                 user_id, job_id, "✓ Overall X-thread generated and saved."
+            )
+
+        if "linkedin_post" in persona_cfg["final_assets"] and config.get(
+            "run_linkedin_post_generation"
+        ):
+            linkedin_post = await generate_linkedin_post(
+                all_section_analyses, runnable_config
+            )
+            db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
+                job_id
+            ).update({"generated_linkedin_post": linkedin_post})
+            db_manager.log_progress(
+                user_id, job_id, "✓ LinkedIn post generated and saved."
             )
 
         timing_metrics["final_content_generation_s"] = (
