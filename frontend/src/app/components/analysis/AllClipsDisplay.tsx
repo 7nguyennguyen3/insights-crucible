@@ -28,13 +28,14 @@ export const AllClipsDisplay: React.FC<AllClipsDisplayProps> = ({
         ? section.section_title
         : section.generated_title;
 
-    // Map the clips for the current section
-    return (
-      section.suggested_clips?.map((clip) => ({
+    // Map the clips for the current section - only if the section has suggested_clips
+    if ('suggested_clips' in section && section.suggested_clips) {
+      return section.suggested_clips.map((clip) => ({
         ...clip,
         sectionTitle, // Use the correctly determined title
-      })) ?? []
-    );
+      }));
+    }
+    return [];
   });
 
   if (allClips.length === 0) {

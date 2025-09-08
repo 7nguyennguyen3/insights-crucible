@@ -5,17 +5,15 @@ import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
 import { stripe } from "@/lib/stripe";
 
-// Import all your necessary Price IDs
-const proPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID;
-const starterPlanPriceId = process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID; // ✅ ADD THIS
-const analysisPackPriceId =
-  process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID;
+// Import credit pack Price IDs
+const starterPackPriceId = process.env.NEXT_PUBLIC_STRIPE_STARTER_PACK_PRICE_ID;
+const professionalPackPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PACK_PRICE_ID;
+const ultimatePackPriceId = process.env.NEXT_PUBLIC_STRIPE_ULTIMATE_PACK_PRICE_ID;
 
 // Validate the required environment variables
-if (!proPlanPriceId || !starterPlanPriceId || !analysisPackPriceId) {
-  // ✅ UPDATE THIS
+if (!starterPackPriceId || !professionalPackPriceId || !ultimatePackPriceId) {
   throw new Error(
-    "Missing Stripe Price ID environment variables. Please check your .env.local file."
+    "Missing credit pack Stripe Price ID environment variables. Please check your .env.local file."
   );
 }
 
@@ -51,24 +49,17 @@ export async function POST(request: NextRequest) {
       await userDocRef.update({ stripeCustomerId });
     }
 
-    // ✅ THIS LOGIC IS CRITICAL: An array to hold all subscription IDs
-    const subscriptionPriceIds = [proPlanPriceId, starterPlanPriceId];
-
-    // ✅ THIS LOGIC IS CRITICAL: Check if the incoming price is in the array
-    const mode = subscriptionPriceIds.includes(priceId)
-      ? "subscription"
-      : "payment";
-
+    // All purchases are now one-time payments (no subscriptions)
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ["card"],
       line_items: [
         {
           price: priceId,
-          quantity: quantity || 25,
+          quantity: quantity || 1,
         },
       ],
-      mode: mode,
+      mode: "payment", // Always payment mode for credit packs
       success_url: success_url,
       cancel_url: cancel_url,
     });

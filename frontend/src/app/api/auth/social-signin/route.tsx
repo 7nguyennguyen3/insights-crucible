@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
         email,
         name: name || "User",
         createdAt: new Date().toISOString(),
-        plan: "free",
         analyses_remaining: creditsToGive,
         stripeCustomerId: newStripeCustomer.id,
         welcomeEmailSent: true,

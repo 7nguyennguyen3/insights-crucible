@@ -26,8 +26,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Terminal } from "lucide-react";
+import { Loader2, Terminal, Shield, CheckCircle2 } from "lucide-react";
 import { FaGoogle } from "react-icons/fa6";
+import { elevationVariants, textGradients, typographyVariants } from "@/styles/variants";
 
 export function AuthForm() {
   const searchParams = useSearchParams();
@@ -135,22 +136,33 @@ export function AuthForm() {
   };
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={setActiveTab}
-      className="w-full max-w-md mx-4"
-    >
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            {activeTab === "signin" ? "Welcome Back" : "Create an Account"}
-          </CardTitle>
-          <CardDescription>
-            {activeTab === "signin"
-              ? "Sign in to access your dashboard."
-              : "Enter your details to get started."}
-          </CardDescription>
-        </CardHeader>
+    <div className="w-full max-w-md mx-4">
+      {/* Trust Indicators */}
+      <div className="text-center mb-6">
+        <div className="flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 text-sm mb-3">
+          <Shield className="w-4 h-4 text-teal-600" />
+          <span>Secure & Encrypted</span>
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>Free Credits Included</span>
+        </div>
+      </div>
+
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <Card className={`${elevationVariants.floating} bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-stone-200/60 dark:border-amber-900/30`}>
+          <CardHeader className="text-center">
+            <CardTitle className={`${typographyVariants.cardTitle} text-slate-900 dark:text-slate-100`}>
+              {activeTab === "signin" ? "Welcome Back" : "Create an Account"}
+            </CardTitle>
+            <CardDescription className="text-slate-600 dark:text-slate-400">
+              {activeTab === "signin"
+                ? "Sign in to access your AI-powered podcast analysis dashboard."
+                : "Start transforming podcasts into actionable insights."}
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           {error && (
             <Alert variant="destructive" className="mb-4">
@@ -163,32 +175,32 @@ export function AuthForm() {
           <div className="space-y-4">
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full h-12 bg-white/70 dark:bg-slate-700/70 hover:bg-white dark:hover:bg-slate-600 border-stone-200 dark:border-stone-600 hover:border-stone-300 dark:hover:border-stone-500 shadow-md hover:shadow-lg transition-all duration-200"
               onClick={handleGoogleSignIn}
               disabled={googleLoading || loading}
             >
               {googleLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-600 dark:text-slate-400" />
               ) : (
-                <FaGoogle className="mr-2 h-5 w-5" />
+                <FaGoogle className="mr-2 h-5 w-5 text-red-500" />
               )}
-              Continue with Google
+              <span className="text-slate-700 dark:text-slate-300">Continue with Google</span>
             </Button>
 
-            <div className="relative my-2">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <span className="w-full border-t border-stone-200 dark:border-amber-800/40" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-white/80 dark:bg-slate-800/80 px-3 py-1 text-slate-500 dark:text-slate-400 rounded-full">
                   Or continue with
                 </span>
               </div>
             </div>
 
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-stone-100/80 dark:bg-slate-700/80 border border-stone-200/60 dark:border-amber-900/30">
+              <TabsTrigger value="signin" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100">Sign Up</TabsTrigger>
             </TabsList>
 
             <form onSubmit={handleEmailPasswordSubmit}>
@@ -257,16 +269,25 @@ export function AuthForm() {
 
               <Button
                 type="submit"
-                className="w-full mt-4"
+                className="w-full mt-6 h-12 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
                 disabled={loading || googleLoading}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {activeTab === "signin" ? "Sign In" : "Create Account"}
+                {activeTab === "signin" ? "Sign In to Dashboard" : "Create Account & Get Started"}
               </Button>
             </form>
           </div>
         </CardContent>
       </Card>
-    </Tabs>
+      </Tabs>
+      
+      {/* Additional Trust Elements */}
+      <div className="mt-6 text-center">
+        <p className="text-xs text-slate-500 dark:text-slate-500 max-w-sm mx-auto leading-relaxed">
+          By continuing, you agree to our Terms of Service and Privacy Policy. 
+          Your data is encrypted and secure.
+        </p>
+      </div>
+    </div>
   );
 }

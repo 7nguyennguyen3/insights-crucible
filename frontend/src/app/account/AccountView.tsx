@@ -85,9 +85,7 @@ export function AccountView() {
     null
   );
   const [quantity, setQuantity] = useState(25);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [isReactivating, setIsReactivating] = useState(false);
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  // No subscription management state needed for credit-based system
   const [promoCode, setPromoCode] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
 
@@ -100,7 +98,7 @@ export function AccountView() {
       if (searchParams.get("payment_success") && auth.currentUser) {
         toast.success("Payment Successful!", {
           description:
-            "Your account is being upgraded. Please wait a moment...",
+            "Credits have been added to your account!",
         });
 
         try {
@@ -115,7 +113,7 @@ export function AccountView() {
         } catch (error) {
           console.error("Failed to refresh session:", error);
           toast.error(
-            "Session refresh failed. Please sign in again to see your new plan."
+            "Session refresh failed. Please sign in again to see your credits."
           );
         } finally {
           // Clean up the URL
@@ -127,41 +125,7 @@ export function AccountView() {
     processPaymentSuccess();
   }, [searchParams, user, mutateProfile, router]);
 
-  const handleCancelSubscription = async () => {
-    setIsCancelling(true);
-    try {
-      await apiClient.post("/billing/cancel-subscription");
-      toast.success("Subscription Cancellation Scheduled", {
-        description:
-          "Your plan will be cancelled at the end of your current billing period.",
-      });
-      mutateProfile();
-      setIsCancelDialogOpen(false);
-    } catch (err: any) {
-      toast.error("Cancellation Failed", {
-        description: err.response?.data?.error || "Please try again.",
-      });
-    } finally {
-      setIsCancelling(false);
-    }
-  };
-
-  const handleReactivateSubscription = async () => {
-    setIsReactivating(true);
-    try {
-      await apiClient.post("/billing/reactivate-subscription");
-      toast.success("Subscription Reactivated", {
-        description: "We're glad to have you back!",
-      });
-      mutateProfile();
-    } catch (err: any) {
-      toast.error("Reactivation Failed", {
-        description: err.response?.data?.error || "Please try again.",
-      });
-    } finally {
-      setIsReactivating(false);
-    }
-  };
+  // No subscription management functions needed for credit-based system
 
   const handleCreateCheckout = async ({
     priceId,
@@ -239,7 +203,7 @@ export function AccountView() {
             My Account
           </h1>
           <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
-            View your plan details, remaining analysis credits, and job history.
+            View your credit balance, purchase more credits, and manage your job history.
           </p>
         </header>
 
@@ -248,7 +212,7 @@ export function AccountView() {
             <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Account Summary</CardTitle>
-                <CardDescription>Your current status and plan.</CardDescription>
+                <CardDescription>Your current credit balance and account info.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-1">
@@ -261,20 +225,9 @@ export function AccountView() {
                     )}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <Label>Current Plan</Label>
-                  <div>
-                    {isProfileLoading ? (
-                      <Skeleton className="h-6 w-16" />
-                    ) : (
-                      <Badge variant="secondary" className="text-md capitalize">
-                        {profile?.plan}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+                {/* No plan field needed for credit-based system */}
                 <div className="space-y-2">
-                  <Label>Analyses Credit Remaining</Label>
+                  <Label>Available Credits</Label>
                   <div className="text-5xl font-bold text-slate-900 dark:text-slate-100 h-12 flex items-center">
                     {isProfileLoading ? (
                       <Skeleton className="h-12 w-24" />
@@ -283,200 +236,71 @@ export function AccountView() {
                     )}
                   </div>
                 </div>
-                {profile?.plan !== "free" && profile?.nextBillingDate && (
-                  <div className="space-y-1">
-                    <Label>Next billing date</Label>
-                    <div className="text-sm text-slate-700 dark:text-slate-300 h-5">
-                      {isProfileLoading ? (
-                        <Skeleton className="h-5 w-32" />
-                      ) : (
-                        new Date(
-                          profile.nextBillingDate * 1000
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
+                {/* No billing dates needed for credit-based system */}
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                {(profile?.plan === "pro" || profile?.plan === "starter") && (
-                  <>
-                    {profile.cancel_at_period_end ? (
-                      <div className="w-full text-center p-4 border border-yellow-300 bg-yellow-50 rounded-md dark:bg-yellow-900/20 dark:border-yellow-700/50 space-y-3">
-                        <div>
-                          <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
-                            Your plan is scheduled to cancel on:
-                          </p>
-                          {profile.subscription_ends_at && (
-                            <p className="font-bold text-yellow-900 dark:text-yellow-100">
-                              {new Date(
-                                profile.subscription_ends_at * 1000
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          className="w-full"
-                          onClick={handleReactivateSubscription}
-                          disabled={isReactivating}
-                        >
-                          {isReactivating ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
-                          )}
-                          Keep My Plan
-                        </Button>
-                      </div>
-                    ) : (
-                      <Dialog
-                        open={isCancelDialogOpen}
-                        onOpenChange={setIsCancelDialogOpen}
-                      >
-                        <DialogTrigger asChild>
-                          <Button className="w-full">
-                            Manage Subscription
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Manage Subscription</DialogTitle>
-                            <DialogDescription>
-                              You will be downgraded to the Free plan at the end
-                              of your current billing period. Are you sure you
-                              want to cancel?
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline">Nevermind</Button>
-                            </DialogClose>
-                            <Button
-                              variant="destructive"
-                              onClick={handleCancelSubscription}
-                              disabled={isCancelling}
-                            >
-                              {isCancelling ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                "Yes, Cancel Subscription"
-                              )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </>
-                )}
-                {profile?.plan === "free" && (
-                  <div className="w-full space-y-3">
-                    <Button
-                      className="w-full"
-                      onClick={() =>
-                        handleCreateCheckout({
-                          priceId:
-                            process.env
-                              .NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID!,
-                        })
-                      }
-                      disabled={!!isCheckoutLoading}
-                    >
-                      {isCheckoutLoading ===
-                      process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="mr-2 h-4 w-4" />
-                      )}
-                      Upgrade to Starter Plan
-                    </Button>
-                  </div>
-                )}
                 <div className="w-full space-y-3 pt-4 border-t">
                   <Label className="font-semibold">
-                    Purchase One-Time Analysis Credits
+                    Purchase Credit Packs
                   </Label>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Need more credits? Choose a pack below. The more you buy,
-                    the more you save!
+                    Credits never expire. Choose a pack that fits your needs!
                   </p>
 
-                  {/* Option 1: Starter Pack */}
+                  {/* Starter Pack */}
                   <Button
                     variant="secondary"
                     className="w-full justify-between"
                     onClick={() =>
                       handleCreateCheckout({
-                        priceId:
-                          process.env
-                            .NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID!,
-                        quantity: 25, // Base quantity
+                        priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PACK_PRICE_ID!,
                       })
                     }
                     disabled={!!isCheckoutLoading}
                   >
-                    <span className="flex items-center">
-                      25{" "}
-                      <span className="text-green-600 dark:text-green-400 font-bold mx-1">
-                        + 3
-                      </span>{" "}
-                      Bonus Credits
-                    </span>
+                    <span className="flex items-center">30 Credits</span>
                     <span className="font-bold">$5</span>
                   </Button>
 
-                  {/* Option 2: Value Pack */}
+                  {/* Professional Pack */}
                   <Button
                     variant="secondary"
                     className="w-full justify-between"
                     onClick={() =>
                       handleCreateCheckout({
-                        priceId:
-                          process.env
-                            .NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID!,
-                        quantity: 100, // Base quantity
+                        priceId: process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PACK_PRICE_ID!,
                       })
                     }
                     disabled={!!isCheckoutLoading}
                   >
                     <span className="flex items-center">
-                      100{" "}
+                      60{" "}
                       <span className="text-green-600 dark:text-green-400 font-bold mx-1">
-                        + 20
+                        + 15
                       </span>{" "}
-                      Bonus Credits
+                      Credits
                       <Badge className="ml-2">Most Popular</Badge>
                     </span>
-                    <span className="font-bold">$20</span>
+                    <span className="font-bold">$10</span>
                   </Button>
 
-                  {/* Option 3: Power Pack */}
+                  {/* Ultimate Pack */}
                   <Button
                     variant="secondary"
                     className="w-full justify-between"
                     onClick={() =>
                       handleCreateCheckout({
-                        priceId:
-                          process.env
-                            .NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID!,
-                        quantity: 250, // Base quantity
+                        priceId: process.env.NEXT_PUBLIC_STRIPE_ULTIMATE_PACK_PRICE_ID!,
                       })
                     }
                     disabled={!!isCheckoutLoading}
                   >
                     <span className="flex items-center">
-                      250{" "}
+                      120{" "}
                       <span className="text-green-600 dark:text-green-400 font-bold mx-1">
-                        + 75
+                        + 50
                       </span>{" "}
-                      Bonus Credits
+                      Credits
                       <Badge
                         variant="outline"
                         className="ml-2 border-green-500 text-green-500"
@@ -484,15 +308,11 @@ export function AccountView() {
                         Best Value
                       </Badge>
                     </span>
-                    <span className="font-bold">$50</span>
+                    <span className="font-bold">$20</span>
                   </Button>
 
-                  <p
-                    className="text-xs text-slate-500 
-                  dark:text-slate-400 mt-3"
-                  >
-                    <strong>Note:</strong> Checkout shows the base amount. Bonus
-                    credits are added automatically after purchase.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                    <strong>Note:</strong> Bonus credits are included automatically in your total.
                   </p>
                 </div>
 

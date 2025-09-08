@@ -26,12 +26,6 @@ from langchain_core.runnables import RunnableConfig
 from src import clients
 from src import db_manager
 from src import cost_tracking
-from src.features import (
-    generate_blog_post,
-    generate_contextual_briefing,
-    generate_x_thread,
-    generate_linkedin_post,
-)
 
 
 PERSONA_CONFIG = {
@@ -44,7 +38,6 @@ PERSONA_CONFIG = {
 - 'actionable_advice': A list of clear, actionable steps a listener could apply.
 - 'questions_and_answers': A list of objects, where each object has 'question' and 'answer' keys.
 - 'potential_entities': A list of EVERY person, organization, place, or specific concept mentioned.
-- 'potential_verifiable_claims': A list of EVERY statement that presents itself as an objective, verifiable fact. Do not include opinions or advice.
 - 'topics_and_keywords': A list of the most important keywords.
 {format_instructions}""",
         "output_keys": {
@@ -52,9 +45,8 @@ PERSONA_CONFIG = {
             "summary": "1_sentence_summary",
             "quotes": "notable_quotes",
             "entities": "potential_entities",
-            "claims": "potential_verifiable_claims",
         },
-        "final_assets": ["x_thread", "blog_post", "linkedin_post"],
+        "final_assets": [],
     },
     "consultant": {
         "prompt_system": """You are a Senior Consultant at a top-tier firm like McKinsey, Bain, or BCG. Your task is to analyze the following client interview transcript SECTION. 
@@ -74,7 +66,7 @@ Your tone should be professional, concise, and direct. Your output must be a str
             "entities": "key_stakeholders_mentioned",
             "claims": "open_questions",
         },
-        "final_assets": ["slide_deck", "blog_post", "x_thread", "linkedin_post"],
+        "final_assets": ["slide_deck"],
     },
 }
 
@@ -845,10 +837,6 @@ async def enrich_section_with_analysis(
     final_analysis = broad_analysis
     final_analysis["key_entities"] = key_entities if key_entities else []
 
-    # This key is now used to pass up the best claim from this section.
-    final_analysis["verifiable_claims"] = (
-        [claim_for_section] if claim_for_section else []
-    )
     # This is no longer generated here, so it's an empty object.
     final_analysis["contextual_briefing"] = {}
     final_analysis.pop(entities_key, None)
@@ -1908,68 +1896,6 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
 
                 pass_2_data = argument_structure_results
 
-        if config.get("run_contextual_briefing") and all_section_analyses:
-            log_msg = "Step 5b: Generating Global Contextual Briefing..."
-            print(f"[magenta]\n{log_msg}[/magenta]")
-            db_manager.log_progress(user_id, job_id, log_msg)
-            start_briefing_time = time.monotonic()
-
-            # 1. Aggregate all claims from all sections
-            all_claims = [
-                claim
-                for analysis in all_section_analyses
-                if analysis.get("verifiable_claims")
-                for claim in analysis["verifiable_claims"]
-            ]
-
-            if all_claims:
-                # 2. Select the best overall claim using Pass 2 data as context
-                best_overall_claim = await _select_best_claim_for_global_briefing(
-                    all_claims, pass_2_data, runnable_config
-                )
-
-                # 3. Generate the single, global briefing if a claim was found
-                if best_overall_claim:
-                    # We need the full text for the briefing's context
-                    full_text_content = "\n\n".join(
-                        "\n".join(
-                            f"{utt['speaker_id']}: {utt['text']}" for utt in section
-                        )
-                        for section in sections
-                    )
-
-                    # Using section_index=-1 as a sentinel for a global briefing
-                    briefing_result_wrapper = await generate_contextual_briefing(
-                        claim_text=best_overall_claim,
-                        context=full_text_content,
-                        user_id=user_id,
-                        job_id=job_id,
-                        section_index=-1,  # Indicates a global briefing
-                    )
-
-                    global_briefing_data = briefing_result_wrapper.get("briefing", {})
-                    briefing_costs = briefing_result_wrapper.get("cost_metrics", {})
-
-                    # 4. Save the result and update costs
-                    if global_briefing_data:
-                        briefing_payload = {
-                            "claim_text": best_overall_claim,
-                            "briefing_data": global_briefing_data,
-                        }
-
-                    # Save the new payload
-                    db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
-                        job_id
-                    ).update({"global_contextual_briefing": briefing_payload})
-                    for key, value in briefing_costs.items():
-                        final_cost_metrics[key] = final_cost_metrics.get(key, 0) + value
-
-                    db_manager.log_progress(
-                        user_id, job_id, "✓ Global contextual briefing generated."
-                    )
-                    timing_metrics["global_briefing_s"] = (
-                        time.monotonic() - start_briefing_time
-                    )
 
         # Update Job Title based on first section's analysis
         final_job_title = await generate_final_title(pass_2_data, runnable_config)
@@ -1997,38 +1923,8 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
                 user_id, job_id, "✓ Client slide deck outline generated and saved."
             )
 
-        if "blog_post" in persona_cfg["final_assets"] and config.get(
-            "run_blog_post_generation"
-        ):
-            blog_post = await generate_blog_post(all_section_analyses, runnable_config)
-            db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
-                job_id
-            ).update({"generated_blog_post": blog_post})
-            db_manager.log_progress(user_id, job_id, "✓ Blog post generated and saved.")
 
-        if "x_thread" in persona_cfg["final_assets"] and config.get(
-            "run_x_thread_generation"
-        ):
-            x_thread = await generate_x_thread(all_section_analyses, runnable_config)
-            db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
-                job_id
-            ).update({"generated_overall_x_thread": x_thread})
-            db_manager.log_progress(
-                user_id, job_id, "✓ Overall X-thread generated and saved."
-            )
 
-        if "linkedin_post" in persona_cfg["final_assets"] and config.get(
-            "run_linkedin_post_generation"
-        ):
-            linkedin_post = await generate_linkedin_post(
-                all_section_analyses, runnable_config
-            )
-            db_manager.db.collection(f"saas_users/{user_id}/jobs").document(
-                job_id
-            ).update({"generated_linkedin_post": linkedin_post})
-            db_manager.log_progress(
-                user_id, job_id, "✓ LinkedIn post generated and saved."
-            )
 
         timing_metrics["final_content_generation_s"] = (
             time.monotonic() - start_final_content

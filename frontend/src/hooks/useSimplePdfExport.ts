@@ -8,10 +8,6 @@ import {
   ConsultantAnalysisSection,
   Slide,
   Contradiction,
-  GlobalContextualBriefingPayload, // Import this
-  Viewpoint,
-  BlogPostData,
-  BlogBlock, // Import this
 } from "@/app/_global/interface";
 import { generateReportBlueprint } from "@/app/utils/reportGenerator";
 
@@ -163,122 +159,8 @@ const generatePdfDocument = (data: JobData) => {
         y += 10;
         break;
 
-      case "global_briefing":
-        const briefing = part.data as GlobalContextualBriefingPayload;
-        addText("Global Contextual Briefing", {
-          size: 14,
-          isBold: true,
-          spaceAfter: 8,
-        });
-        addText(`Claim: ${briefing.claim_text}`, {
-          isBold: true,
-          spaceAfter: 8,
-        });
 
-        if (briefing.briefing_data.overall_summary) {
-          addText("Summary", { isBold: true, spaceAfter: 6 });
-          addText(briefing.briefing_data.overall_summary, { spaceAfter: 8 });
-        }
 
-        if (briefing.briefing_data.supporting_viewpoints?.length) {
-          addText("Supporting Viewpoints", { isBold: true, spaceAfter: 6 });
-          briefing.briefing_data.supporting_viewpoints.forEach(
-            (v: Viewpoint) => {
-              addText(`${v.source}: ${v.perspective}`, { isListItem: true });
-            }
-          );
-          y += 5;
-        }
-
-        if (briefing.briefing_data.challenging_viewpoints?.length) {
-          addText("Challenging Viewpoints", { isBold: true, spaceAfter: 6 });
-          briefing.briefing_data.challenging_viewpoints.forEach(
-            (v: Viewpoint) => {
-              addText(`${v.source}: ${v.perspective}`, { isListItem: true });
-            }
-          );
-        }
-        y += 10;
-        break;
-
-      case "blog_post":
-        addText("Generated Blog Post", {
-          size: 14,
-          isBold: true,
-          spaceAfter: 8,
-        });
-
-        const blogPost = part.content as BlogPostData;
-
-        if (blogPost && blogPost.title) {
-          addText(blogPost.title, { size: 13, isBold: true, spaceAfter: 8 });
-
-          blogPost.content.forEach((block: BlogBlock) => {
-            switch (block.type) {
-              case "heading":
-                addText(block.text, {
-                  size: block.level === 2 ? 12 : 11,
-                  isBold: true,
-                });
-                break;
-              case "paragraph":
-                // We'll rely on the addText's internal cleaning for paragraphs
-                // If you need specific bold/italic within paragraphs, you'd need
-                // to parse the text property and add multiple TextRun calls.
-                // For simplicity, current addText cleans markdown syntax.
-                addText(block.text);
-                break;
-              case "list":
-                (block.items || []).forEach((item: string) => {
-                  addText(item, { isListItem: true });
-                });
-                y += 5;
-                break;
-              case "quote":
-                addText(`${block.text}`, { isQuote: true, isItalic: true }); // Apply quote styling
-                if (block.author) {
-                  // Align author to the right, slightly indented
-                  doc.setFont("helvetica", "normal"); // Reset font for author
-                  doc.setFontSize(10);
-                  const authorText = `— ${block.author}`;
-                  const authorWidth = doc.getStringUnitWidth(authorText) * 10; // 10 is font size
-                  const authorX = usableWidth + pageMargin - authorWidth;
-                  if (y + 10 > 280) {
-                    // Check for page break for author line
-                    doc.addPage();
-                    y = pageMargin;
-                  }
-                  doc.text(authorText, authorX, y);
-                  y += 10; // Move y after author
-                }
-                y += 5;
-                break;
-              case "cta":
-                addText(`➡️ Call to Action: ${block.text}`, { isBold: true });
-                break;
-              case "visual_suggestion":
-                addText(`💡 Visual Suggestion: ${block.description}`, {
-                  isItalic: true,
-                }); // Apply italic for visual suggestions
-                break;
-            }
-          });
-        }
-        y += 10;
-        break;
-
-      case "x_thread":
-        addText("Generated X/Twitter Thread", {
-          size: 14,
-          isBold: true,
-          spaceAfter: 8,
-        });
-        // Ensure each tweet is treated as a list item for consistent bulleting
-        (part.thread as string[]).forEach((tweet) => {
-          addText(tweet, { isListItem: true });
-        });
-        y += 10;
-        break;
 
       case "detailed_sections_header":
         addText("Detailed Section-by-Section Analysis", {

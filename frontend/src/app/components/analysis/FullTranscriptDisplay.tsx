@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatTimestamp } from "@/lib/utils";
+import { secondsToHHMMSS } from "@/app/utils/convertTime";
 import { Utterance } from "@/app/_global/interface";
 
 interface FullTranscriptDisplayProps {
@@ -60,7 +60,7 @@ export const FullTranscriptDisplay: React.FC<FullTranscriptDisplayProps> = ({
                   Speaker {utterance.speaker}
                 </p>
                 <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
-                  {formatTimestamp(utterance.start)}
+                  {secondsToHHMMSS(utterance.start)}
                 </p>
               </div>
 

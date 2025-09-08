@@ -12,6 +12,12 @@ import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Job, JobStatus } from "../_global/interface";
+import {
+  backgroundVariants,
+  containerVariants,
+  spacingVariants,
+  gridPatterns,
+} from "@/styles/variants";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -237,287 +243,298 @@ const DashboardPage = () => {
 
   return (
     <>
-      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen w-full p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <header className="mb-10">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              My Analyses
-            </h1>
-            <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
-              Review your past transcript analysis jobs and results.
-            </p>
-          </header>
+      <div
+        className={`min-h-screen w-full ${backgroundVariants.universal} text-slate-800 dark:text-slate-200 relative overflow-hidden`}
+      >
+        {/* Background Elements */}
+        <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
 
-          <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
-            <FolderSidebar
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-            />
+        <div
+          className={`relative ${spacingVariants.heroPadding} ${containerVariants.section}`}
+        >
+          <div className="max-w-7xl mx-auto">
+            <header className="mb-10">
+              <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+                My Analyses
+              </h1>
+              <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
+                Review your past transcript analysis jobs and results.
+              </p>
+            </header>
 
-            <main className="flex-1">
-              <div className="flex flex-col md:flex-row gap-4 mb-8">
-                <div className="relative flex-grow">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                  <Input
-                    placeholder="Search by title..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+            <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+              <FolderSidebar
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="date"
-                      variant={"outline"}
-                      className={cn(
-                        "w-full md:w-[300px] justify-start text-left font-normal",
-                        !dateRange && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateRange?.from ? (
-                        dateRange.to ? (
-                          <>
-                            {format(dateRange.from, "LLL dd, y")} -{" "}
-                            {format(dateRange.to, "LLL dd, y")}
-                          </>
-                        ) : (
-                          format(dateRange.from, "LLL dd, y")
-                        )
-                      ) : (
-                        <span>Pick a date range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange?.from}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      numberOfMonths={2}
+              <main className="flex-1">
+                <div className="flex flex-col md:flex-row gap-4 mb-8">
+                  <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <Input
+                      placeholder="Search by title..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
                     />
-                  </PopoverContent>
-                </Popover>
+                  </div>
 
-                {(searchTerm || dateRange) && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setDateRange(undefined);
-                    }}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="date"
+                        variant={"outline"}
+                        className={cn(
+                          "w-full md:w-[300px] justify-start text-left font-normal",
+                          !dateRange && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "LLL dd, y")} -{" "}
+                              {format(dateRange.to, "LLL dd, y")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "LLL dd, y")
+                          )
+                        ) : (
+                          <span>Pick a date range</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={dateRange?.from}
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
 
-              {isLoading && jobs.length === 0 ? (
-                renderSkeleton()
-              ) : error ? (
-                <p className="text-red-500 text-center">
-                  Failed to load analysis history.
-                </p>
-              ) : filteredJobs.length === 0 ? (
-                <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                  <h3 className="text-xl font-semibold">No Analyses Found</h3>
-                  <p className="text-slate-500 mt-2">
-                    No results match your current filter criteria.
-                  </p>
-                  <Button
-                    className="mt-4"
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setDateRange(undefined);
-                      setActiveFilter("all");
-                    }}
-                  >
-                    Clear All Filters
-                  </Button>
+                  {(searchTerm || dateRange) && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setDateRange(undefined);
+                      }}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Clear Filters
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredJobs.map((job) => {
-                      const statusProps = getStatusProps(job.status);
-                      const isProcessing = job.status === "PROCESSING";
 
-                      return (
-                        <Card
-                          key={job.id}
-                          className="flex flex-col hover:shadow-xl transition-shadow duration-300 dark:bg-slate-900"
-                        >
-                          <CardHeader>
-                            <div className="flex justify-between items-start gap-2 min-w-0">
-                              <CardTitle className="flex items-center gap-2 text-xl mr-2 flex-1 min-w-0">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 shrink-0 -ml-2"
-                                  onClick={() => handleToggleStar(job)}
-                                >
-                                  <Star
-                                    className={cn(
-                                      "h-5 w-5 transition-all",
-                                      job.isStarred
-                                        ? "text-yellow-400 fill-yellow-400"
-                                        : "text-slate-400"
-                                    )}
-                                  />
-                                  <span className="sr-only">
-                                    Toggle Favorite
-                                  </span>
-                                </Button>
-                                <FileText className="w-5 h-5 text-slate-500 shrink-0" />
-                                <span className="truncate">
-                                  {job.job_title || job.id}
-                                </span>
-                              </CardTitle>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                {isLoading && jobs.length === 0 ? (
+                  renderSkeleton()
+                ) : error ? (
+                  <p className="text-red-500 text-center">
+                    Failed to load analysis history.
+                  </p>
+                ) : filteredJobs.length === 0 ? (
+                  <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                    <h3 className="text-xl font-semibold">No Analyses Found</h3>
+                    <p className="text-slate-500 mt-2">
+                      No results match your current filter criteria.
+                    </p>
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setDateRange(undefined);
+                        setActiveFilter("all");
+                      }}
+                    >
+                      Clear All Filters
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {filteredJobs.map((job) => {
+                        const statusProps = getStatusProps(job.status);
+                        const isProcessing = job.status === "PROCESSING";
+
+                        return (
+                          <Card
+                            key={job.id}
+                            className="flex flex-col hover:shadow-xl transition-shadow duration-300 dark:bg-slate-900"
+                          >
+                            <CardHeader>
+                              <div className="flex justify-between items-start gap-2 min-w-0">
+                                <CardTitle className="flex items-center gap-2 text-xl mr-2 flex-1 min-w-0">
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-8 w-8 shrink-0"
+                                    className="h-8 w-8 shrink-0 -ml-2"
+                                    onClick={() => handleToggleStar(job)}
                                   >
-                                    <MoreVertical className="h-4 w-4" />
+                                    <Star
+                                      className={cn(
+                                        "h-5 w-5 transition-all",
+                                        job.isStarred
+                                          ? "text-yellow-400 fill-yellow-400"
+                                          : "text-slate-400"
+                                      )}
+                                    />
+                                    <span className="sr-only">
+                                      Toggle Favorite
+                                    </span>
                                   </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setJobToEdit(job);
-                                      setNewTitle(job.job_title);
-                                      setIsRenameDialogOpen(true);
-                                    }}
-                                  >
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Rename
-                                  </DropdownMenuItem>
+                                  <FileText className="w-5 h-5 text-slate-500 shrink-0" />
+                                  <span className="truncate">
+                                    {job.job_title || job.id}
+                                  </span>
+                                </CardTitle>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 shrink-0"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setJobToEdit(job);
+                                        setNewTitle(job.job_title);
+                                        setIsRenameDialogOpen(true);
+                                      }}
+                                    >
+                                      <Pencil className="mr-2 h-4 w-4" />
+                                      Rename
+                                    </DropdownMenuItem>
 
-                                  <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger>
-                                      <MoveIcon className="mr-2 h-4 w-4" />
-                                      <span>Move to...</span>
-                                    </DropdownMenuSubTrigger>
-                                    <DropdownMenuSubContent>
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleMoveJob(job.id, null)
-                                        }
-                                        disabled={!job.folderId}
-                                      >
-                                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                                        Unfiled
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      {folders.map((folder) => (
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger>
+                                        <MoveIcon className="mr-2 h-4 w-4" />
+                                        <span>Move to...</span>
+                                      </DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent>
                                         <DropdownMenuItem
-                                          key={folder.id}
                                           onClick={() =>
-                                            handleMoveJob(job.id, folder.id)
+                                            handleMoveJob(job.id, null)
                                           }
-                                          disabled={job.folderId === folder.id}
+                                          disabled={!job.folderId}
                                         >
-                                          <FolderIcon className="mr-2 h-4 w-4" />
-                                          {folder.name}
+                                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                                          Unfiled
                                         </DropdownMenuItem>
-                                      ))}
-                                    </DropdownMenuSubContent>
-                                  </DropdownMenuSub>
+                                        <DropdownMenuSeparator />
+                                        {folders.map((folder) => (
+                                          <DropdownMenuItem
+                                            key={folder.id}
+                                            onClick={() =>
+                                              handleMoveJob(job.id, folder.id)
+                                            }
+                                            disabled={
+                                              job.folderId === folder.id
+                                            }
+                                          >
+                                            <FolderIcon className="mr-2 h-4 w-4" />
+                                            {folder.name}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
 
-                                  <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator />
 
-                                  <DropdownMenuItem
-                                    className="text-red-500"
-                                    onClick={() => {
-                                      setJobToEdit(job);
-                                      setIsDeleteDialogOpen(true);
-                                    }}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                            <CardDescription className="flex items-center gap-2 pt-1">
-                              <CalendarIcon className="w-4 h-4" />
-                              <span>
-                                {new Date(job.createdAt).toLocaleDateString()}
-                              </span>
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="flex-grow">
-                            <Badge
-                              variant="outline"
-                              className={statusProps.className}
-                            >
-                              {statusProps.icon}
-                              <span className="ml-2">{job.status}</span>
-                            </Badge>
-
-                            {isProcessing && job.progress && (
-                              <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                                <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                <p className="truncate">{job.progress}</p>
+                                    <DropdownMenuItem
+                                      className="text-red-500"
+                                      onClick={() => {
+                                        setJobToEdit(job);
+                                        setIsDeleteDialogOpen(true);
+                                      }}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
-                            )}
-                          </CardContent>
-                          <CardFooter>
-                            {job.status === "COMPLETED" ? (
-                              <Link
-                                href={`/results/${job.id}`}
-                                className="w-full"
-                                passHref
+                              <CardDescription className="flex items-center gap-2 pt-1">
+                                <CalendarIcon className="w-4 h-4" />
+                                <span>
+                                  {new Date(job.createdAt).toLocaleDateString()}
+                                </span>
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                              <Badge
+                                variant="outline"
+                                className={statusProps.className}
                               >
-                                <Button className="w-full">
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Results
+                                {statusProps.icon}
+                                <span className="ml-2">{job.status}</span>
+                              </Badge>
+
+                              {isProcessing && job.progress && (
+                                <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                  <p className="truncate">{job.progress}</p>
+                                </div>
+                              )}
+                            </CardContent>
+                            <CardFooter>
+                              {job.status === "COMPLETED" ? (
+                                <Link
+                                  href={`/results/${job.id}`}
+                                  className="w-full"
+                                  passHref
+                                >
+                                  <Button className="w-full">
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Results
+                                  </Button>
+                                </Link>
+                              ) : (
+                                <Button className="w-full" disabled>
+                                  {job.status === "PROCESSING" && (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  )}
+                                  {job.status === "FAILED" && (
+                                    <AlertCircle className="w-4 h-4 mr-2" />
+                                  )}
+                                  {job.status === "QUEUED" && (
+                                    <Loader2 className="w-4 h-4 mr-2" />
+                                  )}
+                                  {job.status}
                                 </Button>
-                              </Link>
-                            ) : (
-                              <Button className="w-full" disabled>
-                                {job.status === "PROCESSING" && (
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                )}
-                                {job.status === "FAILED" && (
-                                  <AlertCircle className="w-4 h-4 mr-2" />
-                                )}
-                                {job.status === "QUEUED" && (
-                                  <Loader2 className="w-4 h-4 mr-2" />
-                                )}
-                                {job.status}
-                              </Button>
-                            )}
-                          </CardFooter>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                  {hasMore && (
-                    <div className="flex justify-center mt-8">
-                      <Button
-                        onClick={() => setSize(size + 1)}
-                        disabled={isLoadingMore}
-                      >
-                        {isLoadingMore ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          "Load More"
-                        )}
-                      </Button>
+                              )}
+                            </CardFooter>
+                          </Card>
+                        );
+                      })}
                     </div>
-                  )}
-                </>
-              )}
-            </main>
+                    {hasMore && (
+                      <div className="flex justify-center mt-8">
+                        <Button
+                          onClick={() => setSize(size + 1)}
+                          disabled={isLoadingMore}
+                        >
+                          {isLoadingMore ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            "Load More"
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </main>
+            </div>
           </div>
         </div>
       </div>

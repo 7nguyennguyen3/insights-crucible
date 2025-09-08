@@ -8,10 +8,7 @@ import { Resend } from "resend";
 
 // This set defines which Stripe events our webhook will process.
 const relevantEvents = new Set([
-  "checkout.session.completed",
-  "invoice.paid",
-  "customer.subscription.updated",
-  "customer.subscription.deleted",
+  "checkout.session.completed", // Only handle one-time credit purchases
 ]);
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -50,7 +47,7 @@ export async function POST(request: NextRequest) {
   if (relevantEvents.has(event.type)) {
     try {
       switch (event.type) {
-        // --- Handles new subscriptions and one-time purchases ---
+        // --- Handles one-time credit pack purchases only ---
         case "checkout.session.completed": {
           const checkoutSession = event.data.object as Stripe.Checkout.Session;
           const customerId = checkoutSession.customer as string;
@@ -70,195 +67,31 @@ export async function POST(request: NextRequest) {
           const userDoc = userQuery.docs[0];
           const userId = userDoc.id;
 
-          // Handle a new subscription
-          if (
-            checkoutSession.mode === "subscription" &&
-            checkoutSession.subscription
-          ) {
-            let subscription: Stripe.Subscription;
-            if (typeof checkoutSession.subscription === "string") {
-              subscription = await stripe.subscriptions.retrieve(
-                checkoutSession.subscription
-              );
-            } else {
-              subscription = checkoutSession.subscription;
-            }
+          // All purchases are now one-time credit packs
+          const lineItems = await stripe.checkout.sessions.listLineItems(
+            checkoutSession.id
+          );
+          const lineItem = lineItems.data[0];
+          const priceId = lineItem.price?.id;
+          
+          let creditsToGrant = 0;
 
-            const priceId = subscription.items.data[0].price.id;
-            let plan = "free";
-            let creditsToGrant = 0;
-
-            // UPDATED LOGIC: Check for Starter or Pro plan
-            if (
-              priceId === process.env.NEXT_PUBLIC_STRIPE_STARTER_PLAN_PRICE_ID
-            ) {
-              plan = "starter";
-              creditsToGrant = 30;
-            } else if (
-              priceId === process.env.NEXT_PUBLIC_STRIPE_PRO_PLAN_PRICE_ID
-            ) {
-              plan = "pro";
-              creditsToGrant = 100;
-            }
-
-            if (plan !== "free" && creditsToGrant > 0) {
-              await auth.setCustomUserClaims(userId, { plan });
-              await userDoc.ref.update({
-                plan: plan,
-                analyses_remaining: FieldValue.increment(creditsToGrant),
-                nextBillingDate: subscription.items.data[0].current_period_end,
-                cancel_at_period_end: false,
-                subscription_ends_at: null,
-              });
-              console.log(
-                `✅ User ${userId} subscribed to ${plan} plan, granting ${creditsToGrant} credits.`
-              );
-              // TODO: Consider sending a welcome email or in-app notification here.
-            }
+          // Map price IDs to credit amounts
+          if (priceId === process.env.NEXT_PUBLIC_STRIPE_STARTER_PACK_PRICE_ID) {
+            creditsToGrant = 30; // Starter pack
+          } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PACK_PRICE_ID) {
+            creditsToGrant = 75; // Professional pack (60 base + 15 bonus)
+          } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_ULTIMATE_PACK_PRICE_ID) {
+            creditsToGrant = 170; // Ultimate pack (120 base + 50 bonus)
           }
-          // Handle a one-time credit pack purchase
-          else if (checkoutSession.mode === "payment") {
-            const lineItems = await stripe.checkout.sessions.listLineItems(
-              checkoutSession.id
+
+          if (creditsToGrant > 0) {
+            await userDoc.ref.update({
+              analyses_remaining: FieldValue.increment(creditsToGrant),
+            });
+            console.log(
+              `✅ User ${userId} purchased ${creditsToGrant} credits.`
             );
-            const lineItem = lineItems.data[0];
-            const priceId = lineItem.price?.id;
-
-            if (
-              priceId === process.env.NEXT_PUBLIC_STRIPE_ANALYSIS_PACK_PRICE_ID
-            ) {
-              const baseQuantity = lineItem.quantity ?? 0;
-              let bonusQuantity = 0;
-
-              // This is our new business logic for tiered bonuses
-              if (baseQuantity === 100) {
-                // Corresponds to the $20 pack
-                bonusQuantity = 20;
-              } else if (baseQuantity === 250) {
-                // Corresponds to the $50 pack
-                bonusQuantity = 75;
-              } else if (baseQuantity === 25) {
-                // Corresponds to the $5 pack
-                bonusQuantity = 3;
-              }
-
-              const totalCreditsToGrant = baseQuantity + bonusQuantity;
-
-              if (totalCreditsToGrant > 0) {
-                await userDoc.ref.update({
-                  analyses_remaining: FieldValue.increment(totalCreditsToGrant),
-                });
-                // The new console log is more descriptive for easier debugging
-                console.log(
-                  `✅ User ${userId} purchased ${baseQuantity} credits + ${bonusQuantity} bonus. Total granted: ${totalCreditsToGrant}.`
-                );
-              }
-            }
-          }
-          break;
-        }
-
-        // --- Handles recurring subscription payments (credit refills) ---
-        case "invoice.paid": {
-          const invoice = event.data.object as Stripe.Invoice;
-          const subscriptionId = invoice.lines.data[0]?.subscription as string;
-
-          if (
-            invoice.billing_reason === "subscription_cycle" &&
-            subscriptionId
-          ) {
-            const customerId = invoice.customer as string;
-            const userQuery = await db
-              .collection("saas_users")
-              .where("stripeCustomerId", "==", customerId)
-              .limit(1)
-              .get();
-
-            if (!userQuery.empty) {
-              const userDoc = userQuery.docs[0];
-              const subscription =
-                await stripe.subscriptions.retrieve(subscriptionId);
-
-              const userData = userDoc.data();
-              let creditsToRefill = 0;
-
-              // UPDATED LOGIC: Refill credits based on the user's plan
-              if (userData?.plan === "starter") {
-                creditsToRefill = 30;
-              } else if (userData?.plan === "pro") {
-                creditsToRefill = 100;
-              }
-
-              if (creditsToRefill > 0) {
-                await userDoc.ref.update({
-                  analyses_remaining: FieldValue.increment(creditsToRefill),
-                  nextBillingDate:
-                    subscription.items.data[0].current_period_end,
-                });
-                console.log(
-                  `✅ Refilled ${creditsToRefill} credits for ${userData?.plan} user ${userDoc.id}.`
-                );
-              }
-            }
-          }
-          break;
-        }
-
-        // --- Handles subscription cancellation requests (e.g., user clicks "cancel") ---
-        case "customer.subscription.updated": {
-          const subscription = event.data.object as Stripe.Subscription;
-          const customerId = subscription.customer as string;
-
-          const userQuery = await db
-            .collection("saas_users")
-            .where("stripeCustomerId", "==", customerId)
-            .limit(1)
-            .get();
-
-          if (!userQuery.empty) {
-            const userDoc = userQuery.docs[0];
-            await userDoc.ref.update({
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              subscription_ends_at: subscription.cancel_at,
-            });
-
-            if (subscription.cancel_at_period_end) {
-              console.log(
-                `✅ User ${userDoc.id} set subscription to cancel at period end.`
-              );
-            } else {
-              console.log(
-                `✅ User ${userDoc.id} reactivated their subscription.`
-              );
-            }
-          }
-          break;
-        }
-
-        // --- Handles when a subscription is fully ended and deleted ---
-        case "customer.subscription.deleted": {
-          const subscription = event.data.object as Stripe.Subscription;
-          const customerId = subscription.customer as string;
-
-          const userQuery = await db
-            .collection("saas_users")
-            .where("stripeCustomerId", "==", customerId)
-            .limit(1)
-            .get();
-
-          if (!userQuery.empty) {
-            const userDoc = userQuery.docs[0];
-            const userId = userDoc.id;
-
-            // Downgrade user to the free plan
-            await auth.setCustomUserClaims(userId, { plan: "free" });
-            await userDoc.ref.update({
-              plan: "free",
-              nextBillingDate: null,
-              cancel_at_period_end: false,
-              subscription_ends_at: null,
-            });
-            console.log(`✅ User ${userDoc.id} downgraded to free plan.`);
           }
           break;
         }

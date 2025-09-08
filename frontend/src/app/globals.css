@@ -41,12 +41,22 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* 2025 Enhanced Color Palette */
+  --color-coral-50: oklch(0.97 0.025 20);
+  --color-coral-100: oklch(0.95 0.05 20);
+  --color-coral-200: oklch(0.9 0.08 20);
+  --color-coral-300: oklch(0.82 0.12 20);
+  --color-coral-400: oklch(0.7 0.16 20);
+  --color-coral-500: oklch(0.62 0.2 20);
+  --color-coral-600: oklch(0.52 0.18 20);
+  --color-coral-700: oklch(0.42 0.16 20);
+  --color-coral-800: oklch(0.32 0.12 20);
+  --color-coral-900: oklch(0.22 0.08 20);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -76,6 +86,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
 }
 
 .dark {

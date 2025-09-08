@@ -20,32 +20,6 @@ export const generateReportBlueprint = (data: JobData) => {
     blueprint.push({ type: "argument", data: data.argument_structure });
   }
 
-  // --- ADD THIS SECTION ---
-  // Part 3: Add Global Briefing and Generated Content if they exist
-  if (data.global_contextual_briefing) {
-    blueprint.push({
-      type: "global_briefing",
-      data: data.global_contextual_briefing,
-    });
-  }
-
-  if (data.generated_blog_post) {
-    blueprint.push({
-      type: "blog_post",
-      content: data.generated_blog_post,
-    });
-  }
-
-  if (
-    data.generated_overall_x_thread &&
-    data.generated_overall_x_thread.length > 0
-  ) {
-    blueprint.push({
-      type: "x_thread",
-      thread: data.generated_overall_x_thread,
-    });
-  }
-  // --- END OF ADDED SECTION ---
 
   // Part 4: Detailed Analysis Sections
   blueprint.push({ type: "detailed_sections_header" });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
-import { TIER_LIMITS, ADD_ON_COSTS } from "@/lib/billing";
+import { CREDIT_LIMITS, ADD_ON_COSTS } from "@/lib/billing";
 import { getYouTubeVideoId } from "@/app/utils/getYoutubeVideoId";
 
 type AddOnKey = keyof typeof ADD_ON_COSTS;
@@ -28,15 +28,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
     const userData = userDoc.data()!;
-    const userPlan = userData.plan || "free";
     const userCredits = userData.analyses_remaining || 0;
 
     // 3. Destructure the request body, now including youtubeUrl
     const { durations, character_count, config, youtubeUrl } =
       await request.json();
 
-    const limits =
-      TIER_LIMITS[userPlan as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
+    // Use fixed limits for all users (no plans)
+    const limits = CREDIT_LIMITS;
 
     let totalBaseCost = 0;
     let totalAddOnCost = 0;
@@ -137,11 +136,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Calculate Add-on cost (This now runs for all job types)
-    if (config) {
-      for (const key of Object.keys(ADD_ON_COSTS)) {
-        const featureKey = key as AddOnKey;
-        if (config[featureKey]) {
-          const singleCost = ADD_ON_COSTS[featureKey];
+    const addonKeys = Object.keys(ADD_ON_COSTS);
+    if (config && addonKeys.length > 0) {
+      for (const key of addonKeys) {
+        const featureKey = key as string;
+        if (config[featureKey as AddOnKey]) {
+          const singleCost = ADD_ON_COSTS[featureKey as AddOnKey];
           const totalFeatureCost = singleCost * numberOfItems;
           totalAddOnCost += totalFeatureCost;
 

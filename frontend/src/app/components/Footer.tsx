@@ -41,7 +41,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/pricing"
+                  href="/#pricing"
                   className="text-base text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-500"
                 >
                   Pricing

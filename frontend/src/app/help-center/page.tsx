@@ -39,21 +39,19 @@ const faqData = [
     ],
   },
   {
-    category: "Billing and Plans",
+    category: "Credits and Billing",
     questions: [
       {
-        q: "How does the analysis allowance work?",
-        // ✅ UPDATED: Replaced 'credits' with 'analyses'.
-        a: "Each analysis you run costs a minimum of 0.5 to 1 base on size. The Free plan includes 5 analysis credits per month. Paid plans (Starter/Pro) come with more credits per month and receive additional 5 free analysis credits each month.",
+        q: "How does the credit system work?",
+        a: "Each analysis consumes credits based on content size. One credit processes up to 10 minutes of audio or 100,000 characters of text. Larger content uses multiple credits proportionally. All new users start with free credits, and you can purchase credit packs as needed.",
       },
       {
-        q: "Do my unused analysis credits roll over?",
-        // ✅ UPDATED: Clearer policy for free vs. paid.
-        a: "For paid plans, yes! Unused analysis credits roll over to the next month. For the Free plan, the allowance resets to 5 new analysis credits at the beginning of each calendar month and does not roll over.",
+        q: "Do credits expire?",
+        a: "No, credits never expire! Once you purchase credits, they remain in your account permanently until you use them. This means you can buy credits when convenient and use them at your own pace.",
       },
       {
-        q: "How do I upgrade or manage my plan?",
-        a: "You can upgrade from a Free to a paid plan on our 'Pricing' page. If you are already on a paid plan, all management tasks, including cancellation and billing details, are handled on your 'Account' page.",
+        q: "How do I get more credits?",
+        a: "Simply purchase credit packs on our 'Pricing' page! We offer Starter (30 credits), Professional (75 credits with bonus), and Ultimate (170 credits with bonus) packs. Credits are added to your account instantly after purchase.",
       },
     ],
   },

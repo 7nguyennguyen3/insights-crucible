@@ -1,47 +1,39 @@
 "use client";
 
-import React, { useRef } from "react";
-import { useParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { useParams } from "next/navigation";
+import { useRef } from "react";
 
 // UI Components
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Copy, Check, Loader2 } from "lucide-react";
+import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
+import { AnalysisHeader } from "@/app/components/analysis/AnalysisHeader";
 import {
   AnalysisPageLayout,
   AnalysisPageLayoutRef,
 } from "@/app/components/analysis/AnalysisPageLayout";
-import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
-import { ConsultantReportView } from "@/app/components/analysis/ConsultantReportView";
-import { ContextualBriefingDisplay } from "@/app/components/analysis/ContextualBriefingDisplay";
-import { AnalysisHeader } from "@/app/components/analysis/AnalysisHeader";
-import { GeneralReportView } from "@/app/components/analysis/GeneralReportView";
-import { SlideDeckDisplay } from "@/app/components/analysis/SlideDeckDisplay";
-import { ExecutiveSynthesisView } from "@/app/components/analysis/synthesis-display/ExecutiveSynthesisView";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Check, Copy, Loader2 } from "lucide-react";
 
 // Interfaces
 import {
-  ConsultantAnalysisSection,
-  GeneralAnalysisSection,
+  LearningAcceleratorSection,
 } from "@/app/_global/interface";
 
 // Custom Hooks
-import { useJobData } from "@/hooks/useJobData";
-import { useShareDialog } from "@/hooks/useShareDialog";
-import { useMarkdownExport } from "@/hooks/useMarkdownExport";
-import { useSimplePdfExport } from "@/hooks/useSimplePdfExport";
+import { LearningAcceleratorView } from "@/app/components/analysis/LearningAcceleratorView";
+import { QuizQuestionsDisplay } from "@/app/components/analysis/QuizQuestionsDisplay";
 import { useDocxExport } from "@/hooks/useDocxExport";
-import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
-import { BlogPostDisplay } from "@/app/components/analysis/BlogPostDisplay";
-import { XThreadDisplay } from "@/app/components/analysis/XThreadDisplay";
-import { LinkedInPostDisplay } from "@/app/components/analysis/LinkedInPostDisplay";
+import { useJobData } from "@/hooks/useJobData";
+import { useMarkdownExport } from "@/hooks/useMarkdownExport";
+import { useShareDialog } from "@/hooks/useShareDialog";
+import { useSimplePdfExport } from "@/hooks/useSimplePdfExport";
 
 const ResultsPage = () => {
   const { loading: authLoading } = useAuthStore();
@@ -49,7 +41,6 @@ const ResultsPage = () => {
   const jobId = params.jobId as string;
   const layoutRef = useRef<AnalysisPageLayoutRef>(null);
 
-  // --- 1. Call your main data hook ---
   const {
     jobData,
     isLoading,
@@ -71,11 +62,6 @@ const ResultsPage = () => {
     handleDeleteItem,
     handleItemChange,
     handleQaChange,
-    handleContextualBriefingChange,
-    handleContextualBriefingAddItem,
-    handleContextualBriefingDeleteItem,
-    handleContextualBriefingListItemChange,
-    handleContextualBriefingViewpointChange,
     handleAddSlide,
     handleDeleteSlide,
     handleSlideTitleChange,
@@ -86,14 +72,18 @@ const ResultsPage = () => {
     handleArgumentStructureListChange,
     handleArgumentStructureAddItem,
     handleArgumentStructureDeleteItem,
-    handleBlogPostChange,
-    handleXThreadAddItem,
-    handleXThreadChange,
-    handleXThreadDeleteItem,
     handleAddEntity,
     handleDeleteEntity,
     handleEntityChange,
-    handleLinkedInPostChange,
+    handleLessonChange,
+    handleAddLesson,
+    handleDeleteLesson,
+    handleQuoteChange,
+    handleAddQuote,
+    handleDeleteQuote,
+    handleQuizQuestionChange,
+    handleAddQuizQuestion,
+    handleDeleteQuizQuestion,
   } = useJobData(jobId);
 
   // --- 2. Call your other hooks, passing in values from useJobData ---
@@ -117,8 +107,6 @@ const ResultsPage = () => {
   );
 
   // --- 3. Loading and Error states ---
-  const persona = jobData?.request_data?.config?.analysis_persona || "general";
-
   if (authLoading || isLoading || !jobData) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -130,8 +118,6 @@ const ResultsPage = () => {
   if (error) {
     return <div>Error loading analysis. Please try again.</div>;
   }
-
-  const claimForBriefing = jobData.global_contextual_briefing?.claim_text;
 
   return (
     <>
@@ -167,138 +153,49 @@ const ResultsPage = () => {
         }
       >
         <div id="analysis-report-content">
-          {/* Step 1: Render the top-level card based on persona */}
-          {persona === "consultant" && jobData.synthesis_results && (
+          {/* Learning Accelerator Quiz Questions */}
+          {(jobData.learning_synthesis?.quiz_questions || jobData.generated_quiz_questions?.questions) && (
             <div className="mb-12">
-              <ExecutiveSynthesisView
-                synthesis={jobData.synthesis_results}
+              <QuizQuestionsDisplay
+                questions={jobData.learning_synthesis?.quiz_questions || jobData.generated_quiz_questions?.questions || []}
+                estimatedTimeMinutes={jobData.generated_quiz_questions?.quiz_metadata?.estimated_time_minutes}
+                totalQuestions={jobData.generated_quiz_questions?.quiz_metadata?.total_questions}
                 isEditMode={isEditMode}
-                onSynthesisChange={handleSynthesisChange}
-                onSynthesisListChange={handleSynthesisListChange}
-                onSynthesisContradictionChange={
-                  handleSynthesisContradictionChange
-                }
-                onSynthesisAddItem={handleSynthesisAddItem}
-                onSynthesisDeleteItem={handleSynthesisDeleteItem}
+                onQuestionChange={handleQuizQuestionChange}
+                onAddQuestion={handleAddQuizQuestion}
+                onDeleteQuestion={handleDeleteQuizQuestion}
               />
             </div>
           )}
 
-          {persona === "general" && jobData.argument_structure && (
-            <div className="mb-12">
-              <ArgumentStructureCard
-                structure={jobData.argument_structure}
-                isEditMode={isEditMode}
-                onFieldChange={handleArgumentStructureFieldChange}
-                onListChange={handleArgumentStructureListChange}
-                onAddItem={handleArgumentStructureAddItem}
-                onDeleteItem={handleArgumentStructureDeleteItem}
-              />
-            </div>
-          )}
-
-          {/* Step 2: Render the Global Briefing right after the top-level card */}
-          {jobData.global_contextual_briefing &&
-            Object.keys(jobData.global_contextual_briefing).length > 0 && (
-              <div className="mb-12 p-6 bg-slate-50 dark:bg-slate-900 rounded-lg shadow-sm border dark:border-slate-800">
-                <ContextualBriefingDisplay
-                  briefing={jobData.global_contextual_briefing.briefing_data}
-                  claimText={claimForBriefing || "the document's central claim"} // <-- PASS THE PROP
-                  isEditMode={isEditMode}
-                  onFieldChange={handleContextualBriefingChange}
-                  onListItemChange={handleContextualBriefingListItemChange}
-                  onViewpointChange={handleContextualBriefingViewpointChange}
-                  onAddItem={handleContextualBriefingAddItem}
-                  onDeleteItem={handleContextualBriefingDeleteItem}
-                />
-              </div>
-            )}
-
-          {/* Render Blog Post */}
-          {jobData.generated_blog_post && (
-            <div className="mb-12">
-              <BlogPostDisplay
-                content={jobData.generated_blog_post}
-                isEditMode={isEditMode}
-                onChange={handleBlogPostChange}
-              />
-            </div>
-          )}
-
-          {/* Render X/Twitter Thread */}
-          {jobData.generated_overall_x_thread && (
-            <div className="mb-12">
-              <XThreadDisplay
-                thread={jobData.generated_overall_x_thread}
-                isEditMode={isEditMode}
-                onChange={handleXThreadChange}
-                onAddItem={handleXThreadAddItem}
-                onDeleteItem={handleXThreadDeleteItem}
-              />
-            </div>
-          )}
-
-          {jobData.generated_linkedin_post && (
-            <div className="mb-12">
-              <LinkedInPostDisplay
-                post={jobData.generated_linkedin_post}
-                isEditMode={isEditMode}
-                onChange={handleLinkedInPostChange}
-              />
-            </div>
-          )}
-
-          {/* Step 3: Add the header for the detailed section list */}
+          {/* Learning Sections Header */}
           <div className="my-12">
             <h2
               className="text-2xl font-bold text-slate-700 
             dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
             >
-              Detailed Section Analysis
+              Learning Sections
             </h2>
           </div>
-          {persona === "consultant" ? (
-            <>
-              <ConsultantReportView
-                results={jobData.results as ConsultantAnalysisSection[]}
-                isEditMode={isEditMode}
-                onFieldChange={handleFieldChange as any}
-                onAddItem={handleAddItem}
-                onDeleteItem={handleDeleteItem}
-                onItemChange={handleItemChange}
-                onAddEntity={handleAddEntity}
-                onDeleteEntity={handleDeleteEntity}
-                onEntityChange={handleEntityChange}
-              />
-              {jobData.generated_slide_outline && (
-                <div className="mt-12">
-                  <SlideDeckDisplay
-                    slides={jobData.generated_slide_outline}
-                    isEditMode={isEditMode}
-                    onAddSlide={handleAddSlide}
-                    onDeleteSlide={handleDeleteSlide}
-                    onSlideTitleChange={handleSlideTitleChange}
-                    onAddBullet={handleAddBullet}
-                    onDeleteBullet={handleDeleteBullet}
-                    onSlideChange={handleSlideChange}
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            <GeneralReportView
-              results={jobData.results as GeneralAnalysisSection[]}
-              isEditMode={isEditMode}
-              onFieldChange={handleFieldChange as any}
-              onAddItem={handleAddItem}
-              onDeleteItem={handleDeleteItem}
-              onItemChange={handleItemChange}
-              onQaChange={handleQaChange}
-              onAddEntity={handleAddEntity}
-              onDeleteEntity={handleDeleteEntity}
-              onEntityChange={handleEntityChange}
-            />
-          )}
+
+          {/* Learning Accelerator View */}
+          <LearningAcceleratorView
+            results={jobData.results as LearningAcceleratorSection[]}
+            isEditMode={isEditMode}
+            onFieldChange={handleFieldChange as any}
+            onAddItem={handleAddItem}
+            onDeleteItem={handleDeleteItem}
+            onItemChange={handleItemChange}
+            onAddEntity={handleAddEntity}
+            onDeleteEntity={handleDeleteEntity}
+            onEntityChange={handleEntityChange}
+            onLessonChange={handleLessonChange}
+            onAddLesson={handleAddLesson}
+            onDeleteLesson={handleDeleteLesson}
+            onQuoteChange={handleQuoteChange}
+            onAddQuote={handleAddQuote}
+            onDeleteQuote={handleDeleteQuote}
+          />
         </div>
       </AnalysisPageLayout>
 

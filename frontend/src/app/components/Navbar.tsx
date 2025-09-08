@@ -8,6 +8,8 @@ import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import NotificationBell from "./NotificationBell";
+import { CustomButton } from "@/components/common/CustomButton";
+import { ROUTES } from "@/lib/constants";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,22 +97,25 @@ const Navbar = () => {
 
     if (user) {
       return (
-        <div className="flex items-center gap-3">
-          <Link href="/engine">
-            <Button className="bg-blue-600 hover:bg-blue-700 hidden sm:flex">
-              <Zap className="h-4 w-4 mr-2" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:flex">
+            <CustomButton
+              href={ROUTES.ENGINE || "/engine"}
+              variant="primary"
+              className="shadow-lg px-4 py-2 text-sm h-10"
+            >
+              <Zap className="h-4 w-4" />
               Launch Engine
-            </Button>
-          </Link>
-          <Link
-            href="/dashboard"
-            onClick={closeAllMenus}
-            className="flex items-center px-3 py-2 text-base font-medium rounded-md text-black dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+            </CustomButton>
+          </div>
+          <CustomButton
+            href={ROUTES.DASHBOARD || "/dashboard"}
+            variant="secondary"
+            className="px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10 flex-shrink-0 min-w-0"
           >
-            <Button variant={"outline"}>
-              <LayoutDashboard className="h-5 w-5 mr-3 " /> Dashboard
-            </Button>
-          </Link>
+            <LayoutDashboard className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline ml-1">Dashboard</span>
+          </CustomButton>
 
           <NotificationBell />
 
@@ -167,7 +172,7 @@ const Navbar = () => {
                   Roadmap
                 </Link>
                 <Link
-                  href="/pricing"
+                  href="/#pricing"
                   onClick={closeAllMenus}
                   className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
@@ -193,11 +198,11 @@ const Navbar = () => {
         <Link href="/demo">
           <Button variant="ghost">Demo</Button>
         </Link>
-        <Link href="/pricing">
-          <Button variant="ghost">Pricing</Button>
-        </Link>
         <Link href="/roadmap">
           <Button variant="ghost">Roadmap</Button>
+        </Link>
+        <Link href="/#pricing">
+          <Button variant="ghost">Pricing</Button>
         </Link>
         <div className="border-l border-slate-200 dark:border-slate-700 h-6 mx-2"></div>
         <Link href="/auth">
@@ -218,19 +223,26 @@ const Navbar = () => {
           {user ? (
             <>
               {/* Logged-in user links */}
-              <Link href="/engine" onClick={closeAllMenus}>
-                <Button className="w-full justify-start text-base bg-blue-600 hover:bg-blue-700 h-12">
-                  <Zap className="h-5 w-5 mr-3" /> Launch Engine
-                </Button>
-              </Link>
-              <Link href="/dashboard" onClick={closeAllMenus} className="my-2">
-                <Button
-                  variant={"outline"}
+              <div onClick={closeAllMenus}>
+                <CustomButton
+                  href={ROUTES.ENGINE || "/engine"}
+                  variant="primary"
                   className="w-full justify-start text-base h-12"
                 >
-                  <LayoutDashboard className="h-5 w-5 mr-3" /> Dashboard
-                </Button>
-              </Link>
+                  <Zap className="h-5 w-5" />
+                  Launch Engine
+                </CustomButton>
+              </div>
+              <div onClick={closeAllMenus} className="my-2">
+                <CustomButton
+                  href={ROUTES.DASHBOARD || "/dashboard"}
+                  variant="secondary"
+                  className="w-full justify-start text-base h-12"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                  Dashboard
+                </CustomButton>
+              </div>
 
               {/* A separator for visual clarity */}
               <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
@@ -257,7 +269,7 @@ const Navbar = () => {
                 <Map className="h-5 w-5 mr-3 text-slate-500" /> Roadmap
               </Link>
               <Link
-                href="/pricing"
+                href="/#pricing"
                 onClick={closeAllMenus}
                 className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
@@ -284,18 +296,18 @@ const Navbar = () => {
                 Demo
               </Link>
               <Link
-                href="/pricing"
-                onClick={closeAllMenus}
-                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                Pricing
-              </Link>
-              <Link
                 href="/roadmap"
                 onClick={closeAllMenus}
                 className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Roadmap
+              </Link>
+              <Link
+                href="/#pricing"
+                onClick={closeAllMenus}
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Pricing
               </Link>
 
               {/* Sign in/up buttons with a separator above */}
@@ -303,19 +315,24 @@ const Navbar = () => {
                 className="border-t border-slate-200 dark:border-slate-700 
               pt-4 mt-2 flex flex-col gap-2"
               >
-                <Link href="/auth" onClick={closeAllMenus}>
-                  <Button
-                    variant={"outline"}
+                <div onClick={closeAllMenus}>
+                  <CustomButton
+                    href={ROUTES.AUTH || "/auth"}
+                    variant="secondary"
                     className="w-full text-base h-11 max-w-[400px]"
                   >
                     Sign In
-                  </Button>
-                </Link>
-                <Link href="/auth?tab=signup" onClick={closeAllMenus}>
-                  <Button className="w-full text-base h-11  max-w-[400px] mt-2">
+                  </CustomButton>
+                </div>
+                <div onClick={closeAllMenus}>
+                  <CustomButton
+                    href={ROUTES.AUTH_SIGNUP || "/auth?tab=signup"}
+                    variant="primary"
+                    className="w-full text-base h-11 max-w-[400px] mt-2"
+                  >
                     Sign Up
-                  </Button>
-                </Link>
+                  </CustomButton>
+                </div>
               </div>
             </>
           )}

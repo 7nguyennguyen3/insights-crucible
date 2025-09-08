@@ -114,6 +114,20 @@ def get_job_results_from_subcollection(
     return results
 
 
+def get_section_result(user_id: str, job_id: str, section_doc_id: str) -> Dict[str, Any]:
+    """Retrieves a single section result from the subcollection for a given job."""
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+
+    job_ref = db.collection(f"saas_users/{user_id}/jobs").document(job_id)
+    section_ref = job_ref.collection("results").document(section_doc_id)
+    doc = section_ref.get()
+    
+    if not doc.exists:
+        return None
+    return doc.to_dict()
+
+
 def get_job_status(user_id: str, job_id: str) -> Dict[str, Any]:
     """Retrieves the full document for a specific job."""
     if db is None:
@@ -222,27 +236,7 @@ def log_progress(user_id: str, job_id: str, message: str):
     db.collection(f"saas_users/{user_id}/jobs/{job_id}/logs").add(log_entry)
 
 
-def get_user_plan(user_id: str) -> str:
-    """
-    Retrieves the plan for a specific user from the 'saas_users' collection.
-    Defaults to 'free' if the user or plan is not found.
-    """
-    if db is None:
-        # Return 'free' as a safe default if the database isn't available
-        return "free"
-
-    try:
-        user_ref = db.collection("saas_users").document(user_id)
-        doc = user_ref.get()
-        if doc.exists:
-            # Safely get the 'plan' field, default to 'free' if it's missing
-            return doc.to_dict().get("plan", "free")
-        else:
-            # If user document doesn't exist, they are on the free plan
-            return "free"
-    except Exception as e:
-        print(f"ERROR: Could not retrieve user plan for {user_id}: {e}")
-        return "free"  # Default to 'free' on any error
+# get_user_plan function removed - no longer needed in credit-based system
 
 
 def refund_analysis_credit(user_id: str, amount: int = 1):
@@ -256,7 +250,7 @@ def refund_analysis_credit(user_id: str, amount: int = 1):
             user_id, None, f"✅ Successfully refunded {amount} analysis credit."
         )
         print(
-            f"[bold green]CRITICAL: Successfully refunded {amount} analysis credit for user {user_id}: {e}[/bold green]"
+            f"[bold green]CRITICAL: Successfully refunded {amount} analysis credit for user {user_id}[/bold green]"
         )
     except Exception as e:
         print(

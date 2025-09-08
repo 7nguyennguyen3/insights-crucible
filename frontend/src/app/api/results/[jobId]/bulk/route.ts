@@ -25,9 +25,6 @@ export async function PATCH(
       updatedSlideDeck,
       updatedSynthesisResults,
       updatedArgumentStructure,
-      updatedGlobalBriefing, // Add this
-      updatedBlogPost, // Add this
-      updatedXThread, // Add this
     } = await request.json();
 
     if (!jobId) {
@@ -67,16 +64,6 @@ export async function PATCH(
     }
     if (updatedArgumentStructure) {
       topLevelUpdates.argument_structure = updatedArgumentStructure;
-    }
-    // ADD logic for new fields
-    if (updatedGlobalBriefing) {
-      topLevelUpdates.global_contextual_briefing = updatedGlobalBriefing;
-    }
-    if (typeof updatedBlogPost === "string") {
-      topLevelUpdates.generated_blog_post = updatedBlogPost;
-    }
-    if (Array.isArray(updatedXThread)) {
-      topLevelUpdates.generated_overall_x_thread = updatedXThread;
     }
 
     // 3. Apply all top-level updates in one go

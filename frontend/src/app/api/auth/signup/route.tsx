@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
       email: userRecord.email,
       name: userRecord.displayName,
       createdAt: new Date().toISOString(),
-      plan: "free",
       analyses_remaining: creditsToGive,
       welcomeEmailSent: false,
     });

@@ -19,15 +19,11 @@ import {
 } from "@/app/components/analysis/AnalysisPageLayout";
 import { AnalysisHeader } from "@/app/components/analysis/AnalysisHeader";
 import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
-import { ContextualBriefingDisplay } from "@/app/components/analysis/ContextualBriefingDisplay";
-import { BlogPostDisplay } from "@/app/components/analysis/BlogPostDisplay";
-import { XThreadDisplay } from "@/app/components/analysis/XThreadDisplay";
 import { SlideDeckDisplay } from "@/app/components/analysis/SlideDeckDisplay";
 import { ConsultantReportView } from "@/app/components/analysis/ConsultantReportView";
 import { GeneralReportView } from "@/app/components/analysis/GeneralReportView";
 import { ExecutiveSynthesisView } from "@/app/components/analysis/synthesis-display/ExecutiveSynthesisView";
 import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
-import { LinkedInPostDisplay } from "@/app/components/analysis/LinkedInPostDisplay";
 
 const fetcher = (url: string) => apiClient.get(url).then((res) => res.data);
 
@@ -66,7 +62,6 @@ const PublicSharePage = () => {
   }
 
   const persona = data.request_data?.config?.analysis_persona || "general";
-  const claimForBriefing = data.global_contextual_briefing?.claim_text;
 
   return (
     <AnalysisPageLayout
@@ -125,54 +120,6 @@ const PublicSharePage = () => {
               onListChange={emptyFunction}
               onAddItem={emptyFunction}
               onDeleteItem={emptyFunction}
-            />
-          </div>
-        )}
-
-        {/* --- Common generated content sections --- */}
-        {data.global_contextual_briefing && (
-          <div className="mb-12">
-            <ContextualBriefingDisplay
-              briefing={data.global_contextual_briefing.briefing_data}
-              claimText={claimForBriefing || "the document's central claim"}
-              isEditMode={false}
-              onFieldChange={emptyFunction}
-              onListItemChange={emptyFunction}
-              onViewpointChange={emptyFunction}
-              onAddItem={emptyFunction}
-              onDeleteItem={emptyFunction}
-            />
-          </div>
-        )}
-
-        {data.generated_blog_post && (
-          <div className="mb-12">
-            <BlogPostDisplay
-              content={data.generated_blog_post}
-              isEditMode={false}
-              onChange={emptyFunction}
-            />
-          </div>
-        )}
-
-        {data.generated_overall_x_thread && (
-          <div className="mb-12">
-            <XThreadDisplay
-              thread={data.generated_overall_x_thread}
-              isEditMode={false}
-              onChange={emptyFunction}
-              onAddItem={emptyFunction}
-              onDeleteItem={emptyFunction}
-            />
-          </div>
-        )}
-
-        {data.generated_linkedin_post && (
-          <div className="mb-12">
-            <LinkedInPostDisplay
-              post={data.generated_linkedin_post}
-              isEditMode={isEditMode}
-              onChange={emptyFunction}
             />
           </div>
         )}

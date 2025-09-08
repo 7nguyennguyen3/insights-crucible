@@ -6,9 +6,6 @@ import {
   ConsultantAnalysisSection,
   Slide,
   Contradiction,
-  GlobalContextualBriefingPayload,
-  Viewpoint,
-  BlogBlock,
 } from "@/app/_global/interface";
 import { generateReportBlueprint } from "@/app/utils/reportGenerator";
 
@@ -67,82 +64,8 @@ const generateMarkdown = (data: JobData): string => {
         }
         break;
 
-      case "global_briefing":
-        const briefing = part.data as GlobalContextualBriefingPayload;
-        md += `## Global Contextual Briefing\n\n`;
-        md += `**Claim:** ${briefing.claim_text}\n\n`;
-        if (briefing.briefing_data.overall_summary) {
-          md += `### Summary\n${briefing.briefing_data.overall_summary}\n\n`;
-        }
-        if (briefing.briefing_data.supporting_viewpoints?.length) {
-          md += `### Supporting Viewpoints\n`;
-          briefing.briefing_data.supporting_viewpoints.forEach(
-            (v: Viewpoint) => {
-              md += `- **${v.source}:** ${v.perspective}\n`;
-            }
-          );
-          md += `\n`;
-        }
-        if (briefing.briefing_data.challenging_viewpoints?.length) {
-          md += `### Challenging Viewpoints\n`;
-          briefing.briefing_data.challenging_viewpoints.forEach(
-            (v: Viewpoint) => {
-              md += `- **${v.source}:** ${v.perspective}\n`;
-            }
-          );
-          md += `\n`;
-        }
-        break;
 
-      case "blog_post":
-        md += `## Generated Blog Post\n\n`;
-        const blogPost = part.content; // part.content is now a BlogPostData object
 
-        if (blogPost && blogPost.title) {
-          // Add the blog post's main title as an H3
-          md += `### ${blogPost.title}\n\n`;
-
-          // Process each content block from the array
-          blogPost.content.forEach((block: BlogBlock) => {
-            switch (block.type) {
-              case "heading":
-                // Use #### for h2, ##### for h3 to maintain report hierarchy
-                const headingLevel = (block.level || 2) + 2;
-                md += `${"#".repeat(headingLevel)} ${block.text}\n\n`;
-                break;
-              case "paragraph":
-                md += `${block.text}\n\n`;
-                break;
-              case "list":
-                (block.items || []).forEach((item) => {
-                  md += `- ${item}\n`;
-                });
-                md += "\n";
-                break;
-              case "quote":
-                md += `> ${block.text}`;
-                if (block.author) {
-                  md += `\n> — ${block.author}`;
-                }
-                md += `\n\n`;
-                break;
-              case "cta":
-                md += `**➡️ Call to Action:** ${block.text}\n\n`;
-                break;
-              case "visual_suggestion":
-                md += `*[💡 Visual Suggestion: ${block.description}]*\n\n`;
-                break;
-            }
-          });
-        }
-        break;
-
-      case "x_thread":
-        md += `## Generated X/Twitter Thread\n\n`;
-        (part.thread as string[]).forEach((tweet, index) => {
-          md += `${index + 1}. ${tweet}\n\n`;
-        });
-        break;
 
       case "detailed_sections_header":
         md += `## Detailed Section-by-Section Analysis\n\n`;

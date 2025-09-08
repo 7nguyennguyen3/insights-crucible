@@ -7,16 +7,15 @@ import { toast } from "sonner";
 import apiClient from "@/lib/apiClient";
 import {
   AnalysisSection,
-  BlogPostData,
-  ContextualBriefing,
   Contradiction,
   GeneralAnalysisSection,
   JobData,
   JobDataWithShare,
-  LinkedInPost,
+  LessonConcept,
+  NotableQuote,
+  QuizQuestion,
   Slide /*, other interfaces */,
   SynthesisResults,
-  Viewpoint,
 } from "@/app/_global/interface";
 
 type GeneralItemField =
@@ -30,9 +29,10 @@ type ConsultantItemField =
   | "critical_quotes"
   | "open_questions"
   | "key_stakeholders_mentioned";
-type ItemField = GeneralItemField | ConsultantItemField;
-type ViewpointField = "supporting_viewpoints" | "challenging_viewpoints";
-type ViewpointProperty = keyof Viewpoint;
+type LearningAcceleratorItemField = 
+  | "key_points" 
+  | "verifiable_claims";
+type ItemField = GeneralItemField | ConsultantItemField | LearningAcceleratorItemField;
 
 export const useJobData = (jobId: string) => {
   // 1. Move SWR call and all state here
@@ -70,10 +70,6 @@ export const useJobData = (jobId: string) => {
       updatedSlideDeck: draftData.generated_slide_outline,
       updatedSynthesisResults: draftData.synthesis_results,
       updatedArgumentStructure: draftData.argument_structure,
-      updatedGlobalBriefing: draftData.global_contextual_briefing,
-      updatedBlogPost: draftData.generated_blog_post,
-      updatedXThread: draftData.generated_overall_x_thread,
-      updatedLinkedInPost: draftData.generated_linkedin_post,
     };
 
     try {
@@ -287,159 +283,8 @@ export const useJobData = (jobId: string) => {
     []
   );
 
-  const handleContextualBriefingChange = useCallback(
-    (field: keyof ContextualBriefing, value: any) => {
-      setDraftData(
-        produce((draft) => {
-          // Access .briefing_data to modify the correct object
-          if (draft?.global_contextual_briefing?.briefing_data) {
-            (draft.global_contextual_briefing.briefing_data as any)[field] =
-              value;
-          }
-        })
-      );
-    },
-    []
-  );
 
-  const handleContextualBriefingAddItem = useCallback(
-    (field: "key_nuances_and_conditions" | ViewpointField) => {
-      setDraftData(
-        produce((draft) => {
-          if (!draft?.global_contextual_briefing?.briefing_data) return;
 
-          // Access .briefing_data to get to the actual content
-          const briefing = draft.global_contextual_briefing.briefing_data;
-
-          if (field === "key_nuances_and_conditions") {
-            briefing.key_nuances_and_conditions = [
-              ...(briefing.key_nuances_and_conditions || []),
-              "",
-            ];
-          } else if (field === "supporting_viewpoints") {
-            briefing.supporting_viewpoints = [
-              ...(briefing.supporting_viewpoints || []),
-              { perspective: "New Perspective", source: "New Source", url: "" },
-            ];
-          } else if (field === "challenging_viewpoints") {
-            briefing.challenging_viewpoints = [
-              ...(briefing.challenging_viewpoints || []),
-              { perspective: "New Perspective", source: "New Source", url: "" },
-            ];
-          }
-        })
-      );
-    },
-    []
-  );
-
-  const handleContextualBriefingDeleteItem = useCallback(
-    (field: "key_nuances_and_conditions" | ViewpointField, index: number) => {
-      setDraftData(
-        produce((draft) => {
-          if (!draft?.global_contextual_briefing?.briefing_data) return;
-
-          // Access .briefing_data to get to the actual content
-          const arrayField =
-            draft.global_contextual_briefing.briefing_data[field];
-          if (Array.isArray(arrayField)) {
-            arrayField.splice(index, 1);
-          }
-        })
-      );
-    },
-    []
-  );
-
-  const handleContextualBriefingListItemChange = useCallback(
-    (field: "key_nuances_and_conditions", index: number, value: string) => {
-      setDraftData(
-        produce((draft) => {
-          // Access .briefing_data to get to the actual content
-          if (
-            draft?.global_contextual_briefing?.briefing_data
-              ?.key_nuances_and_conditions
-          ) {
-            draft.global_contextual_briefing.briefing_data.key_nuances_and_conditions[
-              index
-            ] = value;
-          }
-        })
-      );
-    },
-    []
-  );
-
-  const handleContextualBriefingViewpointChange = useCallback(
-    (
-      field: ViewpointField,
-      index: number,
-      prop: ViewpointProperty,
-      value: string
-    ) => {
-      setDraftData(
-        produce((draft) => {
-          if (!draft?.global_contextual_briefing?.briefing_data) return;
-
-          // Access .briefing_data to get to the actual content
-          const viewpointArray =
-            draft.global_contextual_briefing.briefing_data[field];
-          if (viewpointArray?.[index]) {
-            (viewpointArray[index] as any)[prop] = value;
-          }
-        })
-      );
-    },
-    []
-  );
-
-  const handleBlogPostChange = useCallback((newContent: BlogPostData) => {
-    // CHANGE 'string' to 'BlogPostData'
-    setDraftData(
-      produce((draft) => {
-        if (draft) {
-          draft.generated_blog_post = newContent;
-        }
-      })
-    );
-  }, []);
-
-  // --- Handlers for X Thread ---
-  const handleXThreadChange = useCallback(
-    (index: number, newContent: string) => {
-      setDraftData(
-        produce((draft) => {
-          if (draft?.generated_overall_x_thread) {
-            draft.generated_overall_x_thread[index] = newContent;
-          }
-        })
-      );
-    },
-    []
-  );
-
-  const handleXThreadAddItem = useCallback(() => {
-    setDraftData(
-      produce((draft) => {
-        if (draft) {
-          if (!draft.generated_overall_x_thread) {
-            draft.generated_overall_x_thread = [];
-          }
-          draft.generated_overall_x_thread.push("New tweet...");
-        }
-      })
-    );
-  }, []);
-
-  const handleXThreadDeleteItem = useCallback((index: number) => {
-    setDraftData(
-      produce((draft) => {
-        if (draft?.generated_overall_x_thread) {
-          draft.generated_overall_x_thread.splice(index, 1);
-        }
-      })
-    );
-  }, []);
 
   // --- Handlers for the Slide Deck ---
   const handleAddSlide = useCallback(() => {
@@ -647,18 +492,176 @@ export const useJobData = (jobId: string) => {
     );
   }, []);
 
-  const handleLinkedInPostChange = useCallback(
-    (field: keyof LinkedInPost, value: any) => {
+  // --- Learning Accelerator Handlers ---
+  const handleLessonChange = useCallback(
+    (
+      sectionId: string,
+      index: number,
+      field: keyof LessonConcept,
+      value: string | string[]
+    ) => {
       setDraftData(
         produce((draft) => {
-          if (draft?.generated_linkedin_post) {
-            (draft.generated_linkedin_post as any)[field] = value;
+          if (!draft) return;
+          const section = draft.results.find((s) => s.id === sectionId);
+          if (section && 'lessons_and_concepts' in section && section.lessons_and_concepts) {
+            (section.lessons_and_concepts[index] as any)[field] = value;
           }
         })
       );
     },
     []
   );
+
+  const handleAddLesson = useCallback((sectionId: string) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const section = draft.results.find((s) => s.id === sectionId);
+        if (section && 'lessons_and_concepts' in section) {
+          if (!section.lessons_and_concepts) {
+            section.lessons_and_concepts = [];
+          }
+          section.lessons_and_concepts.push({
+            lesson: "New lesson or concept",
+            supporting_quote: "Add supporting quote...",
+            timestamp: "00:00",
+            real_life_examples: ["Add real-life example..."],
+          });
+        }
+      })
+    );
+  }, []);
+
+  const handleDeleteLesson = useCallback((sectionId: string, index: number) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const section = draft.results.find((s) => s.id === sectionId);
+        if (section && 'lessons_and_concepts' in section && section.lessons_and_concepts) {
+          section.lessons_and_concepts.splice(index, 1);
+        }
+      })
+    );
+  }, []);
+
+  const handleQuoteChange = useCallback(
+    (
+      sectionId: string,
+      index: number,
+      field: keyof NotableQuote,
+      value: string
+    ) => {
+      setDraftData(
+        produce((draft) => {
+          if (!draft) return;
+          const section = draft.results.find((s) => s.id === sectionId);
+          if (section && 'notable_quotes' in section && section.notable_quotes) {
+            (section.notable_quotes[index] as any)[field] = value;
+          }
+        })
+      );
+    },
+    []
+  );
+
+  const handleAddQuote = useCallback((sectionId: string) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const section = draft.results.find((s) => s.id === sectionId);
+        if (section && 'notable_quotes' in section) {
+          if (!section.notable_quotes) {
+            section.notable_quotes = [];
+          }
+          if (section.analysis_persona === "learning_accelerator") {
+            section.notable_quotes.push({
+              quote: "Add notable quote...",
+              context: "Add context...",
+              timestamp: "00:00",
+            });
+          } else {
+            // For other personas that expect strings
+            section.notable_quotes.push("Add notable quote...");
+          }
+        }
+      })
+    );
+  }, []);
+
+  const handleDeleteQuote = useCallback((sectionId: string, index: number) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const section = draft.results.find((s) => s.id === sectionId);
+        if (section && 'notable_quotes' in section && section.notable_quotes) {
+          section.notable_quotes.splice(index, 1);
+        }
+      })
+    );
+  }, []);
+
+  const handleQuizQuestionChange = useCallback(
+    (
+      index: number,
+      field: keyof QuizQuestion,
+      value: string | string[]
+    ) => {
+      setDraftData(
+        produce((draft) => {
+          if (!draft) return;
+          if (draft.learning_synthesis?.quiz_questions) {
+            (draft.learning_synthesis.quiz_questions[index] as any)[field] = value;
+          } else if (draft.generated_quiz_questions?.questions) {
+            (draft.generated_quiz_questions.questions[index] as any)[field] = value;
+          }
+        })
+      );
+    },
+    []
+  );
+
+  const handleAddQuizQuestion = useCallback(() => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const newQuestion: QuizQuestion = {
+          question: "New question...",
+          options: ["Option A", "Option B", "Option C", "Option D"],
+          correct_answer: "A",
+          explanation: "Explanation for correct answer...",
+          supporting_quote: "Add supporting quote...",
+          related_timestamp: "00:00",
+        };
+        
+        if (draft.learning_synthesis) {
+          if (!draft.learning_synthesis.quiz_questions) {
+            draft.learning_synthesis.quiz_questions = [];
+          }
+          draft.learning_synthesis.quiz_questions.push(newQuestion);
+        } else if (draft.generated_quiz_questions) {
+          if (!draft.generated_quiz_questions.questions) {
+            draft.generated_quiz_questions.questions = [];
+          }
+          draft.generated_quiz_questions.questions.push(newQuestion);
+        }
+      })
+    );
+  }, []);
+
+  const handleDeleteQuizQuestion = useCallback((index: number) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        if (draft.learning_synthesis?.quiz_questions) {
+          draft.learning_synthesis.quiz_questions.splice(index, 1);
+        } else if (draft.generated_quiz_questions?.questions) {
+          draft.generated_quiz_questions.questions.splice(index, 1);
+        }
+      })
+    );
+  }, []);
+
 
   return {
     // --- Core Data & State ---
@@ -693,12 +696,16 @@ export const useJobData = (jobId: string) => {
     handleAddEntity,
     handleDeleteEntity,
 
-    // --- Contextual Briefing Handlers ---
-    handleContextualBriefingChange,
-    handleContextualBriefingAddItem,
-    handleContextualBriefingDeleteItem,
-    handleContextualBriefingListItemChange,
-    handleContextualBriefingViewpointChange,
+    // --- Learning Accelerator Handlers ---
+    handleLessonChange,
+    handleAddLesson,
+    handleDeleteLesson,
+    handleQuoteChange,
+    handleAddQuote,
+    handleDeleteQuote,
+    handleQuizQuestionChange,
+    handleAddQuizQuestion,
+    handleDeleteQuizQuestion,
 
     // --- Slide Deck Handlers ---
     handleAddSlide,
@@ -714,12 +721,5 @@ export const useJobData = (jobId: string) => {
     handleArgumentStructureAddItem,
     handleArgumentStructureDeleteItem,
 
-    // --- Blog Post & X-Thread Handlers ---
-    handleBlogPostChange,
-    handleXThreadChange,
-    handleXThreadAddItem,
-    handleXThreadDeleteItem,
-
-    handleLinkedInPostChange,
   };
 };

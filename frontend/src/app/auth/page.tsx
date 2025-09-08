@@ -8,6 +8,7 @@ import { AuthForm } from "./AuthForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import admin from "@/lib/firebaseAdmin";
+import { backgroundVariants, gridPatterns } from "@/styles/variants";
 
 export default async function AuthPage() {
   const sessionCookie = (await cookies()).get("session")?.value;
@@ -30,10 +31,20 @@ export default async function AuthPage() {
 
   // If no cookie exists, or if the cookie was invalid, render the form.
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
-      <React.Suspense fallback={<AuthSkeleton />}>
-        <AuthForm />
-      </React.Suspense>
+    <div className={`flex items-center justify-center min-h-screen ${backgroundVariants.universal} relative overflow-hidden`}>
+      {/* Background Elements */}
+      <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/8 rounded-full blur-3xl animate-pulse" />
+      <div 
+        className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-teal-500/8 rounded-full blur-3xl animate-pulse"
+        style={{ animationDelay: "2s" }}
+      />
+      
+      <div className="relative z-10">
+        <React.Suspense fallback={<AuthSkeleton />}>
+          <AuthForm />
+        </React.Suspense>
+      </div>
     </div>
   );
 }

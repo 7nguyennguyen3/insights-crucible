@@ -3,10 +3,6 @@ from typing import List, Dict, Any, Optional
 
 
 class FeatureConfig(BaseModel):
-    run_contextual_briefing: bool = False
-    run_x_thread_generation: bool = False
-    run_blog_post_generation: bool = False
-    run_linkedin_post_generation: bool = False
     analysis_persona: str = "general"
 
 

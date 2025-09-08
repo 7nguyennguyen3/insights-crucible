@@ -48,13 +48,8 @@ export async function GET(
       status: jobData?.status,
       job_title: jobData?.job_title,
       structured_transcript: jobData?.structured_transcript || null,
-      global_contextual_briefing: jobData?.global_contextual_briefing || null,
 
       generated_slide_outline: jobData?.generated_slide_outline || null,
-
-      generated_blog_post: jobData?.generated_blog_post || null,
-      generated_overall_x_thread: jobData?.generated_overall_x_thread || null,
-      generated_linkedin_post: jobData?.generated_linkedin_post || null,
 
       // --- FIX: Add this line to pass the config to the frontend ---
       request_data: jobData?.request_data || null,
@@ -62,6 +57,11 @@ export async function GET(
       results: resultsData,
       synthesis_results: jobData?.synthesis_results || null,
       argument_structure: jobData?.argument_structure || null,
+      
+      // Learning accelerator specific fields
+      learning_synthesis: jobData?.learning_synthesis || null,
+      generated_quiz_questions: jobData?.generated_quiz_questions || null,
+      
       isPublic: jobData?.isPublic || false,
       publicShareId: jobData?.publicShareId || null,
     };

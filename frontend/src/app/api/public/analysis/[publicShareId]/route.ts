@@ -54,15 +54,10 @@ export async function GET(
       structured_transcript: jobData.structured_transcript || [],
       status: jobData.status,
       job_id: jobDoc.id,
-      generated_blog_post: jobData.generated_blog_post || null,
-      generated_overall_x_thread: jobData.generated_overall_x_thread || null,
-      generated_linkedin_post: jobData.generated_linkedin_post || null,
-
       // --- ADD THESE TWO LINES ---
       synthesis_results: jobData.synthesis_results || null,
       argument_structure: jobData.argument_structure || null,
       generated_slide_outline: jobData.generated_slide_outline || null,
-      global_contextual_briefing: jobData.global_contextual_briefing || null,
     };
 
     return NextResponse.json(publicData);

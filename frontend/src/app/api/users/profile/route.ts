@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, db } from "@/lib/firebaseAdmin";
 import { cookies } from "next/headers";
-import { stripe } from "@/lib/stripe";
 
 export async function GET(_request: NextRequest) {
   try {
@@ -27,31 +26,10 @@ export async function GET(_request: NextRequest) {
     }
 
     const userData = userDoc.data();
-    let nextBillingDate: number | null = null;
 
-    // 3. If the user has a Stripe ID, fetch their active subscription
-    if (userData?.stripeCustomerId) {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: userData.stripeCustomerId,
-        status: "active",
-        limit: 1,
-      });
-
-      const subscription = subscriptions.data[0];
-
-      // 4. Safely get the billing date from the nested subscription item
-      if (subscription && subscription.items.data.length > 0) {
-        nextBillingDate = subscription.items.data[0].current_period_end;
-      }
-    }
-
-    // 5. Assemble and return the final profile object
+    // Simple profile object - just credit balance needed
     const userProfile = {
-      plan: userData?.plan || "free",
       analyses_remaining: userData?.analyses_remaining || 0,
-      nextBillingDate: nextBillingDate,
-      cancel_at_period_end: userData?.cancel_at_period_end || false,
-      subscription_ends_at: userData?.subscription_ends_at || null,
     };
 
     return NextResponse.json(userProfile);

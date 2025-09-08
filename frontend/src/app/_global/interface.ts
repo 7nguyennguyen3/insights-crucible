@@ -43,24 +43,26 @@ export interface Entity {
   explanation: string;
 }
 
-// --- ADDED BACK: Definitions for Contextual Briefing ---
-export interface Viewpoint {
-  perspective: string;
-  source: string;
-  url: string;
+export interface LessonConcept {
+  lesson: string;
+  supporting_quote: string;
+  timestamp: string;
+  real_life_examples: string[];
 }
 
-export interface GlobalContextualBriefingPayload {
-  claim_text: string;
-  briefing_data: ContextualBriefing;
+export interface NotableQuote {
+  quote: string;
+  context: string;
+  timestamp?: string;
 }
 
-export interface ContextualBriefing {
-  broader_context?: string;
-  key_nuances_and_conditions?: string[];
-  overall_summary?: string;
-  supporting_viewpoints?: Viewpoint[];
-  challenging_viewpoints?: Viewpoint[];
+export interface QuizQuestion {
+  question: string;
+  options: string[] | { A: string; B: string; C: string; D: string; };
+  correct_answer: "A" | "B" | "C" | "D";
+  explanation: string;
+  supporting_quote: string;
+  related_timestamp: string;
 }
 
 export interface Contradiction {
@@ -82,6 +84,22 @@ export interface ArgumentStructure {
   counterarguments_mentioned: string[];
 }
 
+export interface LearningAcceleratorSynthesis {
+  quiz_questions: QuizQuestion[];
+  overall_learning_theme?: string;
+  consolidated_lessons?: Array<{
+    lesson: string;
+    supporting_sections: number[];
+  }>;
+  concept_connections?: Array<{
+    concept_1: string;
+    concept_2: string;
+    relationship: string;
+  }>;
+  practical_insights?: string[];
+  lesson_progression?: string;
+}
+
 // --- DEFINE THE 'GENERAL' ANALYSIS STRUCTURE ---
 export interface GeneralAnalysisSection extends BaseAnalysisSection {
   id: string;
@@ -94,7 +112,6 @@ export interface GeneralAnalysisSection extends BaseAnalysisSection {
   notable_quotes: string[];
   questions_and_answers: { question: string; answer: string }[];
   verifiable_claims?: string[];
-  contextual_briefing?: ContextualBriefing;
   suggested_clips?: Clip[];
   entities: Entity[];
 }
@@ -103,8 +120,6 @@ export interface Slide {
   slide_title: string;
   slide_bullets: string[];
 }
-
-// ++ ADD: Define the new shape for the entire blog post object
 
 // --- DEFINE THE 'CONSULTANT' ANALYSIS STRUCTURE ---
 export interface ConsultantAnalysisSection extends BaseAnalysisSection {
@@ -119,15 +134,29 @@ export interface ConsultantAnalysisSection extends BaseAnalysisSection {
   critical_quotes: string[];
   open_questions: string[];
   entities?: Entity[];
-  contextual_briefing?: ContextualBriefing;
   suggested_clips?: Clip[];
 }
 
+// --- DEFINE THE 'LEARNING_ACCELERATOR' ANALYSIS STRUCTURE ---
+export interface LearningAcceleratorSection extends BaseAnalysisSection {
+  id: string;
+  analysis_persona: "learning_accelerator"; // The "discriminator" field
+
+  generated_title: string;
+  "1_sentence_summary": string;
+  key_points: string[];
+  lessons_and_concepts: LessonConcept[];
+  notable_quotes: NotableQuote[];
+  entities: Entity[];
+  verifiable_claims?: string[];
+}
+
 // --- THE DISCRIMINATED UNION ---
-// An AnalysisSection can now be one of the two specific shapes.
+// An AnalysisSection can now be one of the three specific shapes.
 export type AnalysisSection =
   | GeneralAnalysisSection
-  | ConsultantAnalysisSection;
+  | ConsultantAnalysisSection
+  | LearningAcceleratorSection;
 
 // --- Defines the structure for the entire Job Data payload from the API ---
 export interface JobData {
@@ -137,7 +166,6 @@ export interface JobData {
   structured_transcript?: Utterance[];
   results: AnalysisSection[]; // Uses the new, flexible union type
 
-  global_contextual_briefing?: GlobalContextualBriefingPayload;
   synthesis_results?: SynthesisResults;
   argument_structure?: ArgumentStructure;
 
@@ -145,83 +173,28 @@ export interface JobData {
   // which allows the frontend to know which UI to render.
   request_data: {
     config: {
-      analysis_persona: "general" | "consultant";
-      run_contextual_briefing?: boolean;
-      run_x_thread_generation?: boolean;
-      run_blog_post_generation?: boolean;
-      run_linkedin_post_generation?: boolean;
+      analysis_persona: "general" | "consultant" | "learning_accelerator";
     };
   };
-
-  // Optional generated content that can exist on any job type
-  generated_blog_post?: BlogPostData;
-  generated_overall_x_thread?: string[];
-  generated_linkedin_post?: LinkedInPost;
-
   generated_slide_outline?: Slide[];
+  learning_synthesis?: LearningAcceleratorSynthesis;
+  generated_quiz_questions?: {
+    quiz_metadata: {
+      total_questions: number;
+      estimated_time_minutes: number;
+      difficulty_distribution: {
+        easy: number;
+        medium: number;
+        hard: number;
+      };
+      source: string;
+    };
+    questions: QuizQuestion[];
+    quiz_type: string;
+  };
 }
 
 export interface JobDataWithShare extends JobData {
   isPublic?: boolean;
   publicShareId?: string;
-}
-
-interface HeadingBlock {
-  type: "heading";
-  level: number;
-  text: string;
-}
-
-interface ParagraphBlock {
-  type: "paragraph";
-  text: string;
-}
-
-interface ListBlock {
-  type: "list";
-  style: "unordered" | "ordered";
-  items: string[];
-}
-
-interface QuoteBlock {
-  type: "quote";
-  text: string;
-  author?: string;
-}
-
-interface VisualSuggestionBlock {
-  type: "visual_suggestion";
-  description: string;
-}
-
-interface CtaBlock {
-  type: "cta";
-  text: string;
-}
-
-// This is the new, more powerful BlogBlock type.
-export type BlogBlock =
-  | HeadingBlock
-  | ParagraphBlock
-  | ListBlock
-  | QuoteBlock
-  | VisualSuggestionBlock
-  | CtaBlock;
-
-export interface BlogPostData {
-  title: string;
-  content: BlogBlock[];
-}
-
-export interface LinkedInPost {
-  archetype_used: string;
-  post_text: string;
-  visual_suggestion: string;
-  hashtags: string[];
-}
-
-export interface LinkedInPostDisplayProps {
-  post: LinkedInPost;
-  isEditMode: boolean;
-  onChange: (field: keyof LinkedInPost, value: any) => void;
 }
