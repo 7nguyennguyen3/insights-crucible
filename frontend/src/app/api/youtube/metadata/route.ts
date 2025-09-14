@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const title = videoItem.snippet.title || "YouTube Video";
+    const channelName = videoItem.snippet.channelTitle || "Unknown Channel";
     // The API provides multiple thumbnail resolutions. 'high' or 'medium' are good choices.
     const thumbnailUrl =
       videoItem.snippet.thumbnails.high?.url ||
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     const durationISO = videoItem.contentDetails.duration;
     // You would need a function to convert ISO 8601 to seconds if needed.
 
-    return NextResponse.json({ title, thumbnailUrl, duration: durationISO });
+    return NextResponse.json({ title, channelName, thumbnailUrl, duration: durationISO });
   } catch (error: any) {
     console.error("Server-side fetch error:", error);
     return NextResponse.json(

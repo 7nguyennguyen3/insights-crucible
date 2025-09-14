@@ -1,45 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import apiClient from "@/lib/apiClient";
-import { useAuthStore } from "@/store/authStore";
-import { useJobs } from "@/hooks/useJobs";
+import {
+  EnhancedSearch,
+  SearchCriteria,
+} from "@/components/dashboard/EnhancedSearch";
 import { useFolders } from "@/hooks/useFolders";
-import { toast } from "sonner";
-import { DateRange } from "react-day-picker";
-import { format } from "date-fns";
+import { useJobs } from "@/hooks/useJobs";
+import apiClient from "@/lib/apiClient";
 import { cn } from "@/lib/utils";
-import { Job, JobStatus } from "../_global/interface";
+import { useAuthStore } from "@/store/authStore";
 import {
   backgroundVariants,
   containerVariants,
-  spacingVariants,
   gridPatterns,
+  spacingVariants,
 } from "@/styles/variants";
+import { format } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
+import { DateRange } from "react-day-picker";
+import { toast } from "sonner";
+import { Job } from "../_global/interface";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import JobCard from "@/components/dashboard/JobCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,57 +32,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  FileText,
-  AlertCircle,
-  CheckCircle,
+  Calendar as CalendarIcon, // Added User icon for channel name
+  Filter,
   Loader2,
-  Eye,
-  MoreVertical,
-  Trash2,
-  Pencil,
-  Search,
-  X,
-  Star,
-  Move as MoveIcon,
-  Folder as FolderIcon,
-  LayoutDashboard,
-  Calendar as CalendarIcon,
 } from "lucide-react";
-import FolderSidebar from "../components/FolderSidebar";
 import withAuth from "../auth/components/withAuth";
-
-const getStatusProps = (status: JobStatus) => {
-  switch (status) {
-    case "COMPLETED":
-      return {
-        className:
-          "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 border-green-300 dark:border-green-700",
-        icon: <CheckCircle className="h-4 w-4" />,
-      };
-    case "PROCESSING":
-      return {
-        className:
-          "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 border-blue-300 dark:border-blue-700",
-        icon: <Loader2 className="w-4 h-4 animate-spin" />,
-      };
-    case "FAILED":
-      return {
-        className:
-          "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400 border-red-300 dark:border-red-700",
-        icon: <AlertCircle className="w-4 h-4" />,
-      };
-    default:
-      return { variant: "outline", icon: <Loader2 className="w-4 h-4" /> };
-  }
-};
+import FolderSidebar from "../components/FolderSidebar";
 
 const DashboardPage = () => {
   const { user, loading: authLoading } = useAuthStore();
@@ -126,6 +79,14 @@ const DashboardPage = () => {
   const [newTitle, setNewTitle] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
+    titleSearch: "",
+    sourceType: "all",
+    youtubeUrl: "",
+    channelName: "",
+    videoName: "",
+  });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -191,11 +152,62 @@ const DashboardPage = () => {
     }
   };
 
+  const handleRenameClick = (job: Job) => {
+    setJobToEdit(job);
+    setNewTitle(job.job_title);
+    setIsRenameDialogOpen(true);
+  };
+
+  const handleDeleteClick = (job: Job) => {
+    setJobToEdit(job);
+    setIsDeleteDialogOpen(true);
+  };
+
   const filteredJobs = useMemo(() => {
     return jobs
-      .filter((job) =>
-        job.job_title.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      .filter((job) => {
+        const titleMatch =
+          job.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.job_title
+            .toLowerCase()
+            .includes(searchCriteria.titleSearch.toLowerCase());
+
+        const sourceTypeMatch =
+          searchCriteria.sourceType === "all" ||
+          job.sourceType === searchCriteria.sourceType;
+
+        const urlMatch =
+          !searchCriteria.youtubeUrl ||
+          (job.youtubeUrl &&
+            job.youtubeUrl
+              .toLowerCase()
+              .includes(searchCriteria.youtubeUrl.toLowerCase()));
+
+        const channelMatch =
+          !searchCriteria.channelName ||
+          (job.youtubeChannelName &&
+            job.youtubeChannelName
+              .toLowerCase()
+              .includes(searchCriteria.channelName.toLowerCase()));
+
+        const videoNameMatch =
+          !searchCriteria.videoName ||
+          job.job_title
+            .toLowerCase()
+            .includes(searchCriteria.videoName.toLowerCase()) ||
+          (job.youtubeVideoName &&
+            job.youtubeVideoName
+              .toLowerCase()
+              .includes(searchCriteria.videoName.toLowerCase()));
+
+        return (
+          titleMatch &&
+          sourceTypeMatch &&
+          urlMatch &&
+          channelMatch &&
+          videoNameMatch
+        );
+      })
       .filter((job) => {
         if (!dateRange?.from) {
           return true;
@@ -211,7 +223,7 @@ const DashboardPage = () => {
         }
         return jobDate >= fromDate;
       });
-  }, [jobs, searchTerm, dateRange]);
+  }, [jobs, searchTerm, searchCriteria, dateRange]);
 
   const renderSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -246,9 +258,7 @@ const DashboardPage = () => {
       <div
         className={`min-h-screen w-full ${backgroundVariants.universal} text-slate-800 dark:text-slate-200 relative overflow-hidden`}
       >
-        {/* Background Elements */}
         <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
-
         <div
           className={`relative ${spacingVariants.heroPadding} ${containerVariants.section}`}
         >
@@ -261,74 +271,86 @@ const DashboardPage = () => {
                 Review your past transcript analysis jobs and results.
               </p>
             </header>
-
             <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
-              <FolderSidebar
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-              />
-
+              <div className={`md:block ${!isSidebarOpen ? "hidden" : ""}`}>
+                <FolderSidebar
+                  activeFilter={activeFilter}
+                  onFilterChange={setActiveFilter}
+                />
+              </div>
               <main className="flex-1">
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                  <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                    <Input
-                      placeholder="Search by title..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="date"
-                        variant={"outline"}
-                        className={cn(
-                          "w-full md:w-[300px] justify-start text-left font-normal",
-                          !dateRange && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "LLL dd, y")} -{" "}
-                              {format(dateRange.to, "LLL dd, y")}
-                            </>
+                <div className="md:hidden mb-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  >
+                    <Filter className="mr-2 h-4 w-4" />
+                    {isSidebarOpen ? "Hide Filters" : "Show Filters"}
+                  </Button>
+                </div>
+                <div className="mb-8">
+                  <EnhancedSearch
+                    searchCriteria={searchCriteria}
+                    onSearchChange={setSearchCriteria}
+                    onClearSearch={() => {
+                      setSearchCriteria({
+                        titleSearch: "",
+                        sourceType: "all",
+                        youtubeUrl: "",
+                        channelName: "",
+                        videoName: "",
+                      });
+                      setSearchTerm("");
+                      setDateRange(undefined);
+                    }}
+                    hasActiveFilters={
+                      searchCriteria.titleSearch !== "" ||
+                      searchCriteria.sourceType !== "all" ||
+                      searchCriteria.youtubeUrl !== "" ||
+                      searchCriteria.channelName !== "" ||
+                      searchCriteria.videoName !== "" ||
+                      searchTerm !== "" ||
+                      !!dateRange
+                    }
+                  />
+                  <div className="flex flex-col md:flex-row gap-4 mt-4">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="date"
+                          variant={"outline"}
+                          className={cn(
+                            "w-full md:w-[300px] justify-start text-left font-normal",
+                            !dateRange && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dateRange?.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "LLL dd, y")} -{" "}
+                                {format(dateRange.to, "LLL dd, y")}
+                              </>
+                            ) : (
+                              format(dateRange.from, "LLL dd, y")
+                            )
                           ) : (
-                            format(dateRange.from, "LLL dd, y")
-                          )
-                        ) : (
-                          <span>Pick a date range</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={dateRange?.from}
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                        numberOfMonths={2}
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  {(searchTerm || dateRange) && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setDateRange(undefined);
-                      }}
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Clear Filters
-                    </Button>
-                  )}
+                            <span>Pick a date range</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          initialFocus
+                          mode="range"
+                          defaultMonth={dateRange?.from}
+                          selected={dateRange}
+                          onSelect={setDateRange}
+                          numberOfMonths={2}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
 
                 {isLoading && jobs.length === 0 ? (
@@ -347,6 +369,13 @@ const DashboardPage = () => {
                       className="mt-4"
                       variant="outline"
                       onClick={() => {
+                        setSearchCriteria({
+                          titleSearch: "",
+                          sourceType: "all",
+                          youtubeUrl: "",
+                          channelName: "",
+                          videoName: "",
+                        });
                         setSearchTerm("");
                         setDateRange(undefined);
                         setActiveFilter("all");
@@ -358,164 +387,17 @@ const DashboardPage = () => {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {filteredJobs.map((job) => {
-                        const statusProps = getStatusProps(job.status);
-                        const isProcessing = job.status === "PROCESSING";
-
-                        return (
-                          <Card
-                            key={job.id}
-                            className="flex flex-col hover:shadow-xl transition-shadow duration-300 dark:bg-slate-900"
-                          >
-                            <CardHeader>
-                              <div className="flex justify-between items-start gap-2 min-w-0">
-                                <CardTitle className="flex items-center gap-2 text-xl mr-2 flex-1 min-w-0">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0 -ml-2"
-                                    onClick={() => handleToggleStar(job)}
-                                  >
-                                    <Star
-                                      className={cn(
-                                        "h-5 w-5 transition-all",
-                                        job.isStarred
-                                          ? "text-yellow-400 fill-yellow-400"
-                                          : "text-slate-400"
-                                      )}
-                                    />
-                                    <span className="sr-only">
-                                      Toggle Favorite
-                                    </span>
-                                  </Button>
-                                  <FileText className="w-5 h-5 text-slate-500 shrink-0" />
-                                  <span className="truncate">
-                                    {job.job_title || job.id}
-                                  </span>
-                                </CardTitle>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 shrink-0"
-                                    >
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setJobToEdit(job);
-                                        setNewTitle(job.job_title);
-                                        setIsRenameDialogOpen(true);
-                                      }}
-                                    >
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      Rename
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuSub>
-                                      <DropdownMenuSubTrigger>
-                                        <MoveIcon className="mr-2 h-4 w-4" />
-                                        <span>Move to...</span>
-                                      </DropdownMenuSubTrigger>
-                                      <DropdownMenuSubContent>
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            handleMoveJob(job.id, null)
-                                          }
-                                          disabled={!job.folderId}
-                                        >
-                                          <LayoutDashboard className="mr-2 h-4 w-4" />
-                                          Unfiled
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        {folders.map((folder) => (
-                                          <DropdownMenuItem
-                                            key={folder.id}
-                                            onClick={() =>
-                                              handleMoveJob(job.id, folder.id)
-                                            }
-                                            disabled={
-                                              job.folderId === folder.id
-                                            }
-                                          >
-                                            <FolderIcon className="mr-2 h-4 w-4" />
-                                            {folder.name}
-                                          </DropdownMenuItem>
-                                        ))}
-                                      </DropdownMenuSubContent>
-                                    </DropdownMenuSub>
-
-                                    <DropdownMenuSeparator />
-
-                                    <DropdownMenuItem
-                                      className="text-red-500"
-                                      onClick={() => {
-                                        setJobToEdit(job);
-                                        setIsDeleteDialogOpen(true);
-                                      }}
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                              <CardDescription className="flex items-center gap-2 pt-1">
-                                <CalendarIcon className="w-4 h-4" />
-                                <span>
-                                  {new Date(job.createdAt).toLocaleDateString()}
-                                </span>
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                              <Badge
-                                variant="outline"
-                                className={statusProps.className}
-                              >
-                                {statusProps.icon}
-                                <span className="ml-2">{job.status}</span>
-                              </Badge>
-
-                              {isProcessing && job.progress && (
-                                <div className="mt-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                  <p className="truncate">{job.progress}</p>
-                                </div>
-                              )}
-                            </CardContent>
-                            <CardFooter>
-                              {job.status === "COMPLETED" ? (
-                                <Link
-                                  href={`/results/${job.id}`}
-                                  className="w-full"
-                                  passHref
-                                >
-                                  <Button className="w-full">
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View Results
-                                  </Button>
-                                </Link>
-                              ) : (
-                                <Button className="w-full" disabled>
-                                  {job.status === "PROCESSING" && (
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  )}
-                                  {job.status === "FAILED" && (
-                                    <AlertCircle className="w-4 h-4 mr-2" />
-                                  )}
-                                  {job.status === "QUEUED" && (
-                                    <Loader2 className="w-4 h-4 mr-2" />
-                                  )}
-                                  {job.status}
-                                </Button>
-                              )}
-                            </CardFooter>
-                          </Card>
-                        );
-                      })}
+                      {filteredJobs.map((job) => (
+                        <JobCard
+                          key={job.id}
+                          job={job}
+                          folders={folders}
+                          onRename={handleRenameClick}
+                          onDelete={handleDeleteClick}
+                          onToggleStar={handleToggleStar}
+                          onMove={handleMoveJob}
+                        />
+                      ))}
                     </div>
                     {hasMore && (
                       <div className="flex justify-center mt-8">

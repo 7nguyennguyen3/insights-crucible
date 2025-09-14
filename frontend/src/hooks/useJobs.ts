@@ -63,6 +63,15 @@ const jobsFetcher = async (
         progress: data.progress,
         isStarred: data.isStarred || false,
         folderId: data.folderId || null,
+        sourceType: data.request_data?.source_type || data.sourceType,
+        youtubeUrl: data.request_data?.youtube_url || data.youtubeUrl,
+        youtubeChannelName: data.request_data?.youtube_channel_name || data.youtubeChannelName,
+        youtubeVideoName: data.request_data?.youtube_video_title || data.youtubeVideoName,
+        youtubeDuration: data.request_data?.youtube_duration || data.youtubeDuration,
+        youtubeThumbnailUrl: data.request_data?.youtube_thumbnail_url || data.youtubeThumbnailUrl,
+        analysisPersona: data.analysisPersona || data.request_data?.config?.analysis_persona,
+        audioFilename: data.request_data?.audio_filename || data.audioFilename,
+        durationSeconds: data.request_data?.duration_seconds || data.durationSeconds,
       });
     });
 

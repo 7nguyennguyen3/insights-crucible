@@ -49,12 +49,14 @@ export const AnalysisPageLayout = forwardRef<
         toast.error("No transcript available to copy.");
         return;
       }
-      // Your existing copy logic...
+      // Build transcript string with speaker information for uploads
       let transcriptString = `## Full Transcript for ${
         jobTitle || "Analysis"
       }\n\n`;
       transcript.forEach((utterance: Utterance) => {
-        transcriptString += `**${utterance.speaker}:** ${utterance.text}\n\n`;
+        const timestamp = Math.floor(utterance.start / 60) + ':' + String(utterance.start % 60).padStart(2, '0');
+        const speakerPrefix = utterance.speaker ? `**Speaker ${utterance.speaker}** ` : '';
+        transcriptString += `${speakerPrefix}**[${timestamp}]:** ${utterance.text}\n\n`;
       });
       navigator.clipboard.writeText(transcriptString);
       setHasCopiedTranscript(true);

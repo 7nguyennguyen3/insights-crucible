@@ -13,7 +13,14 @@
       "Bash(venvScripts:*)",
       "Bash(pip install:*)",
       "Bash(pnpm build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(powershell:*)",
+      "Bash(npx tsc:*)",
+      "Bash(python:*)",
+      "Bash(rm:*)",
+      "Bash(dir:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:www.assemblyai.com)"
     ],
     "deny": [],
     "ask": []

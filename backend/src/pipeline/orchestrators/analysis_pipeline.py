@@ -24,6 +24,179 @@ from ..config import get_persona_config, is_valid_persona
 from .section_processor import SectionProcessor
 
 
+def split_large_utterance(text: str, start_seconds: float, duration: float, speaker: str = None, max_chars: int = 500, min_duration: float = 1.0) -> List[Dict[str, Any]]:
+    """
+    Split a large utterance into smaller segments based on sentence boundaries.
+
+    Args:
+        text: The text to split
+        start_seconds: Start time of the original utterance
+        duration: Total duration of the original utterance
+        speaker: Speaker identifier (optional)
+        max_chars: Maximum characters per segment
+        min_duration: Minimum duration per segment in seconds
+
+    Returns:
+        List of smaller transcript segments with proportional timing
+    """
+    import re
+
+    # Split text into sentences using multiple delimiters
+    sentences = re.split(r'[.!?]+\s+', text.strip())
+
+    # Remove empty sentences and add back punctuation
+    cleaned_sentences = []
+    for i, sentence in enumerate(sentences):
+        sentence = sentence.strip()
+        if sentence:
+            # Add back punctuation except for the last sentence (which might not have any)
+            if i < len(sentences) - 1 or sentence[-1] not in '.!?':
+                # Find the original punctuation in the text
+                sentence_end_in_text = text.find(sentence) + len(sentence)
+                if sentence_end_in_text < len(text) and text[sentence_end_in_text] in '.!?':
+                    sentence += text[sentence_end_in_text]
+                else:
+                    sentence += '.'  # Default punctuation
+            cleaned_sentences.append(sentence)
+
+    if not cleaned_sentences:
+        # Fallback: create a single segment if sentence splitting fails
+        entry = {
+            "start": start_seconds,
+            "duration": duration,
+            "text": text
+        }
+        if speaker:
+            entry["speaker"] = speaker
+        return [entry]
+
+    # Group sentences into segments that don't exceed max_chars
+    segments = []
+    current_segment = ""
+    current_sentences = []
+
+    for sentence in cleaned_sentences:
+        # Check if adding this sentence would exceed the limit
+        test_segment = current_segment + (" " if current_segment else "") + sentence
+
+        if len(test_segment) <= max_chars:
+            current_segment = test_segment
+            current_sentences.append(sentence)
+        else:
+            # Save current segment if it has content
+            if current_segment:
+                segments.append(current_segment)
+
+            # Start new segment with current sentence
+            current_segment = sentence
+            current_sentences = [sentence]
+
+    # Add final segment
+    if current_segment:
+        segments.append(current_segment)
+
+    # If no segments were created, use the original text
+    if not segments:
+        segments = [text]
+
+    # Calculate timing for each segment based on character count
+    total_chars = sum(len(segment) for segment in segments)
+    result_segments = []
+    current_start = start_seconds
+
+    for i, segment_text in enumerate(segments):
+        # Calculate proportional duration based on character count
+        char_ratio = len(segment_text) / total_chars if total_chars > 0 else 1.0 / len(segments)
+        segment_duration = max(min_duration, duration * char_ratio)
+
+        # Adjust the last segment to end exactly at the original end time
+        if i == len(segments) - 1:
+            segment_duration = (start_seconds + duration) - current_start
+            segment_duration = max(min_duration, segment_duration)
+
+        entry = {
+            "start": round(current_start, 2),
+            "duration": round(segment_duration, 2),
+            "text": segment_text.strip()
+        }
+
+        if speaker:
+            entry["speaker"] = speaker
+
+        result_segments.append(entry)
+        current_start += segment_duration
+
+    return result_segments
+
+
+def convert_structured_to_simple_transcript(structured_transcript: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Convert AssemblyAI structured transcript to simple transcript format.
+    Converts from structured format with millisecond timing to simple format with second-based timing.
+    Automatically splits oversized utterances into smaller, manageable segments.
+
+    Args:
+        structured_transcript: List of utterances from AssemblyAI
+
+    Returns:
+        List of simplified transcript segments with second-based timing
+    """
+    if not structured_transcript:
+        return []
+
+    simple_transcript = []
+    MAX_DURATION_THRESHOLD = 30.0  # seconds
+    MAX_CHARS_THRESHOLD = 500  # characters
+
+    for utterance in structured_transcript:
+        if not isinstance(utterance, dict):
+            continue
+
+        # Extract required fields - structured_transcript uses 'start', 'end', 'text', 'speaker'
+        start_ms = utterance.get("start")
+        end_ms = utterance.get("end")
+        text = utterance.get("text", "").strip()
+        speaker = utterance.get("speaker")
+
+        # Skip if missing essential data
+        if start_ms is None or end_ms is None or not text:
+            continue
+
+        # Convert milliseconds to seconds
+        start_seconds = start_ms / 1000.0
+        end_seconds = end_ms / 1000.0
+        duration = end_seconds - start_seconds
+
+        # Check if utterance is too large and needs splitting
+        is_oversized = duration > MAX_DURATION_THRESHOLD or len(text) > MAX_CHARS_THRESHOLD
+
+        if is_oversized:
+            # Split large utterance into smaller segments
+            split_segments = split_large_utterance(
+                text=text,
+                start_seconds=start_seconds,
+                duration=duration,
+                speaker=speaker,
+                max_chars=MAX_CHARS_THRESHOLD
+            )
+            simple_transcript.extend(split_segments)
+        else:
+            # Use utterance as-is for normal-sized segments
+            entry = {
+                "start": round(start_seconds, 2),
+                "duration": round(duration, 2),
+                "text": text
+            }
+
+            # Add speaker if present (optional field)
+            if speaker:
+                entry["speaker"] = speaker
+
+            simple_transcript.append(entry)
+
+    return simple_transcript
+
+
 @dataclass
 class AnalysisRequest:
     """Request for pipeline analysis."""
@@ -84,6 +257,7 @@ class AnalysisPipeline:
         self.briefing_generator = briefing_generator
         self.db_manager = db_manager
         self.token_tracker = token_tracker
+        self._cached_youtube_metadata = {}
 
     async def run_analysis(self, request: AnalysisRequest) -> AnalysisResult:
         """
@@ -174,13 +348,20 @@ class AnalysisPipeline:
                 all_section_analyses, request, runnable_config, timing_metrics
             )
 
-            # Step 7: Generate final title
+            # Step 7: Generate final title and update with metadata
             final_title = await self.title_generator.generate_title(
                 pass_2_data, runnable_config
             )
-            self.db_manager.update_job_title(
-                request.user_id, request.job_id, final_title
-            )
+            
+            # Update job with title and metadata (including YouTube metadata if available)
+            if self._cached_youtube_metadata and any(self._cached_youtube_metadata.values()):
+                # Ensure analysis_persona is set
+                self._cached_youtube_metadata['analysis_persona'] = request.persona
+                self.db_manager.update_job_with_metadata(
+                    request.user_id, request.job_id, final_title, self._cached_youtube_metadata
+                )
+            else:
+                self.db_manager.update_job_title(request.user_id, request.job_id, final_title)
 
             # Step 8: Generate content assets
             await self._generate_content_assets(
@@ -238,6 +419,25 @@ class AnalysisPipeline:
                 )
 
             raw_youtube_transcript = cached_data.get("structured_transcript")
+            
+            # Store cached YouTube metadata for later use
+            self._cached_youtube_metadata = {
+                'youtube_title': cached_data.get('youtube_title', ''),
+                'youtube_channel_name': cached_data.get('youtube_channel_name', ''),
+                'youtube_thumbnail_url': cached_data.get('youtube_thumbnail_url', ''),
+                'youtube_duration': cached_data.get('youtube_duration', ''),
+                'analysis_persona': request.persona
+            }
+            
+            # Save the original YouTube transcript to the job
+            if request.transcript_id or request.storage_path:
+                self.db_manager.update_job_status(
+                    request.user_id,
+                    request.job_id,
+                    "PROCESSING",
+                    "Step 2/7: Preparing transcript...",
+                    transcript=raw_youtube_transcript
+                )
 
             if isinstance(raw_youtube_transcript, list):
                 return await self.youtube_normalizer.normalize(raw_youtube_transcript)
@@ -266,6 +466,19 @@ class AnalysisPipeline:
                 if audio_duration:
                     cost_metrics["assemblyai_audio_seconds"] = audio_duration
 
+            # Convert AssemblyAI utterances to simple transcript format
+            utterances = transcription_result.get("utterances", [])
+            simple_transcript = convert_structured_to_simple_transcript(utterances)
+
+            # Save the converted transcript in simple format
+            self.db_manager.update_job_status(
+                request.user_id,
+                request.job_id,
+                "PROCESSING",
+                "Step 2/7: Transcribing audio file...",
+                transcript=simple_transcript
+            )
+
             # Convert AssemblyAI format to canonical
             utterances = transcription_result.get("utterances", [])
             canonical_transcript = []
@@ -293,10 +506,69 @@ class AnalysisPipeline:
             )
 
             if not request.raw_transcript:
+                # Enhanced error message with more context
+                error_msg = (
+                    f"No text input provided for job {request.job_id}. "
+                    f"raw_transcript is {type(request.raw_transcript)} with length "
+                    f"{len(request.raw_transcript) if request.raw_transcript else 0}"
+                )
+                print(f"[ERROR] {error_msg}")
                 raise ValueError("No input provided")
 
-            # Un-escape newlines and normalize
-            corrected_text = request.raw_transcript.replace("\\\\n", "\\n")
+            # Additional check for empty lists
+            if isinstance(request.raw_transcript, list) and len(request.raw_transcript) == 0:
+                error_msg = f"Empty transcript list provided for job {request.job_id}"
+                print(f"[ERROR] {error_msg}")
+                raise ValueError("Empty transcript list provided")
+
+            # Save the original text transcript to the job at root level for consistency
+            self.db_manager.update_job_status(
+                request.user_id,
+                request.job_id,
+                "PROCESSING",
+                "Step 2/7: Processing text input...",
+                transcript=request.raw_transcript
+            )
+
+            # Handle both string and list formats for raw_transcript
+            if isinstance(request.raw_transcript, list):
+                # Check if it's a structured transcript with timing data (paste with timestamps)
+                has_timing_data = (
+                    len(request.raw_transcript) > 0 and
+                    isinstance(request.raw_transcript[0], dict) and
+                    'start' in request.raw_transcript[0] and
+                    'text' in request.raw_transcript[0] and
+                    request.raw_transcript[0].get('start', -1) >= 0
+                )
+
+                if has_timing_data:
+                    # Use YouTube normalizer for structured transcript with timing data
+                    print(f"[INFO] Processing structured transcript with timing data ({len(request.raw_transcript)} entries)")
+                    print("[cyan]Routing paste content through YouTube normalizer for timestamp preservation[/cyan]")
+                    return await self.youtube_normalizer.normalize(request.raw_transcript)
+                else:
+                    # If it's a structured transcript without timing, extract text content
+                    print(f"[INFO] Processing structured transcript without timing data ({len(request.raw_transcript)} entries)")
+                    # Extract text from structured format and join
+                    text_parts = []
+                    for entry in request.raw_transcript:
+                        if isinstance(entry, dict) and 'text' in entry:
+                            text_parts.append(entry['text'])
+                        elif isinstance(entry, str):
+                            text_parts.append(entry)
+                    corrected_text = ' '.join(text_parts)
+            else:
+                # Handle string format (legacy or fallback)
+                print(f"[INFO] Processing string transcript (length: {len(request.raw_transcript)})")
+                # Un-escape newlines and normalize
+                corrected_text = request.raw_transcript.replace("\\\\n", "\\n")
+
+            # For non-timestamped content, verify we have valid text content and use text normalizer
+            if not corrected_text.strip():
+                error_msg = f"No valid text content found in transcript for job {request.job_id}"
+                print(f"[ERROR] {error_msg}")
+                raise ValueError("No valid text content found in transcript")
+
             return await self.transcript_normalizer.normalize(corrected_text)
 
     async def _segment_transcript(
@@ -333,12 +605,47 @@ class AnalysisPipeline:
     ):
         """Analyze all sections in parallel."""
         log_msg = f"Step 5/7: Analyzing {len(sections)} sections in parallel..."
-        print(f"[magenta]\\n{log_msg}[/magenta]")
+        print(f"[magenta]\n{log_msg}[/magenta]")
         self.db_manager.update_job_status(
             request.user_id, request.job_id, "PROCESSING", log_msg
         )
 
         start_time = time.monotonic()
+
+        # Set appropriate transcript for timestamp extraction (deep dive persona only)
+        if hasattr(self.section_processor, 'persona') and self.section_processor.persona == "deep_dive":
+            try:
+                # Get the job document to retrieve transcript data and source type
+                job_doc = self.db_manager.get_job_status(request.user_id, request.job_id)
+                source_type = job_doc.get("request_data", {}).get("source_type", "unknown")
+                
+                print(f"[blue]Setting structured transcript for timestamp extraction (source_type: {source_type})...[/blue]")
+                
+                # All source types now use structured transcript format
+                # Try structured_transcript field first, then transcript field
+                structured_transcript = job_doc.get("structured_transcript")
+                transcript_source = "structured_transcript"
+                
+                if not structured_transcript:
+                    structured_transcript = job_doc.get("transcript")
+                    transcript_source = "transcript"
+                
+                if structured_transcript and isinstance(structured_transcript, list):
+                    print(f"[blue]Setting structured transcript from '{transcript_source}' field ({len(structured_transcript)} entries)[/blue]")
+                    self.section_processor.set_structured_transcript(structured_transcript)
+                else:
+                    print(f"[yellow]No structured transcript found for {source_type} source[/yellow]")
+                
+                # Debug: show what fields are available if nothing worked
+                if not (hasattr(self.section_processor, 'structured_transcript') and self.section_processor.structured_transcript):
+                    available_fields = list(job_doc.keys()) if job_doc else []
+                    print(f"[yellow]No structured transcript found. Available job document fields: {available_fields}[/yellow]")
+                    if "transcript" in job_doc:
+                        transcript_type = type(job_doc["transcript"]).__name__
+                        print(f"[yellow]Transcript field type: {transcript_type}[/yellow]")
+                        
+            except Exception as e:
+                print(f"[yellow]Warning: Could not set transcript for timestamp extraction: {e}[/yellow]")
 
         section_results = await self.section_processor.process_sections_parallel(
             sections, request.user_id, request.job_id, runnable_config
@@ -364,6 +671,16 @@ class AnalysisPipeline:
             return {}
 
         start_time = time.monotonic()
+
+        # Fetch original transcript for timestamp matching
+        original_transcript = None
+        try:
+            job_doc = self.db_manager.get_job_status(request.user_id, request.job_id)
+            if job_doc and "request_data" in job_doc:
+                request_data = job_doc["request_data"]
+                original_transcript = request_data.get("transcript")
+        except Exception as e:
+            print(f"[yellow]Warning: Could not fetch original transcript: {e}[/yellow]")
 
         if request.persona == "consultant":
             try:
@@ -393,29 +710,39 @@ class AnalysisPipeline:
                 )
                 return {}
 
-        elif request.persona == "learning_accelerator":
+
+        elif request.persona == "deep_dive":
             try:
-                learning_synthesis = await self.meta_analyzer.perform_synthesis(
-                    all_sections, runnable_config
+                # Pass original transcript to the synthesizer for timestamp matching
+                deep_dive_synthesis = await self.meta_analyzer.perform_synthesis(
+                    all_sections, runnable_config, original_transcript
                 )
                 
-                if not learning_synthesis:
-                    print("[bold yellow]Warning: Empty synthesis results for learning_accelerator persona[/bold yellow]")
+                if not deep_dive_synthesis:
+                    print("[bold yellow]Warning: Empty synthesis results for deep_dive persona[/bold yellow]")
                     self.db_manager.log_progress(
                         request.user_id, request.job_id, 
-                        "Warning: Empty synthesis results from learning accelerator"
+                        "Warning: Empty synthesis results from deep dive analyzer"
                     )
 
-                # Save as generated_quiz_questions to match frontend expectations
+                # Handle deep dive quiz format similar to learning accelerator
+                quiz_questions = deep_dive_synthesis.get("quiz_questions", [])
+                open_ended_questions = deep_dive_synthesis.get("open_ended_questions", [])
+                multi_quiz_data = deep_dive_synthesis.get("multi_quiz_data", {})
+                generation_method = deep_dive_synthesis.get("generation_method", "deep_dive_focused")
+                
                 quiz_data = {
                     "quiz_metadata": {
-                        "total_questions": len(learning_synthesis.get("quiz_questions", [])),
-                        "estimated_time_minutes": len(learning_synthesis.get("quiz_questions", [])) * 2,  # 2 minutes per question
+                        "total_questions": len(quiz_questions),
+                        "total_open_ended_questions": len(open_ended_questions),
+                        "estimated_time_minutes": len(quiz_questions) * 2 + len(open_ended_questions) * 5,
                         "difficulty_distribution": {"easy": 1, "medium": 2, "hard": 0},
-                        "source": "learning_accelerator_analysis"
+                        "source": "deep_dive_analysis"
                     },
-                    "questions": learning_synthesis.get("quiz_questions", []),
-                    "quiz_type": "learning_comprehension"
+                    "questions": quiz_questions,
+                    "open_ended_questions": open_ended_questions,
+                    "quiz_type": "deep_dive_focused",
+                    "generation_method": generation_method
                 }
 
                 self.db_manager.db.collection(
@@ -424,14 +751,14 @@ class AnalysisPipeline:
                     {"generated_quiz_questions": quiz_data}
                 )
                 
-                print(f"[green]✓ Saved learning accelerator quiz with {len(quiz_data['questions'])} questions[/green]")
-                timing_metrics["learning_synthesis_s"] = time.monotonic() - start_time
-                return learning_synthesis
+                print(f"[green]✓ Saved deep dive quiz with {len(quiz_data['questions'])} questions and {len(quiz_data.get('open_ended_questions', []))} open-ended questions[/green]")
+                timing_metrics["deep_dive_synthesis_s"] = time.monotonic() - start_time
+                return deep_dive_synthesis
             except Exception as e:
-                print(f"[bold red]Error in learning accelerator synthesis: {e}[/bold red]")
+                print(f"[bold red]Error in deep dive synthesis: {e}[/bold red]")
                 self.db_manager.log_progress(
                     request.user_id, request.job_id, 
-                    f"Error in learning accelerator synthesis: {e}"
+                    f"Error in deep dive synthesis: {e}"
                 )
                 return {}
 
@@ -476,7 +803,7 @@ class AnalysisPipeline:
     ):
         """Generate global contextual briefing."""
         log_msg = "Step 5b: Generating Global Contextual Briefing..."
-        print(f"[magenta]\\n{log_msg}[/magenta]")
+        print(f"[magenta]\n{log_msg}[/magenta]")
         self.db_manager.log_progress(request.user_id, request.job_id, log_msg)
 
         start_time = time.monotonic()
@@ -499,7 +826,7 @@ class AnalysisPipeline:
     ):
         """Generate final content assets."""
         log_msg = "Step 6/7: Generating final content assets..."
-        print(f"[magenta]\\n{log_msg}[/magenta]")
+        print(f"[magenta]\n{log_msg}[/magenta]")
         self.db_manager.update_job_status(
             request.user_id, request.job_id, "PROCESSING", log_msg
         )
@@ -507,24 +834,6 @@ class AnalysisPipeline:
         start_time = time.monotonic()
         persona_config = get_persona_config(request.persona)
 
-        # Generate assets based on persona configuration
-        if request.persona == "learning_accelerator":
-            # Generate simplified learning content (quiz questions from synthesis)
-            from src.features import generate_quiz_questions
-
-            if "quiz_questions" in persona_config[
-                "final_assets"
-            ] and request.config.get("run_quiz_generation", True):
-                quiz_questions = await generate_quiz_questions(
-                    [self._convert_section_for_learning(s) for s in all_sections],
-                    runnable_config,
-                    synthesis_data,
-                )
-                self.db_manager.db.collection(
-                    f"saas_users/{request.user_id}/jobs"
-                ).document(request.job_id).update(
-                    {"generated_quiz_questions": quiz_questions}
-                )
 
         timing_metrics["content_generation_s"] = time.monotonic() - start_time
 
@@ -538,7 +847,7 @@ class AnalysisPipeline:
     ):
         """Finalize job with metrics and status updates."""
         log_msg = "Step 7/7: Finalizing results and logging analytics..."
-        print(f"[magenta]\\n{log_msg}[/magenta]")
+        print(f"[magenta]\n{log_msg}[/magenta]")
         self.db_manager.update_job_status(
             request.user_id, request.job_id, "PROCESSING", log_msg
         )
@@ -619,7 +928,7 @@ class AnalysisPipeline:
         error_message = f"Analysis failed: {str(error)}"
         print(
             Panel(
-                f"[bold red]❌ ERROR for Job ID: {request.job_id}[/bold red]\\n{error_message}",
+                f"[bold red]❌ ERROR for Job ID: {request.job_id}[/bold red]\n{error_message}",
                 border_style="red",
             )
         )
@@ -665,37 +974,6 @@ class AnalysisPipeline:
             **section.additional_data,
         }
 
-    def _convert_section_for_learning(self, section: SectionAnalysis) -> Dict:
-        """Convert SectionAnalysis to learning format for learning accelerator features."""
-        return {
-            "start_time": section.start_time,
-            "end_time": section.end_time,
-            "module_title": section.title,
-            "learning_objectives": section.additional_data.get(
-                "learning_objectives", [str(section.summary)]
-            ),
-            "core_concepts": [e.name for e in section.entities],
-            "difficulty_level": section.additional_data.get(
-                "difficulty_level", "intermediate"
-            ),
-            "prerequisite_knowledge": section.additional_data.get(
-                "prerequisite_knowledge", []
-            ),
-            "key_insights": [],
-            "real_world_applications": section.additional_data.get(
-                "real_world_applications", []
-            ),
-            "memorable_examples": [str(quote) for quote in section.quotes],
-            "potential_misconceptions": section.additional_data.get(
-                "potential_misconceptions", []
-            ),
-            "connection_points": section.additional_data.get("connection_points", []),
-            "reflection_questions": section.additional_data.get(
-                "reflection_questions", []
-            ),
-            "mastery_indicators": section.additional_data.get("mastery_indicators", []),
-            **section.additional_data,
-        }
 
     def _print_metrics(
         self,
@@ -746,9 +1024,6 @@ class AnalysisPipeline:
             )
         )
 
-        # Log learning accelerator synthesis results for debugging
-        if persona == "learning_accelerator" and synthesis_data:
-            self._log_learning_accelerator_results(synthesis_data)
 
         print(
             Panel(
@@ -757,74 +1032,3 @@ class AnalysisPipeline:
             )
         )
 
-    def _log_learning_accelerator_results(self, synthesis_data: Dict[str, Any]):
-        """Log learning accelerator synthesis results for debugging."""
-        print(
-            Panel(
-                "[bold blue]🔍 Learning Accelerator Analysis Results[/bold blue]\n"
-                "   Debug output for analysis review...",
-                title="[bold]Learning Accelerator Debug[/bold]",
-                border_style="blue",
-                expand=False,
-            )
-        )
-
-        # Log overall theme
-        if "overall_learning_theme" in synthesis_data:
-            print(
-                f"[cyan]📚 Overall Theme:[/cyan] {synthesis_data['overall_learning_theme']}"
-            )
-
-        # Log consolidated lessons
-        if "consolidated_lessons" in synthesis_data:
-            print(
-                f"\n[cyan]📖 Consolidated Lessons ({len(synthesis_data['consolidated_lessons'])}):[/cyan]"
-            )
-            for i, lesson in enumerate(synthesis_data["consolidated_lessons"], 1):
-                lesson_text = lesson.get("lesson", "N/A")
-                sections = lesson.get("supporting_sections", [])
-                print(f"  {i}. {lesson_text}")
-                if sections:
-                    print(f"     → Sections: {', '.join(map(str, sections))}")
-
-        # Log concept connections
-        if "concept_connections" in synthesis_data:
-            print(
-                f"\n[cyan]🔗 Concept Connections ({len(synthesis_data['concept_connections'])}):[/cyan]"
-            )
-            for i, conn in enumerate(synthesis_data["concept_connections"], 1):
-                concept1 = conn.get("concept_1", "N/A")
-                concept2 = conn.get("concept_2", "N/A")
-                relationship = conn.get("relationship", "N/A")
-                print(f"  {i}. {concept1} → {relationship} → {concept2}")
-
-        # Log practical insights
-        if "practical_insights" in synthesis_data:
-            print(
-                f"\n[cyan]💡 Practical Insights ({len(synthesis_data['practical_insights'])}):[/cyan]"
-            )
-            for i, insight in enumerate(synthesis_data["practical_insights"], 1):
-                insight_text = insight if isinstance(insight, str) else str(insight)
-                print(f"  {i}. {insight_text}")
-
-        # Log quiz questions
-        if "quiz_questions" in synthesis_data:
-            questions = synthesis_data["quiz_questions"]
-            print(f"\n[cyan]❓ Quiz Questions ({len(questions)}):[/cyan]")
-            for i, q in enumerate(questions, 1):
-                question_text = q.get("question", "N/A")
-                correct_answer = q.get("correct_answer", "N/A")
-                timestamp = q.get("related_timestamp", "N/A")
-                print(f"  {i}. {question_text}")
-                print(f"     → Answer: {correct_answer} | Timestamp: {timestamp}")
-
-        # Log lesson progression
-        if "lesson_progression" in synthesis_data:
-            print(
-                f"\n[cyan]📈 Lesson Progression:[/cyan] {synthesis_data['lesson_progression']}"
-            )
-
-        print(
-            f"\n[dim]Total synthesis data keys: {', '.join(synthesis_data.keys())}[/dim]"
-        )
-        print("─" * 80)

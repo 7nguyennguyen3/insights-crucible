@@ -40,47 +40,26 @@ export const AnalysisPersonaSection = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex justify-center">
           <Label
-            htmlFor="learning_accelerator"
-            className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-              analysisPersona === "learning_accelerator"
+            htmlFor="deep_dive"
+            className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 max-w-md ${
+              analysisPersona === "deep_dive"
                 ? "border-primary bg-primary/5"
                 : "border-muted hover:border-muted-foreground/50"
             }`}
           >
-            <GraduationCap className="w-6 h-6 mb-2 text-teal-600" />
-            <span className="font-medium text-center">{ANALYSIS_PERSONA_OPTIONS.LEARNING_ACCELERATOR.title}</span>
+            <Brain className="w-6 h-6 mb-2 text-purple-600" />
+            <span className="font-medium text-center">{ANALYSIS_PERSONA_OPTIONS.DEEP_DIVE.title}</span>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Info className="w-4 h-4 mt-1 text-slate-400 hover:text-slate-600" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                <p>{ANALYSIS_PERSONA_OPTIONS.LEARNING_ACCELERATOR.description}</p>
+                <p>{ANALYSIS_PERSONA_OPTIONS.DEEP_DIVE.description}</p>
               </TooltipContent>
             </Tooltip>
           </Label>
-
-          <div className="relative">
-            <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] px-2 py-1 rounded-full font-medium z-10">
-              Coming Soon
-            </div>
-            <Label
-              htmlFor="deep_analysis"
-              className="flex flex-col items-center p-4 rounded-lg border-2 cursor-not-allowed transition-all duration-200 border-muted bg-muted/20 opacity-60"
-            >
-              <Brain className="w-6 h-6 mb-2 text-purple-600" />
-              <span className="font-medium text-center">{ANALYSIS_PERSONA_OPTIONS.DEEP_ANALYSIS.title}</span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-4 h-4 mt-1 text-slate-400 hover:text-slate-600" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>{ANALYSIS_PERSONA_OPTIONS.DEEP_ANALYSIS.description}</p>
-                </TooltipContent>
-              </Tooltip>
-            </Label>
-          </div>
         </div>
 
         <RadioGroup
@@ -89,8 +68,7 @@ export const AnalysisPersonaSection = ({
           className="sr-only"
           disabled={!canInteract}
         >
-          <RadioGroupItem value="learning_accelerator" id="learning_accelerator" />
-          <RadioGroupItem value="deep_analysis" id="deep_analysis" disabled />
+          <RadioGroupItem value="deep_dive" id="deep_dive" />
         </RadioGroup>
       </CardContent>
     </Card>

@@ -171,6 +171,7 @@ export const useCostCalculator = ({
         transcript,
         config: { analysis_persona: analysisPersona },
         model_choice: "universal",
+        source_type: "paste",
       });
       
       if (response.data.job_id) {

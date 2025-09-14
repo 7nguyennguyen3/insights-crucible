@@ -89,7 +89,8 @@ class MetaAnalyzer(ABC):
     async def perform_synthesis(
         self,
         section_analyses: List[SectionAnalysis],
-        runnable_config: RunnableConfig
+        runnable_config: RunnableConfig,
+        original_transcript: str = None
     ) -> Dict[str, Any]:
         """Perform meta-synthesis across all sections.""" 
         pass

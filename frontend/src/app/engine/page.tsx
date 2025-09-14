@@ -103,8 +103,15 @@ const EnginePage = () => {
 
     if (!uploadToastId || filesInFlight.length === 0) return;
 
+    console.log('Toast update triggered:', {
+      filesUploaded,
+      totalFiles: filesInFlight.length,
+      progress: uploadProgress
+    });
+
     const isComplete = filesUploaded === filesInFlight.length;
 
+    // Update the existing toast with current progress
     toast.custom(
       () => (
         <UploadProgressToast
@@ -115,42 +122,46 @@ const EnginePage = () => {
       ),
       {
         id: uploadToastId,
-        duration: isComplete ? 5000 : Infinity,
+        duration: isComplete ? 3000 : Infinity,
       }
     );
 
+    // Show completion notification after a brief delay
     if (isComplete) {
-      toast.custom(
-        () => (
-          <div className="w-80 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center mb-2">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                {UI_MESSAGES.UPLOAD_COMPLETE}
-              </h3>
+      setTimeout(() => {
+        toast.custom(
+          () => (
+            <div className="w-80 p-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center mb-2">
+                <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                  {UI_MESSAGES.UPLOAD_COMPLETE}
+                </h3>
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                {UI_MESSAGES.UPLOAD_COMPLETE_DESCRIPTION}
+              </p>
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  router.push("/dashboard");
+                  toast.dismiss(`${uploadToastId}-complete`);
+                }}
+              >
+                Go to Dashboard
+              </Button>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              {UI_MESSAGES.UPLOAD_COMPLETE_DESCRIPTION}
-            </p>
-            <Button
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                router.push("/dashboard");
-                toast.dismiss(uploadToastId);
-              }}
-            >
-              Go to Dashboard
-            </Button>
-          </div>
-        ),
-        {
-          id: uploadToastId,
-          duration: 10000,
-        }
-      );
-      actions.setUploadToastId(null);
-      actions.setFilesInFlight([]);
+          ),
+          {
+            id: `${uploadToastId}-complete`,
+            duration: 10000,
+          }
+        );
+        // Clean up the upload progress state
+        actions.setUploadToastId(null);
+        actions.setFilesInFlight([]);
+      }, 1000);
     }
   }, [state.upload, router, actions]);
 
@@ -187,6 +198,8 @@ const EnginePage = () => {
         state.analysisPersona,
         state.modelChoice,
         state.activeTab,
+        state.youtube.url,
+        state.youtube.videoDetails,
         router
       );
     } else if (state.activeTab === "paste") {
@@ -204,13 +217,19 @@ const EnginePage = () => {
       const filesToUpload = [...state.upload.selectedFiles];
       actions.setFilesInFlight(filesToUpload);
       actions.setFilesUploaded(0);
-      actions.setUploadProgress({});
+
+      // Initialize progress for all files at 0%
+      const initialProgress: { [fileName: string]: number } = {};
+      filesToUpload.forEach(file => {
+        initialProgress[file.name] = 0;
+      });
+      actions.setUploadProgress(initialProgress);
 
       const toastId = toast.custom(
         () => (
           <UploadProgressToast
             files={filesToUpload}
-            progress={{}}
+            progress={initialProgress}
             filesUploaded={0}
           />
         ),
@@ -225,7 +244,6 @@ const EnginePage = () => {
         state.modelChoice,
         state.upload.uploadToastId
       );
-      actions.resetState(state.activeTab);
     }
   };
 

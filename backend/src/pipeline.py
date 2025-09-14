@@ -1899,7 +1899,15 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
 
         # Update Job Title based on first section's analysis
         final_job_title = await generate_final_title(pass_2_data, runnable_config)
-        db_manager.update_job_title(user_id, job_id, final_job_title)
+        
+        # Update job title and metadata (metadata would have been stored when cached_data was first retrieved)
+        metadata = {'analysis_persona': persona}
+        if hasattr(locals(), 'cached_youtube_metadata') and cached_youtube_metadata:
+            metadata.update(cached_youtube_metadata)
+            db_manager.update_job_with_metadata(user_id, job_id, final_job_title, metadata)
+        else:
+            db_manager.update_job_title(user_id, job_id, final_job_title)
+            
         db_manager.log_progress(
             user_id, job_id, "✓ Final title generated from holistic analysis."
         )

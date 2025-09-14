@@ -8,6 +8,7 @@ from rich import print
 from google.api_core.exceptions import NotFound
 
 from src.config import settings
+from src.find_quote_timestamps import convert_string_transcript_to_structured
 
 
 db: firestore.Client = None
@@ -45,6 +46,7 @@ def initialize_db():
 def create_job(user_id: str, request_data: dict) -> str:
     """
     Creates a new job record in Firestore.
+    Filters request_data to only include fields relevant to the source type.
     """
     if db is None:
         raise ConnectionError("Database client not initialized.")
@@ -52,17 +54,72 @@ def create_job(user_id: str, request_data: dict) -> str:
     now = datetime.datetime.now().strftime("%B %d, %Y at %I:%M %p")
     initial_title = f"Analysis from {now}"
 
+    # Filter request_data based on source_type to keep only relevant fields
+    filtered_request_data = _filter_request_data_by_source_type(request_data)
+
+    # For paste jobs, store the transcript at root level as indicated by the filtering logic
+    job_data = {
+        "status": "QUEUED",
+        "createdAt": firestore.SERVER_TIMESTAMP,
+        "request_data": filtered_request_data,
+        "job_title": initial_title,
+        "folderId": None,
+    }
+
+    # Store transcript at root level for paste source type, converting to structured format
+    if request_data.get("source_type") == "paste" and "transcript" in request_data:
+        string_transcript = request_data["transcript"]
+        print(f"INFO: Converting paste transcript to structured format (length: {len(string_transcript)})")
+
+        # Convert string transcript to structured format
+        structured_transcript = convert_string_transcript_to_structured(string_transcript)
+
+        # Store only the structured format - original string is no longer needed
+        job_data["transcript"] = structured_transcript
+
+        print(f"INFO: Stored structured transcript with {len(structured_transcript)} entries for paste job")
+
     job_ref = db.collection(f"saas_users/{user_id}/jobs").document()
-    job_ref.set(
-        {
-            "status": "QUEUED",
-            "createdAt": firestore.SERVER_TIMESTAMP,
-            "request_data": request_data,
-            "job_title": initial_title,
-            "folderId": None,
-        }
-    )
+    job_ref.set(job_data)
     return job_ref.id
+
+
+def _filter_request_data_by_source_type(request_data: dict) -> dict:
+    """
+    Filters request_data to only include fields relevant to the specific source type.
+    This keeps the database clean and avoids storing irrelevant null/empty fields.
+    """
+    source_type = request_data.get("source_type")
+    
+    # Base fields that are always relevant
+    base_fields = {"user_id", "source_type", "config"}
+    
+    # Define relevant fields for each source type
+    source_type_fields = {
+        "youtube": {
+            "transcript_id", "youtube_url", "youtube_video_title", 
+            "youtube_channel_name", "youtube_duration", "youtube_thumbnail_url"
+        },
+        "paste": set(),  # Only base fields for paste
+        "upload": {
+            "storagePath", "audio_filename", "duration_seconds", "model_choice"
+        }
+    }
+    
+    # Get relevant fields for this source type
+    relevant_fields = base_fields | source_type_fields.get(source_type, set())
+    
+    # Filter the request_data to only include relevant fields
+    filtered_data = {
+        key: value for key, value in request_data.items() 
+        if key in relevant_fields
+    }
+    
+    # For paste source type, remove transcript from request_data since it's stored at root level in create_job()
+    if source_type == "paste" and "transcript" in filtered_data:
+        del filtered_data["transcript"]
+    
+    return filtered_data
 
 
 def update_job_title(user_id: str, job_id: str, new_title: str):
@@ -72,6 +129,18 @@ def update_job_title(user_id: str, job_id: str, new_title: str):
     job_ref = db.collection(f"saas_users/{user_id}/jobs").document(job_id)
     job_ref.update({"job_title": new_title})
     print(f"INFO:      Renamed job {job_id} for user {user_id}")
+
+
+def update_job_with_metadata(user_id: str, job_id: str, new_title: str, metadata: Dict[str, Any] = None):
+    """Updates the title and metadata of a specific job."""
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+    
+    job_ref = db.collection(f"saas_users/{user_id}/jobs").document(job_id)
+    update_data = {"job_title": new_title}
+    
+    job_ref.update(update_data)
+    print(f"INFO:      Updated job {job_id} with title '{new_title}' and metadata for user {user_id}")
 
 
 def delete_job(user_id: str, job_id: str):
@@ -145,12 +214,10 @@ def update_job_status(
     job_id: str,
     status: str,
     progress: str = None,
-    transcript: str = None,
-    structured_transcript: List[Dict] = None,
+    transcript: List[Dict] = None,
 ):
     """
-    Updates the status, progress, and optionally the main transcript
-    and the new structured_transcript of a job.
+    Updates the status, progress, and optionally the main transcript of a job.
     """
     if db is None:
         raise ConnectionError("Database client not initialized.")
@@ -162,14 +229,10 @@ def update_job_status(
         update_data["progress"] = progress
 
     if transcript:
-        update_data["transcript"] = transcript
-
-    # New section to handle the structured transcript
-    if structured_transcript:
         print(
-            f"[bold green]LOG:[/bold green] Saving structured_transcript with {len(structured_transcript)} entries to job {job_id}."
+            f"[bold green]LOG:[/bold green] Saving transcript with {len(transcript)} entries to job {job_id}."
         )
-        update_data["structured_transcript"] = structured_transcript
+        update_data["transcript"] = transcript
 
     job_ref.update(update_data)
 
@@ -308,3 +371,226 @@ def get_cached_transcript(transcript_id: str) -> Optional[Dict]:  # Return a Dic
         print(f"INFO:     Retrieved and deleted cached transcript {transcript_id}")
         return transcript_data  # Return all data
     return None
+
+
+# --- NEW: Open-Ended Quiz Functions (Jobs Subcollection) ---
+
+def create_open_ended_submission(
+    user_id: str,
+    job_id: str,
+    question_id: str,
+    user_answer: str
+) -> str:
+    """
+    Creates a new open-ended submission in the job's subcollection.
+    Returns the question_id as the document identifier.
+    """
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+
+    # Store in jobs subcollection using question_id as document ID
+    question_ref = db.collection(f"saas_users/{user_id}/jobs/{job_id}/open_ended_questions").document(question_id)
+    
+    submission_data = {
+        "user_id": user_id,
+        "job_id": job_id,
+        "question_id": question_id,
+        "user_answer": user_answer,
+        "submitted_at": firestore.SERVER_TIMESTAMP,
+        "grading_status": "PENDING",
+        "grading_result": None,
+        "graded_at": None
+    }
+    
+    question_ref.set(submission_data)
+    print(f"INFO:      Created open-ended submission for question {question_id} in job {job_id}")
+    return question_id
+
+
+def update_open_ended_grading(
+    user_id: str,
+    job_id: str,
+    question_id: str,
+    status: str,
+    result: Optional[Dict] = None
+):
+    """
+    Updates the grading status and result for an open-ended question.
+    """
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+
+    question_ref = db.collection(f"saas_users/{user_id}/jobs/{job_id}/open_ended_questions").document(question_id)
+    
+    update_data = {
+        "grading_status": status,
+        "updated_at": firestore.SERVER_TIMESTAMP
+    }
+    
+    if status == "COMPLETED" and result is not None:
+        update_data["graded_at"] = firestore.SERVER_TIMESTAMP
+        update_data["grading_result"] = result
+    
+    question_ref.update(update_data)
+    print(f"INFO:      Updated grading for question {question_id} in job {job_id} to status {status}")
+
+
+def get_open_ended_question_status(
+    user_id: str,
+    job_id: str,
+    question_id: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves the status and result of an open-ended question.
+    """
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+
+    question_ref = db.collection(f"saas_users/{user_id}/jobs/{job_id}/open_ended_questions").document(question_id)
+    doc = question_ref.get()
+    
+    if not doc.exists:
+        return None
+    return doc.to_dict()
+
+
+def get_latest_grading_results(
+    user_id: str,
+    job_id: str
+) -> List[Dict[str, Any]]:
+    """
+    Gets all grading results for open-ended questions in a specific job.
+    Much simpler now that everything is in the job's subcollection.
+    """
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+
+    try:
+        # Get all open-ended questions for this job
+        questions_ref = db.collection(f"saas_users/{user_id}/jobs/{job_id}/open_ended_questions")
+        questions_query = questions_ref.order_by("submitted_at")
+        questions = questions_query.get()
+        
+        if not questions:
+            return []
+        
+        results = []
+        
+        # Return all questions with their grading data
+        for question_doc in questions:
+            question_data = question_doc.to_dict()
+            
+            results.append({
+                "question_id": question_data.get("question_id"),
+                "user_answer": question_data.get("user_answer"),
+                "submitted_at": question_data.get("submitted_at"),
+                "grading_status": question_data.get("grading_status"),
+                "grading_result": question_data.get("grading_result"),
+                "graded_at": question_data.get("graded_at")
+            })
+        
+        return results
+        
+    except Exception as e:
+        print(f"Error retrieving latest grading results: {e}")
+        return []
+
+
+def get_open_ended_submission(
+    user_id: str,
+    job_id: str,
+    question_id: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves an open-ended submission by question ID from the job's subcollection.
+    """
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+
+    question_ref = db.collection(f"saas_users/{user_id}/jobs/{job_id}/open_ended_questions").document(question_id)
+    doc = question_ref.get()
+    
+    if not doc.exists:
+        return None
+    return doc.to_dict()
+
+
+# --- DEPRECATED: Legacy functions for backward compatibility ---
+# These can be removed after migration
+
+def create_grading_job(
+    user_id: str,
+    submission_id: str
+) -> str:
+    """
+    DEPRECATED: Legacy function for backward compatibility.
+    Use create_open_ended_submission instead.
+    """
+    print("WARNING: create_grading_job is deprecated. Use create_open_ended_submission instead.")
+    return submission_id
+
+
+def update_grading_job_status(
+    user_id: str,
+    grading_job_id: str,
+    status: str,
+    result: Optional[Dict] = None
+):
+    """
+    DEPRECATED: Legacy function for backward compatibility.
+    Use update_open_ended_grading instead.
+    """
+    print("WARNING: update_grading_job_status is deprecated. Use update_open_ended_grading instead.")
+    pass
+
+
+def get_grading_job_status(
+    user_id: str,
+    grading_job_id: str
+) -> Optional[Dict[str, Any]]:
+    """
+    DEPRECATED: Legacy function for backward compatibility.
+    Use get_open_ended_question_status instead.
+    """
+    print("WARNING: get_grading_job_status is deprecated. Use get_open_ended_question_status instead.")
+    return None
+
+
+def save_quiz_answers(
+    user_id: str,
+    job_id: str,
+    answers: List[Dict[str, Any]],
+    final_score: Dict[str, int]
+) -> str:
+    """
+    Saves quiz answers and final score to Firestore.
+    
+    Args:
+        user_id: The ID of the user who took the quiz
+        job_id: The ID of the job/analysis the quiz belongs to
+        answers: List of answer objects containing question data and user responses
+        final_score: Dictionary with 'correct' and 'total' keys
+        
+    Returns:
+        The document ID of the saved quiz attempt
+    """
+    if db is None:
+        raise ConnectionError("Database client not initialized.")
+    
+    # Create quiz attempt document
+    quiz_attempt_data = {
+        "user_id": user_id,
+        "job_id": job_id,
+        "answers": answers,
+        "final_score": final_score,
+        "submitted_at": firestore.SERVER_TIMESTAMP,
+        "created_at": firestore.SERVER_TIMESTAMP
+    }
+    
+    # Save to quiz_attempts collection
+    quiz_ref = db.collection("quiz_attempts").document()
+    quiz_ref.set(quiz_attempt_data)
+    
+    print(f"INFO:      Saved quiz answers for user {user_id}, job {job_id}, score: {final_score['correct']}/{final_score['total']}")
+    
+    return quiz_ref.id

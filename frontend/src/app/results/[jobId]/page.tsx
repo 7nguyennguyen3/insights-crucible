@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/store/authStore";
 import { useParams } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 // UI Components
 import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
@@ -19,24 +19,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, Copy, Loader2, ChevronUp } from "lucide-react";
 
 // Interfaces
 import {
-  LearningAcceleratorSection,
+  // LearningAcceleratorSection, // TODO: Fix missing type
+  DeepDiveSection,
 } from "@/app/_global/interface";
 
 // Custom Hooks
 import { LearningAcceleratorView } from "@/app/components/analysis/LearningAcceleratorView";
-import { QuizQuestionsDisplay } from "@/app/components/analysis/QuizQuestionsDisplay";
+import DeepDiveView from "@/app/components/analysis/DeepDiveView";
+import { UnifiedQuizDisplay } from "@/components/analysis/UnifiedQuizDisplay";
 import { useDocxExport } from "@/hooks/useDocxExport";
 import { useJobData } from "@/hooks/useJobData";
+import { OpenEndedResults } from "@/types/job";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
 import { useShareDialog } from "@/hooks/useShareDialog";
 import { useSimplePdfExport } from "@/hooks/useSimplePdfExport";
 
+// Utils
+import { getStructuredTranscript } from "@/lib/utils/transcriptParser";
+
 const ResultsPage = () => {
-  const { loading: authLoading } = useAuthStore();
+  const { user, loading: authLoading } = useAuthStore();
   const params = useParams();
   const jobId = params.jobId as string;
   const layoutRef = useRef<AnalysisPageLayoutRef>(null);
@@ -84,6 +90,9 @@ const ResultsPage = () => {
     handleQuizQuestionChange,
     handleAddQuizQuestion,
     handleDeleteQuizQuestion,
+    handleTakeawayChange,
+    handleAddTakeaway,
+    handleDeleteTakeaway,
   } = useJobData(jobId);
 
   // --- 2. Call your other hooks, passing in values from useJobData ---
@@ -106,6 +115,43 @@ const ResultsPage = () => {
     mutate
   );
 
+  // Get structured transcript, parsing raw transcript if structured version not available
+  const structuredTranscript = getStructuredTranscript(jobData);
+
+  // Scroll to top button state and logic
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollToTop(scrollTop > 300);
+    };
+
+    // Throttle scroll events for performance
+    let timeoutId: NodeJS.Timeout;
+    const throttledHandleScroll = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener('scroll', throttledHandleScroll);
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   // --- 3. Loading and Error states ---
   if (authLoading || isLoading || !jobData) {
     return (
@@ -125,7 +171,7 @@ const ResultsPage = () => {
         ref={layoutRef}
         isLoading={isLoading}
         jobTitle={jobData?.job_title}
-        transcript={jobData?.structured_transcript}
+        transcript={structuredTranscript}
         header={
           <AnalysisHeader
             isPublicPage={false}
@@ -139,7 +185,7 @@ const ResultsPage = () => {
           <AnalysisActionButtons
             isPublicPage={false}
             hasData={!!jobData}
-            hasTranscript={!!jobData?.structured_transcript?.length}
+            hasTranscript={!!structuredTranscript?.length}
             onShowTranscript={() => layoutRef.current?.openTranscriptDialog()}
             onExportMarkdown={exportToMarkdown}
             onShare={() => setIsShareDialogOpen(true)}
@@ -153,51 +199,110 @@ const ResultsPage = () => {
         }
       >
         <div id="analysis-report-content">
-          {/* Learning Accelerator Quiz Questions */}
-          {(jobData.learning_synthesis?.quiz_questions || jobData.generated_quiz_questions?.questions) && (
+          {/* Learning Assessment - Quiz Questions */}
+          {(jobData.generated_quiz_questions &&
+            (jobData.generated_quiz_questions.questions?.length > 0 || (jobData.generated_quiz_questions.open_ended_questions?.length || 0) > 0)) && (
             <div className="mb-12">
-              <QuizQuestionsDisplay
-                questions={jobData.learning_synthesis?.quiz_questions || jobData.generated_quiz_questions?.questions || []}
-                estimatedTimeMinutes={jobData.generated_quiz_questions?.quiz_metadata?.estimated_time_minutes}
-                totalQuestions={jobData.generated_quiz_questions?.quiz_metadata?.total_questions}
+              {/* Learning Philosophy Note */}
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
+                  The difficulty is where the learning happens. These questions help your brain actively process and connect information.
+                </p>
+                <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
+                  "Difficulties in learning are desirable when they trigger processes that support learning and remembering." — Robert Bjork
+                </blockquote>
+              </div>
+
+              <UnifiedQuizDisplay
+                multipleChoiceQuestions={jobData.generated_quiz_questions.questions || []}
+                openEndedQuestions={jobData.generated_quiz_questions.open_ended_questions || []}
+                mcqEstimatedTimeMinutes={jobData.generated_quiz_questions.quiz_metadata?.estimated_time_minutes}
+                oeEstimatedTimeMinutes={
+                  jobData.generated_quiz_questions.quiz_metadata?.total_open_ended_questions 
+                    ? jobData.generated_quiz_questions.quiz_metadata.total_open_ended_questions * 5 
+                    : undefined
+                }
                 isEditMode={isEditMode}
-                onQuestionChange={handleQuizQuestionChange}
-                onAddQuestion={handleAddQuizQuestion}
-                onDeleteQuestion={handleDeleteQuizQuestion}
+                onMcqQuestionChange={handleQuizQuestionChange}
+                onMcqAddQuestion={handleAddQuizQuestion}
+                onMcqDeleteQuestion={handleDeleteQuizQuestion}
+                userId={user?.uid || ""}
+                jobId={jobId}
+                existingQuizResults={jobData.quiz_results || null}
+                existingOpenEndedResults={jobData.open_ended_results || null}
               />
             </div>
           )}
 
-          {/* Learning Sections Header */}
+
+          {/* Analysis Sections */}
           <div className="my-12">
             <h2
               className="text-2xl font-bold text-slate-700 
             dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
             >
-              Learning Sections
+              {jobData?.request_data?.config?.analysis_persona === "deep_dive" ? "Analysis Sections" : "Learning Sections"}
             </h2>
           </div>
 
-          {/* Learning Accelerator View */}
-          <LearningAcceleratorView
-            results={jobData.results as LearningAcceleratorSection[]}
-            isEditMode={isEditMode}
-            onFieldChange={handleFieldChange as any}
-            onAddItem={handleAddItem}
-            onDeleteItem={handleDeleteItem}
-            onItemChange={handleItemChange}
-            onAddEntity={handleAddEntity}
-            onDeleteEntity={handleDeleteEntity}
-            onEntityChange={handleEntityChange}
-            onLessonChange={handleLessonChange}
-            onAddLesson={handleAddLesson}
-            onDeleteLesson={handleDeleteLesson}
-            onQuoteChange={handleQuoteChange}
-            onAddQuote={handleAddQuote}
-            onDeleteQuote={handleDeleteQuote}
-          />
+          {/* Conditional View based on Persona */}
+          {jobData?.request_data?.config?.analysis_persona === "deep_dive" ? (
+            <DeepDiveView
+              results={jobData.results as DeepDiveSection[]}
+              isEditMode={isEditMode}
+              onFieldChange={handleFieldChange as any}
+              onTakeawayChange={handleTakeawayChange as any}
+              onAddTakeaway={handleAddTakeaway}
+              onDeleteTakeaway={handleDeleteTakeaway}
+            />
+          ) : (
+            <LearningAcceleratorView
+              results={jobData.results as any[]}
+              isEditMode={isEditMode}
+              onFieldChange={handleFieldChange as any}
+              onAddItem={handleAddItem as any}
+              onDeleteItem={handleDeleteItem as any}
+              onItemChange={handleItemChange as any}
+              onAddEntity={handleAddEntity}
+              onDeleteEntity={handleDeleteEntity}
+              onEntityChange={handleEntityChange}
+              onLessonChange={handleLessonChange}
+              onAddLesson={handleAddLesson}
+              onDeleteLesson={handleDeleteLesson}
+              onQuoteChange={handleQuoteChange}
+              onAddQuote={handleAddQuote}
+              onDeleteQuote={handleDeleteQuote}
+            />
+          )}
         </div>
       </AnalysisPageLayout>
+
+      {/* Scroll to Top Button */}
+      {showScrollToTop && (
+        <Button
+          onClick={scrollToTop}
+          size="icon"
+          variant="outline"
+          className={`
+            fixed bottom-6 right-6 z-50
+            transition-all duration-300 ease-in-out
+            shadow-xl hover:shadow-2xl
+            bg-white/95 dark:bg-slate-800/95
+            backdrop-blur-sm
+            border border-slate-300/80 dark:border-slate-600/80
+            hover:border-slate-400 dark:hover:border-slate-500
+            hover:bg-white dark:hover:bg-slate-700
+            hover:scale-110
+            size-12 md:size-14
+            rounded-full
+            group
+            ring-1 ring-slate-200/50 dark:ring-slate-700/50
+          `}
+          aria-label="Scroll to top"
+        >
+          <ChevronUp className="h-5 w-5 md:h-6 md:w-6 group-hover:scale-110 transition-transform duration-200" />
+        </Button>
+      )}
 
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
         <DialogContent>

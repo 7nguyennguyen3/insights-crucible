@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Clock, CheckCircle } from "lucide-react";
+import { Clock, CheckCircle, User } from "lucide-react";
 import { VideoDetails } from "@/types/engine";
 import { parseAndFormatDuration } from "@/lib/engine/engineHelpers";
 import { UI_MESSAGES } from "@/lib/engine/engineConstants";
@@ -23,6 +23,12 @@ export const VideoDetailsCard = ({ videoDetails, className = "" }: VideoDetailsC
         <h4 className="font-semibold text-lg leading-tight mb-1">
           {videoDetails.title}
         </h4>
+        <div className="flex items-center text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">
+          <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
+          <span>
+            {videoDetails.channelName}
+          </span>
+        </div>
         <div className="flex items-center text-sm font-bold text-slate-500 dark:text-slate-400">
           <Clock className="w-4 h-4 mr-1.5 flex-shrink-0" />
           <span>

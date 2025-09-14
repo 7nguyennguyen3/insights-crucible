@@ -17,6 +17,15 @@ from ..services.enrichment import EntityEnricher
 from ..utils import format_seconds_to_timestamp
 from ..config import get_persona_config
 
+# Import timestamp extraction function
+try:
+    from ...find_quote_timestamps import add_timestamps_to_actionable_takeaways
+    print("[green]Successfully imported timestamp extraction function[/green]")
+except ImportError as e:
+    # Fallback if import fails
+    add_timestamps_to_actionable_takeaways = None
+    print(f"[yellow]Failed to import timestamp extraction function: {e}[/yellow]")
+
 
 class SectionProcessingResult:
     """Result of processing a single section."""
@@ -49,6 +58,11 @@ class SectionProcessor:
         self.db_manager = db_manager
         self.persona = persona
         self.persona_config = get_persona_config(persona)
+        self.structured_transcript = None
+        
+    def set_structured_transcript(self, structured_transcript: Optional[List[Dict]]):
+        """Set the structured transcript for timestamp extraction."""
+        self.structured_transcript = structured_transcript
 
     async def process_section(
         self,
@@ -127,12 +141,16 @@ class SectionProcessor:
                         analysis_result.claims, content_for_llm, runnable_config
                     )
 
-            # Step 3: Enrich entities
-            enrichment_result = await self.enricher.enrich_entities(
-                analysis_result.entities,
-                content_for_llm,
-                section_index,
-            )
+            # Step 3: Enrich entities (skip for deep_dive persona)
+            if self.persona == "deep_dive":
+                print(f"{log_prefix}    - [yellow]Skipping entity enrichment for deep_dive persona[/yellow]")
+                enrichment_result = {"explanations": {}, "cost_metrics": {"tavily_searches": 0}}
+            else:
+                enrichment_result = await self.enricher.enrich_entities(
+                    analysis_result.entities,
+                    content_for_llm,
+                    section_index,
+                )
 
             # Combine cost metrics
             entity_costs = enrichment_result.get("cost_metrics", {})
@@ -273,25 +291,74 @@ class SectionProcessor:
             "end_time": analysis.end_time,
             "generated_title": analysis.title,
             "1_sentence_summary": analysis.summary,
-            "notable_quotes": analysis.quotes,
-            "entities": [
-                {"name": e.name, "explanation": e.explanation}
-                for e in analysis.entities
-            ],
         }
 
-        # Add additional data, but handle learning accelerator persona specially
-        if self.persona == "learning_accelerator":
-            # For learning accelerator, explicitly include lessons_and_concepts
-            base_dict["lessons_and_concepts"] = analysis.additional_data.get("lessons_and_concepts", [])
-            base_dict["key_points"] = analysis.additional_data.get("key_points", [])
-            base_dict["section_summary"] = analysis.additional_data.get("section_summary", "")
+        # Handle persona-specific fields
+        if self.persona == "deep_dive":
+            # For deep_dive persona, exclude notable_quotes and entities
+            # Include actionable_takeaways from additional_data
+            base_dict.update(analysis.additional_data)
             
-            # Include other additional data except contextual_briefing (deprecated)
-            for key, value in analysis.additional_data.items():
-                if key not in ["lessons_and_concepts", "key_points", "section_summary", "contextual_briefing"]:
-                    base_dict[key] = value
+            # Add timestamps to actionable_takeaways if available
+            print(f"[blue]Deep dive persona: Adding timestamps to actionable takeaways...[/blue]")
+            print(f"[blue]  - Structured transcript available: {self.structured_transcript is not None}[/blue]")
+            print(f"[blue]  - Actionable takeaways in result: {'actionable_takeaways' in base_dict}[/blue]")
+            
+            if self.structured_transcript:
+                print(f"[blue]  - Structured transcript entries count: {len(self.structured_transcript)}[/blue]")
+                # Show first few entries for debugging
+                sample_entries = self.structured_transcript[:3] if len(self.structured_transcript) > 0 else []
+                print(f"[blue]  - Sample structured transcript entries: {sample_entries}[/blue]")
+            
+            if "actionable_takeaways" in base_dict:
+                print(f"[blue]  - Actionable takeaways count: {len(base_dict['actionable_takeaways'])}[/blue]")
+                # Show first takeaway for debugging
+                if base_dict['actionable_takeaways']:
+                    first_takeaway = base_dict['actionable_takeaways'][0]
+                    print(f"[blue]  - First takeaway keys: {list(first_takeaway.keys()) if isinstance(first_takeaway, dict) else 'Not a dict'}[/blue]")
+            
+            # Add timestamps using structured transcript (all source types now use this format)
+            if (add_timestamps_to_actionable_takeaways is not None and 
+                self.structured_transcript and 
+                "actionable_takeaways" in base_dict):
+                
+                try:
+                    print(f"[blue]Adding timestamps using structured transcript to {len(base_dict['actionable_takeaways'])} actionable takeaways...[/blue]")
+                    enhanced_takeaways = add_timestamps_to_actionable_takeaways(
+                        base_dict["actionable_takeaways"], 
+                        self.structured_transcript
+                    )
+                    base_dict["actionable_takeaways"] = enhanced_takeaways
+                    
+                    # Verify timestamps were added
+                    timestamps_added = sum(1 for takeaway in enhanced_takeaways if takeaway.get('quote_timestamp'))
+                    print(f"[green][+] Successfully added timestamps to {timestamps_added}/{len(enhanced_takeaways)} actionable takeaways[/green]")
+                    
+                    # Show sample results
+                    if enhanced_takeaways:
+                        sample_takeaway = enhanced_takeaways[0]
+                        print(f"[green]  - Sample enhanced takeaway keys: {list(sample_takeaway.keys())}[/green]")
+                        if 'quote_timestamp' in sample_takeaway:
+                            timestamp_data = sample_takeaway['quote_timestamp']
+                            if isinstance(timestamp_data, dict):
+                                print(f"[green]  - Sample timestamp range: {timestamp_data.get('start', '?')} - {timestamp_data.get('end', '?')} (duration: {timestamp_data.get('duration', '?')})[/green]")
+                            else:
+                                print(f"[green]  - Sample timestamp: {timestamp_data}[/green]")
+                        
+                except Exception as e:
+                    print(f"[red]Error: Failed to add timestamps: {e}[/red]")
+                    import traceback
+                    print(f"[red]Full traceback: {traceback.format_exc()}[/red]")
+            else:
+                print(f"[yellow]Skipping timestamp extraction - no structured transcript available[/yellow]")
         else:
+            # For other personas, include quotes and entities
+            base_dict["notable_quotes"] = analysis.quotes
+            base_dict["entities"] = [
+                {"name": e.name, "explanation": e.explanation}
+                for e in analysis.entities
+            ]
+
             # For other personas, include contextual_briefing and all additional data
             base_dict["contextual_briefing"] = analysis.contextual_briefing
             base_dict.update(analysis.additional_data)

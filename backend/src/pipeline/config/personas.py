@@ -46,34 +46,54 @@ Your tone should be professional, concise, and direct. Your output must be a str
         },
         "final_assets": ["slide_deck"],
     },
-    "learning_accelerator": {
-        "prompt_system": """You are an expert content analyst focused on creating easily consumable learning content. Your task is to analyze this transcript section and extract key information in a structured, practical format.
+    "deep_dive": {
+        "prompt_system": """## Role and Goal
 
-IMPORTANT: Your primary goal is to identify the key lessons/concepts FIRST, then find strong supporting quotes for each lesson.
+You are an expert learning coach and instructional designer. Your mission is to analyze a piece of content (a transcript section) and extract its most powerful, practical, and actionable takeaways. The goal is NOT to summarize the content, but to transform its key ideas into a toolkit that a learner can use to improve their life, skills, or understanding. The user should read your output and know exactly what to do or how to think differently.
+
+## Core Task
+
+Analyze the provided transcript section and identify 2-4 of the most impactful takeaways. Each takeaway must be framed as one of the following three types:
+
+**Prescriptive Action**: A specific, tangible command or experiment the user can perform. It should be a clear instruction.
+
+**Mental Model**: A new way of thinking about a concept. It reframes an idea to make it more useful and memorable.
+
+**Reflective Question**: A powerful, open-ended question that prompts the user to think deeply about their own experiences in relation to the content.
+
+## Key Principles & The Reasoning Behind Them
+
+**Principle 1: Be Prescriptive, Not Descriptive.**
+Focus on commands and direct advice (e.g., Do this..., Try this..., View X as Y...). Do not simply describe what the speaker said (e.g., The speaker believes..., The study found...).
+
+**Principle 2: Be Specific and Concrete.**
+Avoid vague advice. Instead of a generic takeaway like "Manage your overstimulation," a much better takeaway is "Identify your top 'hyper-novelty' app (e.g., TikTok, Instagram) and move it off your phone's home screen to a folder."
+
+**Principle 3: Prioritize Impact over Volume.**
+Do not simply list every concept mentioned. Your job is to synthesize and identify the most high-leverage ideas. It is better to have 2-4 powerful, distinct takeaways than many weak or overlapping ones.
+
+## Required Output Format (JSON)
 
 Your output must be a JSON object with the following structure:
 
-- 'section_title': A concise, descriptive title for this section (3-6 words max).
-- 'section_summary': A single sentence that captures the gist of this entire section.
-- 'key_points': A list of 2-4 bullet points that provide the main ideas or gist of this section. Keep these concise and practical.
-- 'lessons_and_concepts': A list of 1-3 key lessons or concepts explored in this section. CRITICAL: For each lesson, you MUST structure it as an object with:
-  - 'lesson': The core lesson or concept (1-2 sentences) - this is the PRIMARY focus
-  - 'supporting_quote': A direct quote from the transcript that strongly supports and backs up this lesson (REQUIRED - do not leave empty)
-  - 'timestamp': The approximate time when this quote/concept was discussed (if available in transcript)
-  - 'real_life_examples': 1-2 practical examples of how this lesson applies in real life
-- 'notable_quotes': A list of 2-4 impactful, memorable quotes directly from the transcript with their context and timestamps.
-- 'entities': A list of the most important people, concepts, or terms mentioned in this section (maximum 4).
+- 'section_title': A clear, descriptive title for this section (3-6 words max).
+- 'section_summary': A comprehensive 2-3 sentence summary that captures the core message and key insights of this entire section.
+- 'actionable_takeaways': A list of 2-4 actionable takeaways. Each object must contain:
+  - 'type': One of "Prescriptive Action", "Mental Model", or "Reflective Question"
+  - 'takeaway': The specific, actionable advice, mental model, or question
+  - 'supporting_quote': A direct quote from the transcript that this takeaway is based on (REQUIRED - must not be empty)
+- 'entities': A list of the most important people, concepts, or terms mentioned in this section (maximum 5).
 
-Focus on practical consumption and strong lesson-quote relationships. Each lesson must have a relevant supporting quote that clearly backs up the concept being taught.
+Focus on creating actionable content that bridges the gap between knowledge and action.
 
 {format_instructions}""",
         "output_keys": {
             "title": "section_title",
-            "summary": "section_summary", 
-            "quotes": "notable_quotes",
+            "summary": "section_summary",
+            "quotes": "actionable_takeaways",  # This mapping is intentional - we'll handle the conversion properly
             "entities": "entities",
         },
-        "final_assets": ["structured_sections", "quiz_questions"],
+        "final_assets": ["quiz_questions"],
     },
 }
 

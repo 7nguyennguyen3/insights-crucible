@@ -1,6 +1,7 @@
 "use client";
 
 import { QuizQuestion } from "@/app/_global/interface";
+import { QuizResults } from "@/types/job";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
   CheckCircle,
   Clock,
   HelpCircle,
+  Loader2,
   MessageSquareQuote,
   PlusCircle,
   RotateCcw,
@@ -36,6 +38,9 @@ interface QuizQuestionsDisplayProps {
   ) => void;
   onAddQuestion?: () => void;
   onDeleteQuestion?: (index: number) => void;
+  userId?: string;
+  jobId?: string;
+  existingQuizResults?: QuizResults | null;
 }
 
 type Answer = "A" | "B" | "C" | "D" | null;
@@ -48,27 +53,97 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
   onQuestionChange = () => {},
   onAddQuestion = () => {},
   onDeleteQuestion = () => {},
+  userId = "",
+  jobId = "",
+  existingQuizResults = null,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<Answer[]>(
-    new Array(questions.length).fill(null)
-  );
-  const [showResults, setShowResults] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState<Answer[]>(() => {
+    if (existingQuizResults) {
+      return existingQuizResults.quiz_answers.map(answer => answer.selectedAnswer);
+    }
+    return new Array(questions.length).fill(null);
+  });
+  const [submittedAnswers, setSubmittedAnswers] = useState<boolean[]>(() => {
+    if (existingQuizResults) {
+      return new Array(questions.length).fill(true);
+    }
+    return new Array(questions.length).fill(false);
+  });
+  const [showingFeedback, setShowingFeedback] = useState(false);
+  const [showResults, setShowResults] = useState(!!existingQuizResults);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [isSavingAnswers, setIsSavingAnswers] = useState(false);
+  const [showCompactResults, setShowCompactResults] = useState(!!existingQuizResults && !isEditMode);
 
   const handleAnswerSelect = (answer: Answer) => {
-    if (showResults) return;
+    if (showResults || submittedAnswers[currentQuestionIndex]) return;
 
     const newAnswers = [...selectedAnswers];
     newAnswers[currentQuestionIndex] = answer;
     setSelectedAnswers(newAnswers);
   };
 
+  const handleSubmitAnswer = async () => {
+    if (!selectedAnswers[currentQuestionIndex] || submittedAnswers[currentQuestionIndex]) return;
+
+    // Mark this answer as submitted
+    const newSubmittedAnswers = [...submittedAnswers];
+    newSubmittedAnswers[currentQuestionIndex] = true;
+    setSubmittedAnswers(newSubmittedAnswers);
+    setShowingFeedback(true);
+  };
+
+  const saveAllAnswers = async () => {
+    if (!userId || !jobId) {
+      setShowResults(true);
+      return;
+    }
+
+    setIsSavingAnswers(true);
+    
+    const answersData = questions.map((question, index) => ({
+      questionIndex: index,
+      selectedAnswer: selectedAnswers[index],
+      isCorrect: selectedAnswers[index] === question.correct_answer,
+      question: question.question,
+      correctAnswer: question.correct_answer
+    }));
+
+    const score = calculateScore();
+
+    try {
+      const response = await fetch('/api/quiz-answers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobId,
+          userId,
+          answers: answersData,
+          finalScore: score
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save quiz answers');
+      }
+    } catch (error) {
+      console.error('Error saving quiz answers:', error);
+    } finally {
+      setIsSavingAnswers(false);
+      setShowResults(true);
+    }
+  };
+
   const handleNextQuestion = () => {
+    setShowingFeedback(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      setShowResults(true);
+      // Last question - save all answers and show results
+      saveAllAnswers();
     }
   };
 
@@ -81,8 +156,12 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
   const resetQuiz = () => {
     setCurrentQuestionIndex(0);
     setSelectedAnswers(new Array(questions.length).fill(null));
+    setSubmittedAnswers(new Array(questions.length).fill(false));
+    setShowingFeedback(false);
     setShowResults(false);
     setQuizStarted(false);
+    setIsSavingAnswers(false);
+    setShowCompactResults(false);
   };
 
   const calculateScore = () => {
@@ -299,6 +378,70 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
     );
   }
 
+  // Compact results display when quiz has been completed previously
+  if (showCompactResults && existingQuizResults) {
+    const percentage = Math.round((existingQuizResults.final_score.correct / existingQuizResults.final_score.total) * 100);
+    const completedDate = existingQuizResults.completed_at?.toDate ? 
+      existingQuizResults.completed_at.toDate().toLocaleDateString() : 
+      new Date().toLocaleDateString();
+
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center">
+              <CheckCircle className="w-5 h-5 mr-3 text-green-500" />
+              Quiz Completed
+            </span>
+            <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+              {percentage}%
+            </Badge>
+          </CardTitle>
+          <CardDescription className="flex items-center justify-between">
+            <span>
+              {existingQuizResults.final_score.correct} of {existingQuizResults.final_score.total} questions correct
+            </span>
+            <span className="text-xs text-slate-500">
+              Completed on {completedDate}
+            </span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowCompactResults(false);
+                setShowResults(true);
+                setQuizStarted(true); // Mark quiz as started to skip the start screen
+              }}
+            >
+              View Details
+            </Button>
+            <Button
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                setShowCompactResults(false);
+                setShowResults(false);
+                setSelectedAnswers(new Array(questions.length).fill(null));
+                setSubmittedAnswers(new Array(questions.length).fill(false));
+                setQuizStarted(false);
+                setCurrentQuestionIndex(0);
+                setShowingFeedback(false);
+                setIsSavingAnswers(false);
+              }}
+            >
+              <RotateCcw className="h-3 w-3 mr-1" />
+              Retake Quiz
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Quiz taking interface
   if (!quizStarted) {
     return (
@@ -458,9 +601,20 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
             })}
           </div>
 
-          <Button onClick={resetQuiz} variant="outline" className="w-full">
-            <RotateCcw className="h-4 w-4 mr-2" /> Retake Quiz
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={resetQuiz} variant="outline" className="flex-1">
+              <RotateCcw className="h-4 w-4 mr-2" /> Retake Quiz
+            </Button>
+            {existingQuizResults && (
+              <Button 
+                onClick={() => setShowCompactResults(true)} 
+                variant="secondary" 
+                className="flex-1"
+              >
+                Back to Summary
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -468,6 +622,9 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const isCurrentQuestionSubmitted = submittedAnswers[currentQuestionIndex];
+  const currentUserAnswer = selectedAnswers[currentQuestionIndex];
+  const isCurrentAnswerCorrect = currentUserAnswer === currentQuestion.correct_answer;
 
   // Convert options to array format if it's an object
   let optionsArray: string[];
@@ -526,26 +683,61 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
           <div className="space-y-3">
             {optionsArray.map((option, index) => {
               const letter = ["A", "B", "C", "D"][index] as Answer;
-              const isSelected =
-                selectedAnswers[currentQuestionIndex] === letter;
+              const isSelected = selectedAnswers[currentQuestionIndex] === letter;
+              const isCorrectAnswer = letter === currentQuestion.correct_answer;
+              
+              // Determine button styling based on submission status
+              let buttonClass = "w-full p-3 text-left rounded-lg border-2 transition-all ";
+              let badgeVariant: "default" | "outline" | "destructive" | "secondary" = "outline";
+              
+              if (!isCurrentQuestionSubmitted) {
+                // Before submission
+                if (isSelected) {
+                  buttonClass += "border-purple-500 bg-purple-50 dark:bg-purple-900/20";
+                  badgeVariant = "default";
+                } else {
+                  buttonClass += "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600";
+                }
+              } else {
+                // After submission - show feedback
+                if (isCorrectAnswer) {
+                  buttonClass += "border-green-500 bg-green-50 dark:bg-green-900/20";
+                  badgeVariant = "default";
+                } else if (isSelected) {
+                  buttonClass += "border-red-500 bg-red-50 dark:bg-red-900/20";
+                  badgeVariant = "destructive";
+                } else {
+                  buttonClass += "border-slate-200 dark:border-slate-700";
+                  badgeVariant = "secondary";
+                }
+              }
 
               return (
                 <button
                   key={letter}
                   onClick={() => handleAnswerSelect(letter)}
-                  className={`w-full p-3 text-left rounded-lg border-2 transition-all ${
-                    isSelected
-                      ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                  }`}
+                  disabled={isCurrentQuestionSubmitted}
+                  className={buttonClass}
                 >
                   <div className="flex items-start space-x-3">
-                    <Badge
-                      variant={isSelected ? "default" : "outline"}
-                      className="w-6 h-6 flex items-center justify-center text-xs"
-                    >
-                      {letter}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      <Badge
+                        variant={badgeVariant}
+                        className="w-6 h-6 flex items-center justify-center text-xs"
+                      >
+                        {letter}
+                      </Badge>
+                      {isCurrentQuestionSubmitted && (
+                        <>
+                          {isCorrectAnswer && (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          )}
+                          {isSelected && !isCorrectAnswer && (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </>
+                      )}
+                    </div>
                     <span className="flex-1">{option}</span>
                   </div>
                 </button>
@@ -554,21 +746,83 @@ export const QuizQuestionsDisplay: React.FC<QuizQuestionsDisplayProps> = ({
           </div>
         </div>
 
+        {/* Feedback section */}
+        {isCurrentQuestionSubmitted && (
+          <div className="mt-6 p-4 rounded-lg border bg-slate-50 dark:bg-slate-800/50">
+            <div className="flex items-center mb-2">
+              {isCurrentAnswerCorrect ? (
+                <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-500 mr-2" />
+              )}
+              <span className={`font-medium ${
+                isCurrentAnswerCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+              }`}>
+                {isCurrentAnswerCorrect ? 'Correct!' : 'Incorrect'}
+              </span>
+            </div>
+            {!isCurrentAnswerCorrect && (
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                The correct answer is <strong>{currentQuestion.correct_answer}</strong>.
+              </p>
+            )}
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+              <strong>Explanation:</strong> {currentQuestion.explanation}
+            </p>
+            {currentQuestion.supporting_quote && (
+              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3">
+                <div className="flex items-center mb-2">
+                  <MessageSquareQuote className="w-3 h-3 mr-2 text-blue-500" />
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                    Supporting Quote
+                  </span>
+                </div>
+                <p className="italic text-sm text-slate-600 dark:text-slate-400">
+                  "{currentQuestion.supporting_quote}"
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex justify-between">
           <Button
             variant="outline"
             onClick={handlePreviousQuestion}
-            disabled={currentQuestionIndex === 0}
+            disabled={currentQuestionIndex === 0 || isCurrentQuestionSubmitted}
           >
             Previous
           </Button>
 
-          <Button
-            onClick={handleNextQuestion}
-            disabled={selectedAnswers[currentQuestionIndex] === null}
-          >
-            {currentQuestionIndex === questions.length - 1 ? "Finish" : "Next"}
-          </Button>
+          {!isCurrentQuestionSubmitted ? (
+            <Button
+              onClick={handleSubmitAnswer}
+              disabled={selectedAnswers[currentQuestionIndex] === null || isSavingAnswers}
+            >
+              {isSavingAnswers ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Submit Answer'
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleNextQuestion}
+              disabled={isSavingAnswers}
+            >
+              {isSavingAnswers ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                currentQuestionIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'
+              )}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

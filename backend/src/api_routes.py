@@ -16,6 +16,14 @@ from src.models import (
     BulkProcessResponseItem,
     TranscriptDetailResponse,
     TranscriptDetailRequest,
+    OpenEndedSubmission,
+    GradingJob,
+    GradingResult,
+)
+from src.utils import (
+    fetch_youtube_metadata,
+    extract_youtube_video_id,
+    format_iso_duration_to_readable,
 )
 from src import db_manager
 from src.security import verify_api_key
@@ -134,6 +142,12 @@ async def start_bulk_analysis_processing(
     # 1. Generate a single BATCH ID to group all these jobs
     batch_id = str(uuid.uuid4())
 
+    # Create a lookup dictionary for file metadata by filename
+    file_metadata_lookup = {}
+    if bulk_request.file_metadata:
+        for file_meta in bulk_request.file_metadata:
+            file_metadata_lookup[file_meta["name"]] = file_meta
+
     for item in bulk_request.items:
         # 2. For each item in the bulk request, create a payload for a single job
         single_job_payload = {
@@ -144,7 +158,15 @@ async def start_bulk_analysis_processing(
             "model_choice": bulk_request.model_choice,
             "batch_id": batch_id,  # ** CRUCIAL FOR TRACKING **
             "client_provided_id": item.client_provided_id,
+            "source_type": bulk_request.source_type,
         }
+
+        # Add file metadata if available and this is a file upload
+        if bulk_request.source_type == "upload" and item.client_provided_id:
+            file_meta = file_metadata_lookup.get(item.client_provided_id)
+            if file_meta:
+                single_job_payload["audio_filename"] = item.client_provided_id
+                single_job_payload["duration_seconds"] = file_meta.get("duration")
 
         # 3. Create the job in the database (your existing function works perfectly)
         job_id = db_manager.create_job(user_id, single_job_payload)
@@ -199,12 +221,50 @@ async def get_transcript_and_cache(
         raw_transcript = fetch_transcript_with_retry(request.video_id)
         # --- END MODIFIED LOGIC ---
 
-        # Calculate character count
+        # Log the raw transcript structure for debugging
+        print(
+            f"DEBUG: Raw transcript structure (first 3 items): {raw_transcript[:3] if raw_transcript else 'Empty'}"
+        )
+        print(
+            f"DEBUG: Total transcript items: {len(raw_transcript) if raw_transcript else 0}"
+        )
+
+        # Calculate character count (for cost estimation)
         full_text = " ".join([item["text"] for item in raw_transcript])
         character_count = len(full_text)
         print(f"DEBUG: Video ID {request.video_id} has {character_count} characters.")
 
-        title = "YouTube Video Transcript"
+        # Save the complete transcript with timestamps to fetched_transcript.md
+        try:
+            with open("fetched_transcript.md", "w", encoding="utf-8") as f:
+                f.write(f"# YouTube Transcript - Video ID: {request.video_id}\n\n")
+
+                # Save with timestamps if available
+                if (
+                    raw_transcript
+                    and len(raw_transcript) > 0
+                    and "start" in raw_transcript[0]
+                ):
+                    f.write("## Timestamped Transcript\n\n")
+                    for item in raw_transcript:
+                        start_time = item.get("start", 0)
+                        text = item.get("text", "")
+                        # Format timestamp as MM:SS
+                        minutes = int(start_time // 60)
+                        seconds = int(start_time % 60)
+                        f.write(f"**[{minutes:02d}:{seconds:02d}]** {text}\n\n")
+                else:
+                    # Fallback to plain text if no timestamps
+                    f.write("## Plain Text Transcript\n\n")
+                    f.write(full_text)
+
+            print(f"DEBUG: Transcript saved to fetched_transcript.md")
+        except Exception as e:
+            print(f"WARNING: Failed to save transcript to file: {e}")
+
+        # Fetch YouTube metadata
+        metadata = await fetch_youtube_metadata(request.video_id)
+        title = metadata.get("title", "YouTube Video Transcript")
 
         # Cache in Firestore
         if db_manager.db:
@@ -216,14 +276,26 @@ async def get_transcript_and_cache(
                 datetime.timezone.utc
             ) + datetime.timedelta(hours=1)
 
-            cache_ref.set(
-                {
-                    "structured_transcript": raw_transcript,
-                    "character_count": character_count,
-                    "createdAt": firestore.SERVER_TIMESTAMP,
-                    "expiresAt": expiration_time,
-                }
-            )
+            # Include metadata in cached data
+            cached_data = {
+                "structured_transcript": raw_transcript,
+                "character_count": character_count,
+                "createdAt": firestore.SERVER_TIMESTAMP,
+                "expiresAt": expiration_time,
+            }
+
+            # Add YouTube metadata if available
+            if metadata:
+                cached_data.update(
+                    {
+                        "youtube_title": metadata.get("title", ""),
+                        "youtube_channel_name": metadata.get("channel_name", ""),
+                        "youtube_thumbnail_url": metadata.get("thumbnail_url", ""),
+                        "youtube_duration": metadata.get("duration", ""),
+                    }
+                )
+
+            cache_ref.set(cached_data)
 
             return TranscriptDetailResponse(
                 transcript_id=transcript_id,
@@ -241,4 +313,114 @@ async def get_transcript_and_cache(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to retrieve transcript after multiple retries: {e}",
+        )
+
+
+# --- NEW: Open-Ended Quiz Endpoints ---
+
+
+@router.post("/submit-open-ended-answer", status_code=202)
+async def submit_open_ended_answer(
+    submission: OpenEndedSubmission,
+    _=Depends(verify_api_key),
+):
+    """
+    Submit an open-ended answer for grading.
+    Creates a submission record in the job's subcollection.
+    """
+    try:
+        # Create the open-ended submission in job's subcollection
+        question_id = db_manager.create_open_ended_submission(
+            user_id=submission.user_id,
+            job_id=submission.job_id,
+            question_id=submission.question_id,
+            user_answer=submission.user_answer,
+        )
+
+        # Enqueue the grading task
+        try:
+            task_manager.create_grading_task(
+                user_id=submission.user_id,
+                job_id=submission.job_id,
+                question_id=question_id,
+            )
+        except Exception as e:
+            print(f"WARNING: Failed to enqueue grading task: {e}")
+            # Even if we can't enqueue the task, we still return success
+            # The grading can be processed manually or by a fallback mechanism
+
+        return {
+            "question_id": question_id,
+            "job_id": submission.job_id,
+            "status": "PENDING",
+            "message": "Answer submitted successfully. Grading will begin shortly.",
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to submit open-ended answer: {e}"
+        )
+
+
+@router.get("/grading-status/{job_id}/{question_id}")
+async def get_grading_status(
+    user_id: str,
+    job_id: str,
+    question_id: str,
+    _=Depends(verify_api_key),
+):
+    """
+    Get the status and result of an open-ended answer grading.
+    """
+    try:
+        # Get the question grading status from job subcollection
+        question_data = db_manager.get_open_ended_question_status(
+            user_id, job_id, question_id
+        )
+
+        if not question_data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Question {question_id} not found in job {job_id} for user {user_id}",
+            )
+
+        return {
+            "question_id": question_id,
+            "job_id": job_id,
+            "grading_status": question_data["grading_status"],
+            "grading_result": question_data.get("grading_result"),
+            "submitted_at": question_data.get("submitted_at"),
+            "graded_at": question_data.get("graded_at"),
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve grading status: {e}"
+        )
+
+
+@router.get("/latest-grading-results/{user_id}/{job_id}")
+async def get_latest_grading_results(
+    user_id: str,
+    job_id: str,
+    _=Depends(verify_api_key),
+):
+    """
+    Get the latest completed grading results for a specific job.
+    """
+    try:
+        # Get the latest grading results for this job
+        grading_results = db_manager.get_latest_grading_results(user_id, job_id)
+
+        if not grading_results:
+            return {
+                "has_results": False,
+                "message": "No grading results found for this job",
+            }
+
+        return {"has_results": True, "results": grading_results}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve latest grading results: {e}"
         )

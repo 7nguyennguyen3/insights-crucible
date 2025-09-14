@@ -22,7 +22,8 @@ class ConsultantSynthesizer(MetaAnalyzer):
     async def perform_synthesis(
         self,
         section_analyses: List[SectionAnalysis],
-        runnable_config: RunnableConfig
+        runnable_config: RunnableConfig,
+        original_transcript: str = None
     ) -> Dict[str, Any]:
         """
         Performs a meta-analysis to synthesize high-level strategic insights
@@ -30,7 +31,7 @@ class ConsultantSynthesizer(MetaAnalyzer):
         """
         print(
             Panel(
-                "[bold magenta]🧠 Meta-Synthesis Initiated[/bold magenta]\n"
+                "[bold magenta]Meta-Synthesis Initiated[/bold magenta]\n"
                 "   - Analyzing connections across all document sections...",
                 title="[bold]Pass 2: Synthesis[/bold]",
                 border_style="magenta",
@@ -84,7 +85,7 @@ Your output must be a JSON object with the following keys:
                 "format_instructions": parser.get_format_instructions(),
             }, config=runnable_config)
             
-            print("[green]✓ Meta-Synthesis complete. High-level insights generated.[/green]")
+            print("[green]Meta-Synthesis complete. High-level insights generated.[/green]")
             return synthesis_results
             
         except Exception as e:
@@ -117,14 +118,15 @@ class GeneralSynthesizer(MetaAnalyzer):
     async def generate_argument_structure(
         self,
         section_analyses: List[SectionAnalysis], 
-        runnable_config: RunnableConfig
+        runnable_config: RunnableConfig,
+        original_transcript: str = None
     ) -> Dict[str, Any]:
         """
         Generate argument structure using map-reduce approach.
         """
         print(
             Panel(
-                "[bold cyan]🧠 Initiating Map-Reduce for Argument Structure[/bold cyan]\n"
+                "[bold cyan]Initiating Map-Reduce for Argument Structure[/bold cyan]\n"
                 "  1. (Map) Summarize section chunks in parallel.\n"
                 "  2. (Reduce) Synthesize summaries into final argument.",
                 title="[bold]Pass 2: Map-Reduce[/bold]",
@@ -153,7 +155,7 @@ class GeneralSynthesizer(MetaAnalyzer):
         # Filter out failed summaries
         valid_summaries = [s for s in intermediate_summaries if s]
         
-        print(f"  [green]✓ Phase 1 (Map) Complete: Generated {len(valid_summaries)} intermediate summaries.[/green]")
+        print(f"  [green]Phase 1 (Map) Complete: Generated {len(valid_summaries)} intermediate summaries.[/green]")
         
         # Step 2: Reduce - Generate final argument structure
         if not valid_summaries:
@@ -163,81 +165,135 @@ class GeneralSynthesizer(MetaAnalyzer):
         return await self._generate_final_argument_structure(valid_summaries, runnable_config)
 
 
-class LearningAcceleratorSynthesizer(MetaAnalyzer):
-    """Meta-analyzer for learning_accelerator persona - generates simple quiz questions for knowledge testing."""
+
+class DeepDiveSynthesizer(MetaAnalyzer):
+    """Meta-analyzer for deep_dive persona - generates quizzes for simplified analysis."""
     
     def __init__(self, llm_client):
         self.llm = llm_client
+        # Import here to avoid circular imports
+        from .quiz_generator import SectionAwareQuizGenerator
+        self.quiz_generator = SectionAwareQuizGenerator(llm_client)
     
     async def perform_synthesis(
         self,
         section_analyses: List[SectionAnalysis],
-        runnable_config: RunnableConfig
+        runnable_config: RunnableConfig,
+        original_transcript: str = None
     ) -> Dict[str, Any]:
         """
-        Generate simple quiz questions based on all sections for knowledge testing.
+        Generate quizzes for deep dive analysis focused on essential learning.
         """
         print(
             Panel(
-                "[bold green]📝 Learning Quiz Generation[/bold green]\n"
-                "   - Analyzing key concepts across all sections...\n"
-                "   - Generating quiz questions for knowledge testing...",
-                title="[bold]Pass 2: Quiz Generation[/bold]",
+                "[bold green]Deep Dive Quiz Generation[/bold green]\n"
+                "   - Generating focused multiple choice and open-ended questions...\n"
+                "   - Based on simplified lessons and concepts...",
+                title="[bold]Pass 2: Deep Dive Quiz Generation[/bold]",
                 border_style="green",
                 expand=False,
             )
         )
         
+        try:
+            print(f"[blue]DEBUG: Starting deep dive quiz generation with {len(section_analyses)} sections[/blue]")
+            
+            # Use the quiz generator to create both multiple choice and open-ended questions
+            # Pass the original transcript for timestamp matching
+            quiz_results = await self.quiz_generator.generate_quizzes(
+                section_analyses, 
+                runnable_config,
+                original_transcript
+            )
+            
+            print(f"[blue]DEBUG: Deep dive quiz generator returned: {type(quiz_results)} with keys: {list(quiz_results.keys()) if isinstance(quiz_results, dict) else 'Not a dict'}[/blue]")
+            
+            if quiz_results.get("error"):
+                print(f"[bold red]Deep dive quiz generation error: {quiz_results['error']}[/bold red]")
+                print("[yellow]Falling back to legacy method for deep dive[/yellow]")
+                return await self._legacy_deep_dive_quiz_generation(section_analyses, runnable_config, original_transcript)
+            
+            # Extract quiz questions for backward compatibility
+            quiz_questions = quiz_results.get("quiz_questions", [])
+            open_ended_questions = quiz_results.get("open_ended_questions", [])
+            
+            print(f"[green]Deep dive quiz generation complete. Generated {len(quiz_questions)} multiple choice and {len(open_ended_questions)} open-ended questions.[/green]")
+            
+            # Return in format expected by the current pipeline
+            return {
+                "quiz_questions": quiz_questions,
+                "open_ended_questions": open_ended_questions,
+                "multi_quiz_data": quiz_results,  # Store full multi-quiz data
+                "generation_method": "deep_dive_focused"
+            }
+            
+        except Exception as e:
+            print(f"[bold red]Error during deep dive quiz generation: {str(e)}. Falling back to legacy method.[/bold red]")
+            import traceback
+            print(f"[red]Traceback: {traceback.format_exc()}[/red]")
+            # Fallback to legacy method if new approach fails
+            return await self._legacy_deep_dive_quiz_generation(section_analyses, runnable_config, original_transcript)
+    
+    async def generate_argument_structure(
+        self,
+        section_analyses: List[SectionAnalysis], 
+        runnable_config: RunnableConfig
+    ) -> Dict[str, Any]:
+        """Not used for deep_dive persona."""
+        return {}
+    
+    async def _legacy_deep_dive_quiz_generation(
+        self,
+        section_analyses: List[SectionAnalysis],
+        runnable_config: RunnableConfig,
+        original_transcript: str = None
+    ) -> Dict[str, Any]:
+        """Legacy quiz generation method as fallback for deep dive."""
+        print("[yellow]Using legacy deep dive quiz generation method...[/yellow]")
+        
         # Calculate total content duration for quiz question count
         total_duration = self._calculate_total_duration(section_analyses)
         quiz_question_count = self._determine_quiz_count(total_duration)
         
-        # Debug: Check what data we have in section analyses
-        print(f"[blue]Debug - Processing {len(section_analyses)} sections for quiz generation[/blue]")
-        for i, analysis in enumerate(section_analyses):
-            print(f"[blue]Debug - Section {i+1} additional_data keys: {list(analysis.additional_data.keys())}[/blue]")
-            lessons = analysis.additional_data.get("lessons_and_concepts", [])
-            print(f"[blue]Debug - Section {i+1} lessons_and_concepts: {len(lessons) if isinstance(lessons, list) else 'not a list'}[/blue]")
-        
-        # Convert section analyses to structured JSON for quiz generation
+        # Convert section analyses to structured JSON for quiz generation, focusing on lessons
         section_data = json.dumps([
             {
                 "section_number": i + 1,
                 "time_range": f"{analysis.start_time} - {analysis.end_time}",
                 "summary": analysis.summary,
-                "key_concepts": analysis.additional_data.get("lessons_and_concepts", []),  # Use the proper lessons and concepts structure
-                "notable_quotes": analysis.quotes,
-                "entities": [e.name for e in analysis.entities],
+                "actionable_takeaways": analysis.additional_data.get("actionable_takeaways", []),
+                "key_quotes": analysis.quotes[:2],  # Limit quotes for simplicity
             }
             for i, analysis in enumerate(section_analyses)
         ], indent=2)
-        
-        print(f"[blue]Debug - Section data for LLM: {section_data[:500]}...[/blue]")
         
         parser = JsonOutputParser()
         
         prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                f"""You are an expert quiz generator specializing in creating multiple choice questions for knowledge testing. You have been provided with structured content from a learning session. Your task is to generate quiz questions that test understanding of the most important concepts.
+                f"""You are an expert quiz generator specializing in creating focused knowledge assessments. You have been provided with simplified content focused on actionable takeaways. Your task is to generate quiz questions that test understanding of the most important takeaways.
 
 Your output must be a JSON object with the following keys:
 
-- 'quiz_questions': Generate exactly {quiz_question_count} multiple choice questions based on the most important concepts across all sections. Each question should have:
-  - 'question': A clear, specific question about a key concept or lesson
+- 'quiz_questions': Generate exactly {quiz_question_count} multiple choice questions based on the key actionable takeaways across all sections. Each question should have:
+  - 'question': A clear, specific question about a key takeaway or concept
   - 'options': An array of exactly 4 answer choices (A, B, C, D options)
   - 'correct_answer': The letter of the correct answer (A, B, C, or D)
   - 'explanation': A brief explanation of why this answer is correct
   - 'supporting_quote': A direct quote from the content that supports this question/answer
   - 'related_timestamp': The timestamp where this concept was discussed
 
-Focus on testing comprehension of the most valuable insights and practical concepts. Questions should be challenging but fair, with plausible wrong answers.
+- 'open_ended_questions': Generate 1-2 open-ended questions for deeper reflection:
+  - 'question': A thought-provoking question that requires synthesis of multiple concepts
+
+Focus on testing comprehension of the most valuable actionable takeaways and practical concepts. Questions should be clear and directly related to the takeaways provided.
 
 {{format_instructions}}""",
             ),
             (
                 "human",
-                """Based on the following section content, generate quiz questions that test understanding of the key concepts and lessons.
+                """Based on the following section content focused on actionable takeaways, generate quiz questions.
 
 --- SECTION CONTENT (JSON) ---
 {section_data}
@@ -253,20 +309,12 @@ Focus on testing comprehension of the most valuable insights and practical conce
                 "format_instructions": parser.get_format_instructions(),
             }, config=runnable_config)
             
-            print(f"[green]✓ Quiz generation complete. Generated {quiz_question_count} questions based on {total_duration:.1f} min content.[/green]")
+            print(f"[green]Legacy deep dive quiz generation complete. Generated {quiz_question_count} questions based on {total_duration:.1f} min content.[/green]")
             return synthesis_results
             
         except Exception as e:
-            print(f"[bold red]Error during quiz generation: {e}. Returning empty synthesis.[/bold red]")
+            print(f"[bold red]Error during legacy deep dive quiz generation: {e}. Returning empty synthesis.[/bold red]")
             return {}
-    
-    async def generate_argument_structure(
-        self,
-        section_analyses: List[SectionAnalysis], 
-        runnable_config: RunnableConfig
-    ) -> Dict[str, Any]:
-        """Not used for learning_accelerator persona."""
-        return {}
     
     def _calculate_total_duration(self, section_analyses: List[SectionAnalysis]) -> float:
         """Calculate total duration in minutes from section analyses."""
@@ -309,105 +357,3 @@ Focus on testing comprehension of the most valuable insights and practical conce
             return 2
         else:
             return 3
-    
-    async def _generate_intermediate_summary(
-        self, 
-        analysis_chunk: List[SectionAnalysis], 
-        runnable_config: RunnableConfig
-    ) -> Dict[str, Any]:
-        """Generate intermediate summary for a chunk of section analyses."""
-        print(f"  - [magenta]Generating intermediate summary for chunk of {len(analysis_chunk)} sections...[/magenta]")
-        
-        # Convert chunk to JSON
-        consolidated_chunk = json.dumps([
-            {
-                "title": analysis.title,
-                "summary": analysis.summary,
-                "quotes": analysis.quotes,
-                "additional_data": analysis.additional_data,
-            }
-            for analysis in analysis_chunk
-        ], indent=2)
-        
-        parser = JsonOutputParser()
-        
-        prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                """You are an expert analyst. You will be given a JSON object containing the analysis of a few consecutive sections from a larger document. 
-Your task is to synthesize these sections into a single, concise summary object.
-
-Based ONLY on the provided JSON context, you must extract the following:
-- 'main_thesis': A single sentence stating the central argument of THIS CHUNK.
-- 'supporting_arguments': A list of the key points used to build the case within THIS CHUNK.
-- 'counterarguments_mentioned': A list of opposing viewpoints mentioned within THIS CHUNK.
-
-Your output must be a single, valid JSON object.
-{format_instructions}""",
-            ),
-            (
-                "human",
-                """Please analyze the following consolidated analysis chunk and extract the required information.
-
---- ANALYSIS CHUNK (JSON) ---
-{chunk_context}
---- END ANALYSIS CHUNK ---""",
-            ),
-        ])
-        
-        chain = prompt | self.llm | parser
-        
-        try:
-            return await chain.ainvoke({
-                "chunk_context": consolidated_chunk,
-                "format_instructions": parser.get_format_instructions(),
-            }, config=runnable_config)
-        except Exception as e:
-            print(f"[bold red]Error generating intermediate summary: {e}[/bold red]")
-            return {}
-    
-    async def _generate_final_argument_structure(
-        self,
-        intermediate_summaries: List[Dict[str, Any]],
-        runnable_config: RunnableConfig
-    ) -> Dict[str, Any]:
-        """Generate final argument structure from intermediate summaries."""
-        consolidated_context = json.dumps(intermediate_summaries, indent=2)
-        
-        parser = JsonOutputParser()
-        
-        prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                """You are an expert in rhetoric and logical analysis. You have been given a structured JSON containing intermediate summaries of a document. Your task is to deconstruct the core argument of the original document based on this analysis. Identify the primary thesis, supporting points, and any counterarguments.
-
-Your output must be a JSON object with the following keys:
-- 'main_thesis': A single, clear sentence stating the central argument or primary message of the entire text.
-- 'supporting_arguments': A list of 3-5 strings, where each string is a key point or piece of evidence the author uses to build their case.
-- 'counterarguments_mentioned': A list of strings for any opposing viewpoints or counterarguments the author discusses in the text. If none are mentioned, return an empty list.
-{format_instructions}""",
-            ),
-            (
-                "human",
-                """Please analyze the following intermediate summaries and extract the original document's argument structure.
-
---- INTERMEDIATE SUMMARIES (JSON) ---
-{structured_analysis}
---- END SUMMARIES ---""",
-            ),
-        ])
-        
-        chain = prompt | self.llm | parser
-        
-        try:
-            result = await chain.ainvoke({
-                "structured_analysis": consolidated_context,
-                "format_instructions": parser.get_format_instructions(),
-            }, config=runnable_config)
-            
-            print("[green]✓ Argument structure analysis complete.[/green]")
-            return result
-            
-        except Exception as e:
-            print(f"[bold red]Error during argument structure generation: {e}[/bold red]")
-            return {}

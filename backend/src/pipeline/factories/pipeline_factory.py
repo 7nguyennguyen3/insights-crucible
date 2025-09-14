@@ -18,7 +18,7 @@ from ..services.analysis import (
     PersonaBasedAnalyzer,
     ConsultantSynthesizer,
     GeneralSynthesizer,
-    LearningAcceleratorSynthesizer,
+    DeepDiveSynthesizer,
 )
 from ..services.enrichment import (
     EntityEnricher,
@@ -117,8 +117,8 @@ class PipelineFactory:
         
         if persona == "consultant":
             return ConsultantSynthesizer(llm_client)
-        elif persona == "learning_accelerator":
-            return LearningAcceleratorSynthesizer(llm_client)
+        elif persona == "deep_dive":
+            return DeepDiveSynthesizer(llm_client)
         else:
             return GeneralSynthesizer(llm_client)
     

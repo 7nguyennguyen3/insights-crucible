@@ -48,9 +48,13 @@ pnpm lint         # Run ESLint
 
 ```bash
 cd backend
+# Activate virtual environment (use PowerShell on Windows)
+.\venv\Scripts\activate
 pip install -r requirements.txt -r requirements-api.txt    # Install dependencies
 python -m uvicorn src.main:app --reload --port 8000    # Start development server
 ```
+
+**Note**: On Windows, use PowerShell to activate the virtual environment. For Claude Code, run Python commands using: `powershell -Command "& { Set-Location 'backend'; & '.\venv\Scripts\python.exe' 'script.py' }"`
 
 ### Testing
 

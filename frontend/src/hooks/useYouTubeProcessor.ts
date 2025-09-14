@@ -30,6 +30,8 @@ interface UseYouTubeProcessorReturn {
     analysisPersona: AnalysisPersona,
     modelChoice: ModelChoice,
     activeTab: TabType,
+    youtubeUrl: string,
+    videoDetails: VideoDetails | null,
     router: any
   ) => Promise<void>;
 }
@@ -81,6 +83,8 @@ export const useYouTubeProcessor = ({
       analysisPersona: AnalysisPersona,
       modelChoice: ModelChoice,
       activeTab: TabType,
+      youtubeUrl: string,
+      videoDetails: VideoDetails | null,
       router: any
     ) => {
       setStatus("processing-batch");
@@ -92,6 +96,12 @@ export const useYouTubeProcessor = ({
           transcript_id: transcriptId,
           config: { analysis_persona: analysisPersona },
           model_choice: modelChoice,
+          source_type: "youtube",
+          youtube_url: youtubeUrl,
+          youtube_video_title: videoDetails?.title || null,
+          youtube_channel_name: videoDetails?.channelName || null,
+          youtube_duration: videoDetails?.duration || null,
+          youtube_thumbnail_url: videoDetails?.thumbnailUrl || null,
         });
 
         if (response.data.job_id) {

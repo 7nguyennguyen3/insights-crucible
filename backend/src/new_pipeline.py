@@ -42,6 +42,15 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
 
     request_data = job_doc.get("request_data", {})
 
+    # Get transcript from either request_data or root level (for paste jobs)
+    # For paste jobs, transcript is stored at root level due to filtering logic
+    transcript_value = request_data.get("transcript") or job_doc.get("transcript")
+
+    # Validation: ensure we have the required input for the job type
+    source_type = request_data.get("source_type")
+    if source_type == "paste" and not transcript_value:
+        raise ValueError(f"No transcript found for paste job {job_id}. Expected either in request_data or at root level.")
+
     # Create analysis request
     request = AnalysisRequest(
         user_id=user_id,
@@ -49,7 +58,7 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
         persona=persona,
         transcript_id=request_data.get("transcript_id"),
         storage_path=request_data.get("storagePath"),
-        raw_transcript=request_data.get("transcript"),
+        raw_transcript=transcript_value,
         config=request_data.get("config", {}),
         model_choice=request_data.get("model_choice", "universal"),
     )
