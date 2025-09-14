@@ -29,9 +29,8 @@ export const generateReportBlueprint = (data: JobData) => {
     persona: persona,
   });
 
-  // Part 5: Slide Deck Outline for Consultants
+  // Part 5: Slide Deck Outline
   if (
-    persona === "consultant" &&
     data.generated_slide_outline &&
     data.generated_slide_outline?.length > 0
   ) {

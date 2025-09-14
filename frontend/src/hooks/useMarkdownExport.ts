@@ -2,8 +2,6 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import {
   JobData,
-  GeneralAnalysisSection,
-  ConsultantAnalysisSection,
   Slide,
   Contradiction,
 } from "@/app/_global/interface";
@@ -81,67 +79,26 @@ const generateMarkdown = (data: JobData): string => {
             timeDisplay = ` (${s.start_time || "00:00"}-${s.end_time || "XX:XX"})`;
           }
 
-          if (part.persona === "consultant") {
-            const consultantSection = section as ConsultantAnalysisSection;
-            md += `### ${index + 1}. ${consultantSection.section_title}${timeDisplay}\n\n**Executive Summary:** ${
-              consultantSection.executive_summary
-            }\n\n`;
-            md += `**Client Pain Points:**\n`;
-            (consultantSection.client_pain_points ?? []).forEach(
-              (p) => (md += `- ${p}\n`)
+          // Deep dive analysis section
+          const deepDiveSection = section as any; // Using any since we're transitioning
+          md += `### ${index + 1}. ${deepDiveSection.generated_title}${timeDisplay}\n\n> ${
+            deepDiveSection["1_sentence_summary"]
+          }\n\n`;
+
+          if (deepDiveSection.actionable_takeaways?.length > 0) {
+            md += `**Actionable Takeaways:**\n`;
+            (deepDiveSection.actionable_takeaways ?? []).forEach(
+              (takeaway: any) => (md += `- **${takeaway.type}**: ${takeaway.takeaway}\n`)
             );
             md += `\n`;
-            // Add Critical Quotes for consultant persona
-            if (consultantSection.critical_quotes?.length > 0) {
-              md += `**Critical Quotes:**\n`;
-              (consultantSection.critical_quotes ?? []).forEach(
-                (quote) => (md += `> "${quote}"\n`)
-              );
-              md += `\n`;
-            }
-            // Add Strategic Opportunities for consultant persona
-            if (consultantSection.strategic_opportunities?.length > 0) {
-              md += `**Strategic Opportunities:**\n`;
-              (consultantSection.strategic_opportunities ?? []).forEach(
-                (opportunity) => (md += `- ${opportunity}\n`)
-              );
-              md += `\n`;
-            }
-          } else {
-            const generalSection = section as GeneralAnalysisSection;
-            md += `### ${index + 1}. ${generalSection.generated_title}${timeDisplay}\n\n> ${
-              generalSection["1_sentence_summary"]
-            }\n\n`;
-            md += `**Summary Points:**\n`;
-            (generalSection.summary_points ?? []).forEach(
-              (p) => (md += `- ${p}\n`)
+          }
+
+          if (deepDiveSection.entities?.length > 0) {
+            md += `**Key Concepts:**\n`;
+            (deepDiveSection.entities ?? []).forEach(
+              (entity: any) => (md += `- **${entity.name}**: ${entity.explanation}\n`)
             );
             md += `\n`;
-
-            if (generalSection.actionable_advice?.length > 0) {
-              md += `**Actionable Advice:**\n`;
-              (generalSection.actionable_advice ?? []).forEach(
-                (advice) => (md += `- ${advice}\n`)
-              );
-              md += `\n`;
-            }
-
-            if (generalSection.notable_quotes?.length > 0) {
-              md += `**Notable Quotes:**\n`;
-              (generalSection.notable_quotes ?? []).forEach(
-                (quote) => (md += `> "${quote}"\n`)
-              );
-              md += `\n`;
-            }
-
-            if (generalSection.questions_and_answers?.length > 0) {
-              md += `**Questions & Answers:**\n`;
-              (generalSection.questions_and_answers ?? []).forEach((qa) => {
-                md += `**Q:** ${qa.question}\n`;
-                md += `**A:** ${qa.answer}\n\n`;
-              });
-              md += `\n`;
-            }
           }
         });
         break;

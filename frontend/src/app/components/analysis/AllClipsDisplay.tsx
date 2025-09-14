@@ -22,15 +22,12 @@ export const AllClipsDisplay: React.FC<AllClipsDisplayProps> = ({
 }) => {
   // Aggregate all clips from all sections, adding context from the section title
   const allClips = results.flatMap((section) => {
-    // --- FIX: Determine the correct title based on the persona ---
-    const sectionTitle =
-      section.analysis_persona === "consultant"
-        ? section.section_title
-        : section.generated_title;
+    // Use generated_title for deep_dive persona
+    const sectionTitle = section.generated_title;
 
     // Map the clips for the current section - only if the section has suggested_clips
-    if ('suggested_clips' in section && section.suggested_clips) {
-      return section.suggested_clips.map((clip) => ({
+    if ('suggested_clips' in section && Array.isArray((section as any).suggested_clips)) {
+      return (section as any).suggested_clips.map((clip: any) => ({
         ...clip,
         sectionTitle, // Use the correctly determined title
       }));

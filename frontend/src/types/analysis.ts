@@ -76,33 +76,6 @@ export interface BaseAnalysisSection {
 }
 
 // Specific analysis section types
-export interface GeneralAnalysisSection extends BaseAnalysisSection {
-  id: string;
-  analysis_persona: "general";
-  generated_title: string;
-  "1_sentence_summary": string;
-  summary_points: string[];
-  actionable_advice: string[];
-  notable_quotes: string[];
-  questions_and_answers: { question: string; answer: string }[];
-  verifiable_claims?: string[];
-  suggested_clips?: Clip[];
-  entities: Entity[];
-}
-
-export interface ConsultantAnalysisSection extends BaseAnalysisSection {
-  id: string;
-  analysis_persona: "consultant";
-  section_title: string;
-  executive_summary: string;
-  client_pain_points: string[];
-  strategic_opportunities: string[];
-  key_stakeholders_mentioned: string[];
-  critical_quotes: string[];
-  open_questions: string[];
-  entities?: Entity[];
-  suggested_clips?: Clip[];
-}
 
 
 export interface ActionableTakeaway {
@@ -139,10 +112,7 @@ export interface DeepDiveSection extends BaseAnalysisSection {
 }
 
 // Discriminated union for all analysis section types
-export type AnalysisSection =
-  | GeneralAnalysisSection
-  | ConsultantAnalysisSection
-  | DeepDiveSection;
+export type AnalysisSection = DeepDiveSection;
 
 // Analysis persona type
-export type AnalysisPersona = "general" | "consultant" | "deep_dive";
+export type AnalysisPersona = "deep_dive";

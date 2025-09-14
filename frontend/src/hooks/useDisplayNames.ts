@@ -15,11 +15,7 @@ export const useDisplayNames = (
 
   const personaDisplayName = analysisPersona === "deep_dive"
     ? "Deep Dive"
-    : analysisPersona === "general"
-    ? "General Analysis"
-    : analysisPersona === "consultant"
-    ? "Consultant Analysis"
-    : "Deep Dive"; // fallback
+    : "Deep Dive"; // Only deep_dive supported now
 
   return {
     sourceDisplayName,

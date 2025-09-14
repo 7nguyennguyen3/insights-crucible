@@ -7,8 +7,6 @@ import apiClient from "@/lib/apiClient";
 import { Loader2 } from "lucide-react";
 import {
   JobData,
-  GeneralAnalysisSection,
-  ConsultantAnalysisSection,
 } from "@/app/_global/interface";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
 
@@ -20,8 +18,7 @@ import {
 import { AnalysisHeader } from "@/app/components/analysis/AnalysisHeader";
 import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
 import { SlideDeckDisplay } from "@/app/components/analysis/SlideDeckDisplay";
-import { ConsultantReportView } from "@/app/components/analysis/ConsultantReportView";
-import { GeneralReportView } from "@/app/components/analysis/GeneralReportView";
+import DeepDiveView from "@/app/components/analysis/DeepDiveView";
 import { ExecutiveSynthesisView } from "@/app/components/analysis/synthesis-display/ExecutiveSynthesisView";
 import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
 
@@ -61,7 +58,7 @@ const PublicSharePage = () => {
     );
   }
 
-  const persona = data.request_data?.config?.analysis_persona || "general";
+  const persona = data.request_data?.config?.analysis_persona || "deep_dive";
 
   return (
     <AnalysisPageLayout
@@ -96,77 +93,36 @@ const PublicSharePage = () => {
       }
     >
       <div id="analysis-report-content">
-        {/* --- Top-level card based on persona --- */}
-        {persona === "consultant" && data.synthesis_results && (
-          <div className="mb-12">
-            <ExecutiveSynthesisView
-              synthesis={data.synthesis_results}
-              isEditMode={false}
-              onSynthesisChange={emptyFunction}
-              onSynthesisListChange={emptyFunction}
-              onSynthesisContradictionChange={emptyFunction}
-              onSynthesisAddItem={emptyFunction}
-              onSynthesisDeleteItem={emptyFunction}
-            />
-          </div>
-        )}
-
-        {persona === "general" && data.argument_structure && (
-          <div className="mb-12">
-            <ArgumentStructureCard
-              structure={data.argument_structure}
-              isEditMode={false}
-              onFieldChange={emptyFunction}
-              onListChange={emptyFunction}
-              onAddItem={emptyFunction}
-              onDeleteItem={emptyFunction}
-            />
-          </div>
-        )}
-
         {/* --- Header for detailed results --- */}
         <div className="my-12">
           <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2">
-            Detailed Section Analysis
+            Analysis Sections
           </h2>
         </div>
 
-        {/* --- Detailed results based on persona --- */}
-        {persona === "consultant" ? (
-          <>
-            <ConsultantReportView
-              results={data.results as ConsultantAnalysisSection[]}
+        {/* --- Deep Dive Analysis --- */}
+        <DeepDiveView
+          results={data.results as any}
+          isEditMode={false}
+          onFieldChange={emptyFunction}
+          onTakeawayChange={emptyFunction}
+          onAddTakeaway={emptyFunction}
+          onDeleteTakeaway={emptyFunction}
+        />
+
+        {data.generated_slide_outline && (
+          <div className="mt-12">
+            <SlideDeckDisplay
+              slides={data.generated_slide_outline}
               isEditMode={false}
-              onFieldChange={emptyFunction}
-              onAddItem={emptyFunction}
-              onDeleteItem={emptyFunction}
-              onItemChange={emptyFunction}
+              onAddSlide={emptyFunction}
+              onDeleteSlide={emptyFunction}
+              onSlideTitleChange={emptyFunction}
+              onAddBullet={emptyFunction}
+              onDeleteBullet={emptyFunction}
+              onSlideChange={emptyFunction}
             />
-            {data.generated_slide_outline && (
-              <div className="mt-12">
-                <SlideDeckDisplay
-                  slides={data.generated_slide_outline}
-                  isEditMode={false}
-                  onAddSlide={emptyFunction}
-                  onDeleteSlide={emptyFunction}
-                  onSlideTitleChange={emptyFunction}
-                  onAddBullet={emptyFunction}
-                  onDeleteBullet={emptyFunction}
-                  onSlideChange={emptyFunction}
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <GeneralReportView
-            results={data.results as GeneralAnalysisSection[]}
-            isEditMode={false}
-            onFieldChange={emptyFunction}
-            onAddItem={emptyFunction}
-            onDeleteItem={emptyFunction}
-            onItemChange={emptyFunction}
-            onQaChange={emptyFunction}
-          />
+          </div>
         )}
       </div>
     </AnalysisPageLayout>

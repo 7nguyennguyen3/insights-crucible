@@ -28,7 +28,7 @@ const Logo = () => (
   </Text>
 );
 
-// --- ADD THIS HELPER FUNCTION ---
+// --- HELPER FUNCTION FOR DYNAMIC CREDITS ---
 const getInitialCredits = () => {
   const promoEndDateString = process.env.NEXT_PUBLIC_PROMO_END_DATE;
   const promoCredits = parseInt(
@@ -98,7 +98,7 @@ export const WelcomeEmail = ({
               </Section>
               <Text style={paragraph}>
                 After verifying, you can start transforming your content. You
-                have {/* --- USE THE DYNAMIC VALUE HERE --- */}
+                have{" "}
                 <strong>
                   {creditsToDisplay} complimentary analysis credits
                 </strong>{" "}
@@ -109,18 +109,17 @@ export const WelcomeEmail = ({
             // --- B. CONTENT FOR SOCIAL SIGN-UP ---
             <>
               <Text style={paragraph}>
-                Welcome aboard Insights Crucible! I'm Jimmy, the founder, and
+                Welcome aboard Insights Crucible! I'm Nguyen, the founder, and
                 I'm genuinely excited to have you join our journey.
               </Text>
               <Text style={paragraph}>
                 Your account is ready, and you're all set to start transforming
                 your content. You have{" "}
-                {/* --- USE THE DYNAMIC VALUE HERE --- */}
                 <strong>
                   {creditsToDisplay} complimentary analysis credits
                 </strong>{" "}
-                on your <strong>free plan</strong> to help you get acquainted
-                with the power of AI-driven insights.
+                to help you get started and experience the power of AI-driven
+                insights.
               </Text>
               <Section style={btnContainer}>
                 <Button
@@ -134,21 +133,59 @@ export const WelcomeEmail = ({
           )}
 
           <Text style={paragraph}>
-            As an early user, you're part of our foundational community. For the{" "}
-            <strong>first 100 users</strong>, we're offering an exclusive{" "}
-            <strong style={{ color: "#1d1d1f", fontWeight: "bold" }}>
-              Charter Member plan at just $15/month for life!
-            </strong>{" "}
-            This is a special opportunity to secure full access at our lowest
-            rate ever, and your feedback will be invaluable in shaping the
-            future of Insights Crucible. You can learn more and upgrade anytime
-            from your dashboard.
+            I started Insights Crucible because I realized that real learning
+            happens when we force our brains to actively process and reconstruct
+            information - not just consume it. I was drowning in saved articles,
+            videos, and notes that I never truly understood because I never took
+            the time to extract patterns, test my understanding, or explain
+            concepts in my own words. This tool isn't about generating insights
+            for you to passively read - it's about creating a dialogue with your
+            content, asking better questions, and using AI as a thinking partner
+            to challenge your understanding and help you see connections you
+            might have missed.
           </Text>
 
           <Text style={paragraph}>
-            If you have any questions or ideas as you explore, please don't
-            hesitate to reply directly to this email. I read every message and
-            look forward to connecting with you. You can also follow my
+            <strong>Quick tip to get started:</strong> Try analyzing content
+            you've recently consumed but haven't fully processed yet. The AI
+            will help you identify key patterns and connections you might have
+            missed. I built this tool to solve my own learning challenges, and I
+            hope it transforms yours too.
+          </Text>
+
+          <Text style={paragraph}>
+            Thank you for choosing Insights Crucible - it truly means the world
+            to me that you're giving this product a try. As an early user,
+            you're part of our foundational community, and I'd love to hear what
+            types of content you're analyzing and what insights you're
+            discovering. Your feedback will be invaluable in shaping the future
+            of this platform.
+          </Text>
+
+          <Text style={paragraph}>
+            When you need more analysis power, you can easily purchase
+            additional credits from your dashboard. But here's something
+            important: if you ever find yourself running out of credits and
+            aren't able to purchase more, please don't hesitate to reach out to
+            me at{" "}
+            <Link style={link} href="mailto:jimmy@insightscrucible.com">
+              jimmy@insightscrucible.com
+            </Link>{" "}
+            (or my personal email{" "}
+            <Link style={link} href="mailto:7nguyennguyen@gmail.com">
+              7nguyennguyen@gmail.com
+            </Link>{" "}
+            if you prefer). I'd be happy to set you up with additional credits -
+            no questions asked. I believe everyone should have access to
+            powerful AI tools for learning, regardless of their financial
+            situation.
+          </Text>
+
+          <Text style={paragraph}>
+            If you have any questions, ideas, or just want to share your
+            learning journey as you explore, please don't hesitate to reply
+            directly to this email. I read every message personally and look
+            forward to connecting with you. You can also follow my
             building-in-public journey on{" "}
             <Link
               style={link}
@@ -169,12 +206,21 @@ export const WelcomeEmail = ({
             </Link>
             .
           </Text>
+
+          <Text style={paragraph}>
+            Here's to transforming how we learn, together.
+          </Text>
+
           <Text style={paragraph}>
             Best,
             <br />
-            Jimmy
+            Jimmy (Nguyen)
+            <br />
+            Founder, Insights Crucible
           </Text>
+
           <Hr style={hr} />
+
           <Text style={footer}>
             You're receiving this because you signed up for an account at
             insightscrucible.com.
@@ -190,7 +236,7 @@ export const WelcomeEmail = ({
 
 export default WelcomeEmail;
 
-// --- Styles for the email (no changes needed here) ---
+// --- Styles for the email ---
 const main = {
   backgroundColor: "#ffffff",
   fontFamily:

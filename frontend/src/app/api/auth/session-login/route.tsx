@@ -46,11 +46,11 @@ export async function POST(request: NextRequest) {
 
       // Send the email using Resend
       await resend.emails.send({
-        from: "Jimmy from Insights Crucible <onboarding@insightscrucible.com>",
+        from: "Nguyen from Insights Crucible <onboarding@insightscrucible.com>",
         to: [email!],
         subject: "Welcome to Insights Crucible!",
         html: emailHtml,
-        replyTo: "jimmy@insightscrucible.com",
+        replyTo: "7nguyennguyen@gmail.com",
       });
 
       // Update the flag in Firestore so we don't send it again

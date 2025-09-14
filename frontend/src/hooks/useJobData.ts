@@ -9,7 +9,6 @@ import {
   ActionableTakeaway,
   AnalysisSection,
   Contradiction,
-  GeneralAnalysisSection,
   LessonConcept,
   NotableQuote,
   QuizQuestion,
@@ -279,9 +278,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId) as
-            | GeneralAnalysisSection
-            | undefined;
+          const section = draft.results.find((s) => s.id === sectionId) as any;
           if (section?.questions_and_answers) {
             section.questions_and_answers[index][field] = value;
           }
@@ -594,10 +591,11 @@ export const useJobData = (jobId: string) => {
           });
         } else if (section && 'lessons_and_concepts' in section) {
           // Handle legacy structure
-          if (!section.lessons_and_concepts) {
-            section.lessons_and_concepts = [];
+          const legacySection = section as any;
+          if (!legacySection.lessons_and_concepts) {
+            legacySection.lessons_and_concepts = [];
           }
-          (section.lessons_and_concepts as any).push({
+          legacySection.lessons_and_concepts.push({
             lesson: "New lesson or concept",
             supporting_quote: "Add supporting quote...",
             // timestamp: "00:00", // TODO: Fix type mismatch
@@ -615,9 +613,12 @@ export const useJobData = (jobId: string) => {
         const section = draft.results.find((s) => s.id === sectionId);
         if (section && 'actionable_takeaways' in section && section.actionable_takeaways) {
           section.actionable_takeaways.splice(index, 1);
-        } else if (section && 'lessons_and_concepts' in section && section.lessons_and_concepts) {
+        } else if (section && 'lessons_and_concepts' in section) {
           // Handle legacy structure
-          section.lessons_and_concepts.splice(index, 1);
+          const legacySection = section as any;
+          if (legacySection.lessons_and_concepts) {
+            legacySection.lessons_and_concepts.splice(index, 1);
+          }
         }
       })
     );
@@ -634,8 +635,11 @@ export const useJobData = (jobId: string) => {
         produce((draft) => {
           if (!draft) return;
           const section = draft.results.find((s) => s.id === sectionId);
-          if (section && 'notable_quotes' in section && section.notable_quotes) {
-            (section.notable_quotes[index] as any)[field] = value;
+          if (section && 'notable_quotes' in section) {
+            const legacySection = section as any;
+            if (legacySection.notable_quotes && legacySection.notable_quotes[index]) {
+              legacySection.notable_quotes[index][field] = value;
+            }
           }
         })
       );
@@ -652,16 +656,12 @@ export const useJobData = (jobId: string) => {
           if (!section.notable_quotes) {
             section.notable_quotes = [];
           }
-          if ((section as any).analysis_persona === "deep_dive") {
-            (section.notable_quotes as any).push({
-              quote: "Add notable quote...",
-              context: "Add context...",
-              // timestamp: "00:00", // TODO: Fix type mismatch
-            });
-          } else {
-            // For other personas that expect strings
-            section.notable_quotes.push("Add notable quote...");
-          }
+          // Deep dive sections that use NotableQuote objects
+          (section.notable_quotes as any).push({
+            quote: "Add notable quote...",
+            context: "Add context...",
+            timestamp: "00:00",
+          });
         }
       })
     );
@@ -672,8 +672,11 @@ export const useJobData = (jobId: string) => {
       produce((draft) => {
         if (!draft) return;
         const section = draft.results.find((s) => s.id === sectionId);
-        if (section && 'notable_quotes' in section && section.notable_quotes) {
-          section.notable_quotes.splice(index, 1);
+        if (section && 'notable_quotes' in section) {
+          const legacySection = section as any;
+          if (legacySection.notable_quotes) {
+            legacySection.notable_quotes.splice(index, 1);
+          }
         }
       })
     );

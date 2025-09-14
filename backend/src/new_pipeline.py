@@ -21,7 +21,7 @@ async def run_full_analysis(user_id: str, job_id: str, persona: str):
     Args:
         user_id: The ID of the user requesting analysis
         job_id: The unique job identifier
-        persona: The analysis persona ('general' or 'consultant')
+        persona: The analysis persona ('deep_dive')
     """
 
     # Create token tracker for cost tracking

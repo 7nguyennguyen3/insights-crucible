@@ -85,11 +85,11 @@ export async function POST(request: NextRequest) {
       );
 
       await resend.emails.send({
-        from: "Jimmy from Insights Crucible <onboarding@insightscrucible.com>",
+        from: "Nguyen from Insights Crucible <onboarding@insightscrucible.com>",
         to: [email],
         subject: "Welcome to Insights Crucible!",
         html: emailHtml,
-        replyTo: "jimmy@insightscrucible.com",
+        replyTo: "7nguyennguyen@gmail.com",
       });
       console.log(`Welcome email successfully queued for ${email}`);
     } catch (emailSendError) {

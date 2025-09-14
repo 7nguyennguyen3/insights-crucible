@@ -4,8 +4,6 @@ import jsPDF from "jspdf";
 import { toast } from "sonner";
 import {
   JobData,
-  GeneralAnalysisSection,
-  ConsultantAnalysisSection,
   Slide,
   Contradiction,
 } from "@/app/_global/interface";
@@ -188,92 +186,35 @@ const generatePdfDocument = (data: JobData) => {
             timeDisplay = ` (${s.start_time || "00:00"}-${s.end_time || "XX:XX"})`;
           }
 
-          if (part.persona === "consultant") {
-            const consultantSection = s as ConsultantAnalysisSection; // Use 's' directly
-            addText(
-              `${index + 1}. ${consultantSection.section_title}${timeDisplay}`,
-              {
-                size: 12,
-                isBold: true,
-                spaceAfter: 8,
-              }
-            );
-            addText("Executive Summary", { isBold: true });
-            addText(consultantSection.executive_summary || "N/A", {
+          // Deep dive analysis section
+          const deepDiveSection = s as any; // Using any since we're transitioning
+          addText(
+            `${index + 1}. ${deepDiveSection.generated_title}${timeDisplay}`,
+            {
+              size: 12,
+              isBold: true,
               spaceAfter: 8,
-            });
-            addText("Client Pain Points", { isBold: true, spaceAfter: 6 });
-            (consultantSection.client_pain_points ?? []).forEach((p) =>
-              addText(p, { isListItem: true })
+            }
+          );
+          addText("Summary", { isBold: true });
+          addText(deepDiveSection["1_sentence_summary"] || "N/A", {
+            spaceAfter: 8,
+          });
+
+          if (deepDiveSection.actionable_takeaways?.length > 0) {
+            addText("Actionable Takeaways", { isBold: true, spaceAfter: 6 });
+            (deepDiveSection.actionable_takeaways ?? []).forEach((takeaway: any) =>
+              addText(`${takeaway.type}: ${takeaway.takeaway}`, { isListItem: true })
             );
-            y += 5; // Add space after this list
+            y += 5; // Add space after this section
+          }
 
-            // Add Critical Quotes for consultant persona
-            if (consultantSection.critical_quotes?.length > 0) {
-              addText("Critical Quotes", { isBold: true, spaceAfter: 6 });
-              (consultantSection.critical_quotes ?? []).forEach((quote) =>
-                addText(`"${quote}"`, { isListItem: true })
-              );
-              y += 5; // Add space after this section
-            }
-
-            // Add Strategic Opportunities for consultant persona
-            if (consultantSection.strategic_opportunities?.length > 0) {
-              addText("Strategic Opportunities", {
-                isBold: true,
-                spaceAfter: 6,
-              });
-              (consultantSection.strategic_opportunities ?? []).forEach(
-                (opportunity) => addText(opportunity, { isListItem: true })
-              );
-              y += 5; // Add space after this section
-            }
-          } else {
-            const generalSection = s as GeneralAnalysisSection; // Use 's' directly
-            addText(
-              `${index + 1}. ${generalSection.generated_title}${timeDisplay}`,
-              {
-                size: 12,
-                isBold: true,
-                spaceAfter: 8,
-              }
+          if (deepDiveSection.entities?.length > 0) {
+            addText("Key Concepts", { isBold: true, spaceAfter: 6 });
+            (deepDiveSection.entities ?? []).forEach((entity: any) =>
+              addText(`${entity.name}: ${entity.explanation}`, { isListItem: true })
             );
-            addText("Summary", { isBold: true });
-            addText(generalSection["1_sentence_summary"] || "N/A", {
-              spaceAfter: 8,
-            });
-            addText("Summary Points", { isBold: true, spaceAfter: 6 });
-            (generalSection.summary_points ?? []).forEach((p) =>
-              addText(p, { isListItem: true })
-            );
-            y += 5; // Add space after this list
-
-            // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
-            if (generalSection.actionable_advice?.length > 0) {
-              addText("Actionable Advice", { isBold: true, spaceAfter: 6 });
-              (generalSection.actionable_advice ?? []).forEach((advice) =>
-                addText(advice, { isListItem: true })
-              );
-              y += 5; // Add space after this section
-            }
-
-            if (generalSection.notable_quotes?.length > 0) {
-              addText("Notable Quotes", { isBold: true, spaceAfter: 6 });
-              (generalSection.notable_quotes ?? []).forEach((quote) =>
-                addText(`"${quote}"`, { isListItem: true })
-              );
-              y += 5; // Add space after this section
-            }
-
-            if (generalSection.questions_and_answers?.length > 0) {
-              addText("Questions & Answers", { isBold: true, spaceAfter: 6 });
-              (generalSection.questions_and_answers ?? []).forEach((qa) => {
-                addText(`Q: ${qa.question}`, { isBold: true });
-                addText(`A: ${qa.answer}`, { spaceAfter: 6 });
-              });
-              y += 5; // Add space after this section
-            }
-            // --- END REPLACEMENT / ADDITION ---
+            y += 5; // Add space after this section
           }
           y += 10; // Extra space after each detailed section
         });

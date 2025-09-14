@@ -10,8 +10,6 @@ import {
 import { saveAs } from "file-saver";
 import {
   JobData,
-  GeneralAnalysisSection,
-  ConsultantAnalysisSection,
   Slide,
   Contradiction,
 } from "@/app/_global/interface";
@@ -226,142 +224,51 @@ export const useDocxExport = (jobData: JobData | null) => {
                 ? ` (${s.start_time || "00:00"}-${s.end_time || "XX:XX"})`
                 : "";
 
-            if (part.persona === "consultant") {
-              const consultantSection = s as ConsultantAnalysisSection;
+            // Deep dive analysis section
+            const deepDiveSection = s as any; // Using any since we're transitioning
+            docChildren.push(
+              new Paragraph({
+                text: `${index + 1}. ${deepDiveSection.generated_title}${timeDisplay}`,
+                heading: HeadingLevel.HEADING_3,
+              }),
+              new Paragraph({
+                text: "Summary",
+                heading: HeadingLevel.HEADING_4,
+              }),
+              new Paragraph({
+                text: deepDiveSection["1_sentence_summary"] || "N/A",
+              }),
+              new Paragraph({ text: "" })
+            );
+
+            // Add Actionable Takeaways
+            if (deepDiveSection.actionable_takeaways?.length > 0) {
               docChildren.push(
                 new Paragraph({
-                  text: `${index + 1}. ${consultantSection.section_title}${timeDisplay}`, // Add time here
-                  heading: HeadingLevel.HEADING_3,
-                }),
-                new Paragraph({
-                  text: "Executive Summary",
+                  text: "Actionable Takeaways",
                   heading: HeadingLevel.HEADING_4,
                 }),
-                new Paragraph({
-                  text: consultantSection.executive_summary || "N/A",
-                }),
-                new Paragraph({
-                  text: "Client Pain Points",
-                  heading: HeadingLevel.HEADING_4,
-                }),
-                ...(consultantSection.client_pain_points || []).map(
-                  (p) => new Paragraph({ text: p, bullet: { level: 0 } })
-                ),
-                new Paragraph({ text: "" }) // Add a space after this block
-              );
-
-              // Add Critical Quotes for consultant persona
-              if (consultantSection.critical_quotes?.length > 0) {
-                docChildren.push(
-                  new Paragraph({
-                    text: "Critical Quotes",
-                    heading: HeadingLevel.HEADING_4,
-                  }),
-                  ...(consultantSection.critical_quotes || []).map(
-                    (quote) =>
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `"${quote}"`, italics: true }),
-                        ],
-                        bullet: { level: 0 },
-                      })
-                  ),
-                  new Paragraph({ text: "" }) // Add space after this section
-                );
-              }
-
-              // Add Strategic Opportunities for consultant persona
-              if (consultantSection.strategic_opportunities?.length > 0) {
-                docChildren.push(
-                  new Paragraph({
-                    text: "Strategic Opportunities",
-                    heading: HeadingLevel.HEADING_4,
-                  }),
-                  ...(consultantSection.strategic_opportunities || []).map(
-                    (opportunity) =>
-                      new Paragraph({ text: opportunity, bullet: { level: 0 } })
-                  ),
-                  new Paragraph({ text: "" }) // Add space after this section
-                );
-              }
-            } else {
-              const generalSection = s as GeneralAnalysisSection;
-              docChildren.push(
-                new Paragraph({
-                  text: `${index + 1}. ${generalSection.generated_title}${timeDisplay}`, // Add time here
-                  heading: HeadingLevel.HEADING_3,
-                }),
-                new Paragraph({
-                  text: "Summary",
-                  heading: HeadingLevel.HEADING_4,
-                }),
-                new Paragraph({
-                  text: generalSection["1_sentence_summary"] || "N/A",
-                }),
-                new Paragraph({
-                  text: "Summary Points",
-                  heading: HeadingLevel.HEADING_4,
-                }),
-                ...(generalSection.summary_points || []).map(
-                  (p) => new Paragraph({ text: p, bullet: { level: 0 } })
+                ...(deepDiveSection.actionable_takeaways || []).map(
+                  (takeaway: any) =>
+                    new Paragraph({ text: `${takeaway.type}: ${takeaway.takeaway}`, bullet: { level: 0 } })
                 ),
                 new Paragraph({ text: "" })
               );
+            }
 
-              // --- START REPLACEMENT / ADDITION FOR GENERAL ANALYSIS ---
-              if (generalSection.actionable_advice?.length > 0) {
-                docChildren.push(
-                  new Paragraph({
-                    text: "Actionable Advice",
-                    heading: HeadingLevel.HEADING_4,
-                  }),
-                  ...(generalSection.actionable_advice || []).map(
-                    (advice) =>
-                      new Paragraph({ text: advice, bullet: { level: 0 } })
-                  ),
-                  new Paragraph({ text: "" }) // Add space after this section
-                );
-              }
-
-              if (generalSection.notable_quotes?.length > 0) {
-                docChildren.push(
-                  new Paragraph({
-                    text: "Notable Quotes",
-                    heading: HeadingLevel.HEADING_4,
-                  }),
-                  ...(generalSection.notable_quotes || []).map(
-                    (quote) =>
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `"${quote}"`, italics: true }),
-                        ],
-                        bullet: { level: 0 },
-                      })
-                  ),
-                  new Paragraph({ text: "" }) // Add space after this section
-                );
-              }
-
-              if (generalSection.questions_and_answers?.length > 0) {
-                docChildren.push(
-                  new Paragraph({
-                    text: "Questions & Answers",
-                    heading: HeadingLevel.HEADING_4,
-                  })
-                );
-                (generalSection.questions_and_answers || []).forEach((qa) => {
-                  docChildren.push(
-                    new Paragraph({
-                      children: [
-                        new TextRun({ text: `Q: ${qa.question}`, bold: true }),
-                      ],
-                    }),
-                    new Paragraph({ text: `A: ${qa.answer}` })
-                  );
-                });
-                docChildren.push(new Paragraph({ text: "" })); // Add space after this section
-              }
-              // --- END REPLACEMENT / ADDITION ---
+            // Add Entities if available
+            if (deepDiveSection.entities?.length > 0) {
+              docChildren.push(
+                new Paragraph({
+                  text: "Key Concepts",
+                  heading: HeadingLevel.HEADING_4,
+                }),
+                ...(deepDiveSection.entities || []).map(
+                  (entity: any) =>
+                    new Paragraph({ text: `${entity.name}: ${entity.explanation}`, bullet: { level: 0 } })
+                ),
+                new Paragraph({ text: "" })
+              );
             }
           });
           // The problematic logic to remove the last separator is no longer needed

@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/store/authStore";
 import { useParams } from "next/navigation";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // UI Components
 import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
@@ -19,21 +19,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, Copy, Loader2, ChevronUp } from "lucide-react";
+import { Check, ChevronUp, Copy, Loader2 } from "lucide-react";
 
 // Interfaces
-import {
-  // LearningAcceleratorSection, // TODO: Fix missing type
-  DeepDiveSection,
-} from "@/app/_global/interface";
+import { DeepDiveSection } from "@/app/_global/interface";
 
 // Custom Hooks
-import { LearningAcceleratorView } from "@/app/components/analysis/LearningAcceleratorView";
 import DeepDiveView from "@/app/components/analysis/DeepDiveView";
 import { UnifiedQuizDisplay } from "@/components/analysis/UnifiedQuizDisplay";
 import { useDocxExport } from "@/hooks/useDocxExport";
 import { useJobData } from "@/hooks/useJobData";
-import { OpenEndedResults } from "@/types/job";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
 import { useShareDialog } from "@/hooks/useShareDialog";
 import { useSimplePdfExport } from "@/hooks/useSimplePdfExport";
@@ -58,35 +53,7 @@ const ResultsPage = () => {
     handleSave,
     handleCancel,
     handleTitleChange,
-    handleSynthesisChange,
-    handleSynthesisListChange,
-    handleSynthesisContradictionChange,
-    handleSynthesisAddItem,
-    handleSynthesisDeleteItem,
     handleFieldChange,
-    handleAddItem,
-    handleDeleteItem,
-    handleItemChange,
-    handleQaChange,
-    handleAddSlide,
-    handleDeleteSlide,
-    handleSlideTitleChange,
-    handleAddBullet,
-    handleDeleteBullet,
-    handleSlideChange,
-    handleArgumentStructureFieldChange,
-    handleArgumentStructureListChange,
-    handleArgumentStructureAddItem,
-    handleArgumentStructureDeleteItem,
-    handleAddEntity,
-    handleDeleteEntity,
-    handleEntityChange,
-    handleLessonChange,
-    handleAddLesson,
-    handleDeleteLesson,
-    handleQuoteChange,
-    handleAddQuote,
-    handleDeleteQuote,
     handleQuizQuestionChange,
     handleAddQuizQuestion,
     handleDeleteQuizQuestion,
@@ -123,7 +90,8 @@ const ResultsPage = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
       setShowScrollToTop(scrollTop > 300);
     };
 
@@ -136,9 +104,9 @@ const ResultsPage = () => {
       timeoutId = setTimeout(handleScroll, 100);
     };
 
-    window.addEventListener('scroll', throttledHandleScroll);
+    window.addEventListener("scroll", throttledHandleScroll);
     return () => {
-      window.removeEventListener('scroll', throttledHandleScroll);
+      window.removeEventListener("scroll", throttledHandleScroll);
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
@@ -148,7 +116,7 @@ const ResultsPage = () => {
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   };
 
@@ -200,40 +168,54 @@ const ResultsPage = () => {
       >
         <div id="analysis-report-content">
           {/* Learning Assessment - Quiz Questions */}
-          {(jobData.generated_quiz_questions &&
-            (jobData.generated_quiz_questions.questions?.length > 0 || (jobData.generated_quiz_questions.open_ended_questions?.length || 0) > 0)) && (
-            <div className="mb-12">
-              {/* Learning Philosophy Note */}
-              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
-                  The difficulty is where the learning happens. These questions help your brain actively process and connect information.
-                </p>
-                <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
-                  "Difficulties in learning are desirable when they trigger processes that support learning and remembering." — Robert Bjork
-                </blockquote>
+          {jobData.generated_quiz_questions &&
+            (jobData.generated_quiz_questions.questions?.length > 0 ||
+              (jobData.generated_quiz_questions.open_ended_questions?.length ||
+                0) > 0) && (
+              <div className="mb-12">
+                {/* Learning Philosophy Note */}
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
+                    The difficulty is where the learning happens. These
+                    questions help your brain actively process and connect
+                    information.
+                  </p>
+                  <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
+                    "Difficulties in learning are desirable when they trigger
+                    processes that support learning and remembering." — Robert
+                    Bjork
+                  </blockquote>
+                </div>
+
+                <UnifiedQuizDisplay
+                  multipleChoiceQuestions={
+                    jobData.generated_quiz_questions.questions || []
+                  }
+                  openEndedQuestions={
+                    jobData.generated_quiz_questions.open_ended_questions || []
+                  }
+                  mcqEstimatedTimeMinutes={
+                    jobData.generated_quiz_questions.quiz_metadata
+                      ?.estimated_time_minutes
+                  }
+                  oeEstimatedTimeMinutes={
+                    jobData.generated_quiz_questions.quiz_metadata
+                      ?.total_open_ended_questions
+                      ? jobData.generated_quiz_questions.quiz_metadata
+                          .total_open_ended_questions * 5
+                      : undefined
+                  }
+                  isEditMode={isEditMode}
+                  onMcqQuestionChange={handleQuizQuestionChange}
+                  onMcqAddQuestion={handleAddQuizQuestion}
+                  onMcqDeleteQuestion={handleDeleteQuizQuestion}
+                  userId={user?.uid || ""}
+                  jobId={jobId}
+                  existingQuizResults={jobData.quiz_results || null}
+                  existingOpenEndedResults={jobData.open_ended_results || null}
+                />
               </div>
-
-              <UnifiedQuizDisplay
-                multipleChoiceQuestions={jobData.generated_quiz_questions.questions || []}
-                openEndedQuestions={jobData.generated_quiz_questions.open_ended_questions || []}
-                mcqEstimatedTimeMinutes={jobData.generated_quiz_questions.quiz_metadata?.estimated_time_minutes}
-                oeEstimatedTimeMinutes={
-                  jobData.generated_quiz_questions.quiz_metadata?.total_open_ended_questions 
-                    ? jobData.generated_quiz_questions.quiz_metadata.total_open_ended_questions * 5 
-                    : undefined
-                }
-                isEditMode={isEditMode}
-                onMcqQuestionChange={handleQuizQuestionChange}
-                onMcqAddQuestion={handleAddQuizQuestion}
-                onMcqDeleteQuestion={handleDeleteQuizQuestion}
-                userId={user?.uid || ""}
-                jobId={jobId}
-                existingQuizResults={jobData.quiz_results || null}
-                existingOpenEndedResults={jobData.open_ended_results || null}
-              />
-            </div>
-          )}
-
+            )}
 
           {/* Analysis Sections */}
           <div className="my-12">
@@ -241,12 +223,14 @@ const ResultsPage = () => {
               className="text-2xl font-bold text-slate-700 
             dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
             >
-              {jobData?.request_data?.config?.analysis_persona === "deep_dive" ? "Analysis Sections" : "Learning Sections"}
+              {jobData?.request_data?.config?.analysis_persona === "deep_dive"
+                ? "Analysis Sections"
+                : "Learning Sections"}
             </h2>
           </div>
 
           {/* Conditional View based on Persona */}
-          {jobData?.request_data?.config?.analysis_persona === "deep_dive" ? (
+          {jobData?.request_data?.config?.analysis_persona === "deep_dive" && (
             <DeepDiveView
               results={jobData.results as DeepDiveSection[]}
               isEditMode={isEditMode}
@@ -254,24 +238,6 @@ const ResultsPage = () => {
               onTakeawayChange={handleTakeawayChange as any}
               onAddTakeaway={handleAddTakeaway}
               onDeleteTakeaway={handleDeleteTakeaway}
-            />
-          ) : (
-            <LearningAcceleratorView
-              results={jobData.results as any[]}
-              isEditMode={isEditMode}
-              onFieldChange={handleFieldChange as any}
-              onAddItem={handleAddItem as any}
-              onDeleteItem={handleDeleteItem as any}
-              onItemChange={handleItemChange as any}
-              onAddEntity={handleAddEntity}
-              onDeleteEntity={handleDeleteEntity}
-              onEntityChange={handleEntityChange}
-              onLessonChange={handleLessonChange}
-              onAddLesson={handleAddLesson}
-              onDeleteLesson={handleDeleteLesson}
-              onQuoteChange={handleQuoteChange}
-              onAddQuote={handleAddQuote}
-              onDeleteQuote={handleDeleteQuote}
             />
           )}
         </div>

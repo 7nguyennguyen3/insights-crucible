@@ -40,7 +40,7 @@ export interface JobData {
   argument_structure?: ArgumentStructure;
   request_data: {
     config: {
-      analysis_persona: "general" | "consultant" | "deep_dive";
+      analysis_persona: "deep_dive";
     };
   };
   generated_slide_outline?: Slide[];

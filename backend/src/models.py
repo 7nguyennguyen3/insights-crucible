@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 
 
 class FeatureConfig(BaseModel):
-    analysis_persona: str = "general"
+    analysis_persona: str = "deep_dive"
 
 
 class AnalysisRequest(BaseModel):
@@ -23,7 +23,7 @@ class AnalysisRequest(BaseModel):
     duration_seconds: Optional[float] = None  # For audio estimates
     storagePath: Optional[str] = None  # For audio processing
     transcript_id: Optional[str] = None
-    
+
     # Source metadata fields
     source_type: Optional[str] = None  # "youtube", "upload", "paste"
     youtube_url: Optional[str] = None
@@ -129,7 +129,7 @@ class BulkAnalysisItem(BaseModel):
     client_provided_id: Optional[str] = Field(
         None, description="A client-side identifier for tracking."
     )
-    
+
     # Source metadata fields for bulk items
     source_type: Optional[str] = None  # "youtube", "upload", "paste"
     youtube_url: Optional[str] = None
@@ -168,10 +168,12 @@ class BulkAnalysisRequest(BaseModel):
     # The config and model_choice apply to all items in the batch.
     config: FeatureConfig = Field(default_factory=FeatureConfig)
     model_choice: str = "universal"
-    
+
     # Source metadata fields for bulk requests
     source_type: Optional[str] = None  # "youtube", "upload", "paste"
-    file_metadata: Optional[List[Dict[str, Any]]] = None  # For file uploads with names and durations
+    file_metadata: Optional[List[Dict[str, Any]]] = (
+        None  # For file uploads with names and durations
+    )
 
     @field_validator("model_choice")
     @classmethod
@@ -220,8 +222,10 @@ class TranscriptDetailResponse(BaseModel):
 
 # --- NEW: Enhanced Quiz Models for Multi-Quiz Support ---
 
+
 class QuizQuestion(BaseModel):
     """Individual quiz question with metadata."""
+
     question_id: str
     question: str
     options: List[str]  # 4 answer choices
@@ -237,6 +241,7 @@ class QuizQuestion(BaseModel):
 
 class QuizMetadata(BaseModel):
     """Metadata for a single quiz."""
+
     quiz_number: int
     section_range: str
     total_questions: int
@@ -248,27 +253,36 @@ class QuizMetadata(BaseModel):
 
 # --- Open-Ended Quiz Models ---
 
+
 class OpenEndedQuestion(BaseModel):
     """Open-ended question for deeper learning assessment."""
+
     question: str
 
 
 class SingleQuiz(BaseModel):
     """Individual quiz with its questions and metadata."""
+
     quiz_questions: List[QuizQuestion]
     quiz_metadata: QuizMetadata
 
 
 class MultiQuizResponse(BaseModel):
     """Response model for multiple quiz generation."""
-    quiz_questions: List[QuizQuestion]  # All questions combined (backward compatibility)
-    open_ended_questions: List[OpenEndedQuestion] = []  # Open-ended questions for deeper learning
+
+    quiz_questions: List[
+        QuizQuestion
+    ]  # All questions combined (backward compatibility)
+    open_ended_questions: List[OpenEndedQuestion] = (
+        []
+    )  # Open-ended questions for deeper learning
     quizzes: List[SingleQuiz]  # New multi-quiz structure
     quiz_metadata: Dict[str, Any]  # Overall metadata for all quizzes
 
 
 class LegacyQuizResponse(BaseModel):
     """Legacy quiz response format for backward compatibility."""
+
     quiz_metadata: Dict[str, Any]
     questions: List[Dict[str, Any]]
     quiz_type: str = "knowledge_testing"
@@ -276,6 +290,7 @@ class LegacyQuizResponse(BaseModel):
 
 class OpenEndedSubmission(BaseModel):
     """User submission for open-ended question (now stored in job subcollection)."""
+
     user_id: str
     job_id: str
     question_id: str
@@ -285,6 +300,7 @@ class OpenEndedSubmission(BaseModel):
 
 class GradingJob(BaseModel):
     """DEPRECATED: Legacy grading job model for backward compatibility."""
+
     user_id: str
     submission_id: str
     status: str  # PENDING, PROCESSING, COMPLETED, FAILED
@@ -294,6 +310,7 @@ class GradingJob(BaseModel):
 
 class GradingResult(BaseModel):
     """Result of AI grading for open-ended response."""
+
     score: float  # 0.0 to 1.0
     feedback: str
     strengths: List[str]
