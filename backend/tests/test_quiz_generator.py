@@ -265,7 +265,13 @@ class TestSectionAwareQuizGenerator(unittest.TestCase):
             }
         ]
         
-        response = self.quiz_generator._create_multi_quiz_response(generated_quizzes, sections)
+        # Mock open-ended questions for the test
+        open_ended_questions = [
+            {"question": "How would you explain this concept in simple terms?"},
+            {"question": "How would you apply this in real life?"}
+        ]
+
+        response = self.quiz_generator._create_multi_quiz_response(generated_quizzes, open_ended_questions, sections)
         
         # Check structure
         self.assertIn("quiz_questions", response)
@@ -279,16 +285,22 @@ class TestSectionAwareQuizGenerator(unittest.TestCase):
         metadata = response["quiz_metadata"]
         self.assertEqual(metadata["total_quizzes"], 2)
         self.assertEqual(metadata["total_questions"], 3)
+        self.assertEqual(metadata["total_open_ended_questions"], 2)
         self.assertEqual(metadata["total_sections"], 2)
         self.assertEqual(metadata["generation_approach"], "section_aware_multi_quiz")
+
+        # Check open-ended questions are included
+        self.assertIn("open_ended_questions", response)
+        self.assertEqual(len(response["open_ended_questions"]), 2)
     
+    @patch('pipeline.services.analysis.quiz_generator.SectionAwareQuizGenerator._generate_all_open_ended_questions')
     @patch('pipeline.services.analysis.quiz_generator.SectionAwareQuizGenerator._generate_quiz_for_group')
-    def test_generate_quizzes_success(self, mock_generate_quiz):
+    def test_generate_quizzes_success(self, mock_generate_quiz, mock_generate_open_ended):
         """Test successful quiz generation flow."""
         async def run_test():
             # Setup
             sections = [create_mock_section(0), create_mock_section(1)]
-            
+
             # Mock successful quiz generation
             mock_generate_quiz.return_value = {
                 "quiz_questions": [
@@ -296,14 +308,24 @@ class TestSectionAwareQuizGenerator(unittest.TestCase):
                 ],
                 "quiz_metadata": {"quiz_number": 1, "total_questions": 1}
             }
-            
+
+            # Mock successful open-ended question generation
+            mock_generate_open_ended.return_value = [
+                {"question": "How would you explain this concept in simple terms?"},
+                {"question": "How would you apply this in real life?"},
+                {"question": "What personal experiences relate to this?"}
+            ]
+
             result = await self.quiz_generator.generate_quizzes(sections, self.runnable_config)
-            
+
             # Verify success
             self.assertNotIn("error", result)
             self.assertIn("quiz_questions", result)
+            self.assertIn("open_ended_questions", result)
+            self.assertEqual(len(result["open_ended_questions"]), 3)
             mock_generate_quiz.assert_called()
-        
+            mock_generate_open_ended.assert_called_once()
+
         asyncio.run(run_test())
     
     @patch('pipeline.services.analysis.quiz_generator.SectionAwareQuizGenerator._generate_quiz_for_group')
@@ -339,6 +361,61 @@ class TestSectionAwareQuizGenerator(unittest.TestCase):
         
         self.assertEqual(empty_group.total_duration_minutes, 0.0)
         self.assertEqual(empty_group.section_range, "Sections 1-0")  # Edge case handling
+
+    def test_calculate_open_ended_count_duration_based(self):
+        """Test that open-ended question count scales with duration."""
+        # Test short content (≤20 min) -> 3 questions
+        short_sections = [
+            create_mock_section(0, start_time="00:00", end_time="10:00", lessons_count=2),
+            create_mock_section(1, start_time="10:00", end_time="15:00", lessons_count=1)
+        ]
+        count = self.quiz_generator._calculate_open_ended_count(15.0, short_sections)
+        self.assertEqual(count, 3)
+
+        # Test medium content (20-60 min) -> 5 questions
+        medium_sections = [
+            create_mock_section(0, start_time="00:00", end_time="30:00", lessons_count=5),
+            create_mock_section(1, start_time="30:00", end_time="45:00", lessons_count=3)
+        ]
+        count = self.quiz_generator._calculate_open_ended_count(45.0, medium_sections)
+        self.assertEqual(count, 5)
+
+        # Test long content (1-2 hours) -> 6 questions
+        long_sections = [create_mock_section(0, start_time="00:00", end_time="1:30:00", lessons_count=8)]
+        count = self.quiz_generator._calculate_open_ended_count(90.0, long_sections)
+        self.assertEqual(count, 6)
+
+        # Test very long content (>2 hours) -> 7 questions
+        very_long_sections = [create_mock_section(0, start_time="00:00", end_time="3:00:00", lessons_count=10)]
+        count = self.quiz_generator._calculate_open_ended_count(180.0, very_long_sections)
+        self.assertEqual(count, 7)
+
+        # Test concept-rich content (adds +1, max 8)
+        concept_rich_sections = [
+            create_mock_section(0, start_time="00:00", end_time="2:00:00", lessons_count=16)  # >15 concepts
+        ]
+        count = self.quiz_generator._calculate_open_ended_count(120.0, concept_rich_sections)
+        self.assertEqual(count, 7)  # 6 (base) + 1 (concept-rich) = 7
+
+    def test_prepare_all_section_data_for_llm(self):
+        """Test preparation of all section data for LLM processing."""
+        sections = [
+            create_mock_section(0, lessons_count=2),
+            create_mock_section(1, lessons_count=3)
+        ]
+
+        section_data_str = self.quiz_generator._prepare_all_section_data_for_llm(sections)
+        section_data = json.loads(section_data_str)
+
+        # Verify structure
+        self.assertEqual(len(section_data), 2)
+
+        # Check section structure
+        first_section = section_data[0]
+        self.assertEqual(first_section["section_number"], 1)
+        self.assertIn("time_range", first_section)
+        self.assertIn("key_concepts", first_section)
+        self.assertEqual(len(first_section["key_concepts"]), 2)
     
     async def async_llm_mock_success(self, *args, **kwargs):
         """Mock successful LLM response."""

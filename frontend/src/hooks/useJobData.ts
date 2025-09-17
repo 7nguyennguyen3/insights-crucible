@@ -11,6 +11,7 @@ import {
   Contradiction,
   LessonConcept,
   NotableQuote,
+  OpenEndedQuestion,
   QuizQuestion,
   Slide,
   SynthesisResults,
@@ -741,6 +742,82 @@ export const useJobData = (jobId: string) => {
     );
   }, []);
 
+  // --- Open-Ended Question Handlers ---
+  const handleOpenEndedQuestionChange = useCallback(
+    (
+      index: number,
+      field: string,
+      value: string | string[]
+    ) => {
+      setDraftData(
+        produce((draft) => {
+          if (!draft) return;
+          if (draft.generated_quiz_questions?.open_ended_questions) {
+            const question = draft.generated_quiz_questions.open_ended_questions[index];
+            if (field.startsWith('metadata.')) {
+              const metadataField = field.replace('metadata.', '');
+              if (!question.metadata) {
+                question.metadata = {
+                  evaluation_criteria: [],
+                  supporting_quote: '',
+                  quote_timestamp: null,
+                  timestamp_source: '',
+                  insight_principle: ''
+                };
+              }
+              (question.metadata as any)[metadataField] = value;
+            } else {
+              // Handle special fields that need type conversion
+              if (field === 'source_section') {
+                (question as any)[field] = typeof value === 'string' ? parseInt(value) || 0 : value;
+              } else {
+                (question as any)[field] = value;
+              }
+            }
+          }
+        })
+      );
+    },
+    []
+  );
+
+  const handleAddOpenEndedQuestion = useCallback(() => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        const newQuestion: OpenEndedQuestion = {
+          question: "New reflection question...",
+          related_timestamp: "00:00",
+          metadata: {
+            evaluation_criteria: [""],
+            supporting_quote: "Add supporting quote...",
+            quote_timestamp: null,
+            timestamp_source: "manual",
+            insight_principle: "Add learning principle..."
+          }
+        };
+
+        if (draft.generated_quiz_questions) {
+          if (!draft.generated_quiz_questions.open_ended_questions) {
+            draft.generated_quiz_questions.open_ended_questions = [];
+          }
+          draft.generated_quiz_questions.open_ended_questions.push(newQuestion);
+        }
+      })
+    );
+  }, []);
+
+  const handleDeleteOpenEndedQuestion = useCallback((index: number) => {
+    setDraftData(
+      produce((draft) => {
+        if (!draft) return;
+        if (draft.generated_quiz_questions?.open_ended_questions) {
+          draft.generated_quiz_questions.open_ended_questions.splice(index, 1);
+        }
+      })
+    );
+  }, []);
+
 
   return {
     // --- Core Data & State ---
@@ -785,6 +862,11 @@ export const useJobData = (jobId: string) => {
     handleQuizQuestionChange,
     handleAddQuizQuestion,
     handleDeleteQuizQuestion,
+
+    // --- Open-Ended Question Handlers ---
+    handleOpenEndedQuestionChange,
+    handleAddOpenEndedQuestion,
+    handleDeleteOpenEndedQuestion,
 
     // --- Deep Dive Takeaway Handlers ---
     handleTakeawayChange,

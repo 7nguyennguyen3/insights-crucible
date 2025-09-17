@@ -39,8 +39,8 @@ interface OpenEndedQuestionsDisplayProps {
   isEditMode?: boolean;
   onQuestionChange?: (
     index: number,
-    field: keyof OpenEndedQuestion,
-    value: string | number
+    field: string,
+    value: string | string[]
   ) => void;
   onAddQuestion?: () => void;
   onDeleteQuestion?: (index: number) => void;
@@ -274,12 +274,12 @@ export const OpenEndedQuestionsDisplay: React.FC<
 
               <EditableField
                 isEditing={true}
-                value={question.question}
+                value={question.question === "text" ? "" : question.question}
                 onChange={(newValue) =>
                   onQuestionChange(index, "question", newValue)
                 }
                 isTextarea
-                placeholder="Enter open-ended question..."
+                placeholder="Enter open-ended question... (leave empty to auto-generate from learning principle)"
                 className="font-medium"
               />
 
@@ -309,7 +309,7 @@ export const OpenEndedQuestionsDisplay: React.FC<
                       onQuestionChange(
                         index,
                         "source_section",
-                        parseInt(newValue) || 0
+                        newValue
                       )
                     }
                     placeholder="Section number"
@@ -317,23 +317,90 @@ export const OpenEndedQuestionsDisplay: React.FC<
                 </div>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
-                <div className="flex items-center mb-2">
-                  <MessageSquareQuote className="w-3 h-3 mr-2 text-blue-500" />
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Supporting Quote
-                  </span>
+              <div className="space-y-4">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                  <div className="flex items-center mb-2">
+                    <MessageSquareQuote className="w-3 h-3 mr-2 text-blue-500" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      Supporting Quote
+                    </span>
+                  </div>
+                  <EditableField
+                    isEditing={true}
+                    value={question.metadata?.supporting_quote || ""}
+                    onChange={(newValue) =>
+                      onQuestionChange(index, "metadata.supporting_quote", newValue)
+                    }
+                    isTextarea
+                    placeholder="Enter supporting quote from content..."
+                    className="italic text-sm text-slate-600 dark:text-slate-400"
+                  />
                 </div>
-                <EditableField
-                  isEditing={true}
-                  value={question.supporting_quote}
-                  onChange={(newValue) =>
-                    onQuestionChange(index, "supporting_quote", newValue)
-                  }
-                  isTextarea
-                  placeholder="Enter supporting quote from content..."
-                  className="italic text-sm text-slate-600 dark:text-slate-400"
-                />
+
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                  <div className="flex items-center mb-2">
+                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                      💡 Learning Principle
+                    </span>
+                  </div>
+                  <EditableField
+                    isEditing={true}
+                    value={question.metadata?.insight_principle || ""}
+                    onChange={(newValue) =>
+                      onQuestionChange(index, "metadata.insight_principle", newValue)
+                    }
+                    isTextarea
+                    placeholder="Enter the learning principle this question demonstrates..."
+                    className="text-sm text-slate-600 dark:text-slate-400"
+                  />
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                  <div className="flex items-center mb-2">
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      📝 Evaluation Criteria
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {(question.metadata?.evaluation_criteria || []).map((criterion, criterionIndex) => (
+                      <div key={criterionIndex} className="flex items-center gap-2">
+                        <EditableField
+                          isEditing={true}
+                          value={criterion}
+                          onChange={(newValue) => {
+                            const newCriteria = [...(question.metadata?.evaluation_criteria || [])];
+                            newCriteria[criterionIndex] = newValue;
+                            onQuestionChange(index, "metadata.evaluation_criteria", newCriteria);
+                          }}
+                          placeholder="Enter evaluation criterion..."
+                          className="flex-1 text-sm"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newCriteria = (question.metadata?.evaluation_criteria || []).filter((_, i) => i !== criterionIndex);
+                            onQuestionChange(index, "metadata.evaluation_criteria", newCriteria);
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newCriteria = [...(question.metadata?.evaluation_criteria || []), ""];
+                        onQuestionChange(index, "metadata.evaluation_criteria", newCriteria);
+                      }}
+                      className="w-full"
+                    >
+                      + Add Criterion
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -717,6 +784,16 @@ export const OpenEndedQuestionsDisplay: React.FC<
   );
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
+  // Generate question text if it's just a placeholder
+  const getQuestionText = (question: OpenEndedQuestion) => {
+    if (question.question === "text" && question.metadata?.insight_principle) {
+      // Generate a question based on the insight principle and evaluation criteria
+      const principle = question.metadata.insight_principle;
+      return `Reflect on this learning principle: "${principle}" - How does this concept apply to your own learning experiences?`;
+    }
+    return question.question;
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -737,8 +814,39 @@ export const OpenEndedQuestionsDisplay: React.FC<
       <CardContent className="space-y-6">
         <div>
           <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-4">
-            {currentQuestion.question}
+            {getQuestionText(currentQuestion)}
           </h3>
+
+          {currentQuestion.metadata?.insight_principle && (
+            <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center mb-1">
+                <span className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                  💡 Learning Principle
+                </span>
+              </div>
+              <p className="text-sm text-purple-800 dark:text-purple-300">
+                {currentQuestion.metadata.insight_principle}
+              </p>
+            </div>
+          )}
+
+          {currentQuestion.metadata?.evaluation_criteria && currentQuestion.metadata.evaluation_criteria.length > 0 && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center mb-2">
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                  📝 What to consider in your response:
+                </span>
+              </div>
+              <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                {currentQuestion.metadata.evaluation_criteria.map((criterion, idx) => (
+                  <li key={idx} className="flex items-start">
+                    <span className="text-blue-500 mr-2 mt-1">•</span>
+                    {criterion}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <Textarea
             value={currentAnswer}
@@ -756,7 +864,7 @@ export const OpenEndedQuestionsDisplay: React.FC<
           </div>
         </div>
 
-        {currentQuestion.supporting_quote && (
+        {currentQuestion.metadata?.supporting_quote && (
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center mb-2">
               <MessageSquareQuote className="w-4 h-4 mr-2 text-blue-500" />
@@ -765,7 +873,7 @@ export const OpenEndedQuestionsDisplay: React.FC<
               </span>
             </div>
             <blockquote className="italic text-sm text-slate-600 dark:text-slate-400 border-l-4 border-blue-200 pl-4">
-              {currentQuestion.supporting_quote}
+              {currentQuestion.metadata.supporting_quote}
             </blockquote>
           </div>
         )}

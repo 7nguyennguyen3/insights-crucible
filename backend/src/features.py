@@ -56,6 +56,7 @@ def retry_with_exponential_backoff(func):
 
 # Simplified Learning Accelerator Content Generator
 
+
 @retry_with_exponential_backoff
 async def generate_quiz_questions(
     all_sections_analysis: List[Dict],
@@ -67,24 +68,26 @@ async def generate_quiz_questions(
     Now supports both new multi-quiz and legacy single quiz formats.
     """
     print("        - [blue]Generating Quiz Questions...[/blue]")
-    
+
     # Check if synthesis data already contains quiz questions from synthesis
     if synthesis_data and "quiz_questions" in synthesis_data:
         print("        - [green]Using quiz questions from learning synthesis[/green]")
-        
+
         quiz_questions = synthesis_data["quiz_questions"]
         generation_method = synthesis_data.get("generation_method", "legacy")
         multi_quiz_data = synthesis_data.get("multi_quiz_data", {})
-        
+
         if generation_method == "section_aware" and multi_quiz_data:
             # Return new multi-quiz format
-            print(f"        - [cyan]Using section-aware multi-quiz format with {multi_quiz_data.get('quiz_metadata', {}).get('total_quizzes', 1)} quizzes[/cyan]")
+            print(
+                f"        - [cyan]Using section-aware multi-quiz format with {multi_quiz_data.get('quiz_metadata', {}).get('total_quizzes', 1)} quizzes[/cyan]"
+            )
             return {
                 "quiz_metadata": multi_quiz_data.get("quiz_metadata", {}),
                 "questions": quiz_questions,
                 "quizzes": multi_quiz_data.get("quizzes", []),
                 "quiz_type": "section_aware_multi_quiz",
-                "generation_method": "section_aware"
+                "generation_method": "section_aware",
             }
         else:
             # Return legacy single quiz format
@@ -92,136 +95,159 @@ async def generate_quiz_questions(
             return {
                 "quiz_metadata": {
                     "total_questions": len(quiz_questions),
-                    "estimated_time_minutes": len(quiz_questions) * 2,  # 2 minutes per question
-                    "difficulty_distribution": {"easy": 1, "medium": len(quiz_questions) - 1, "hard": 0},
-                    "source": "learning_synthesis"
+                    "estimated_time_minutes": len(quiz_questions)
+                    * 2,  # 2 minutes per question
+                    "difficulty_distribution": {
+                        "easy": 1,
+                        "medium": len(quiz_questions) - 1,
+                        "hard": 0,
+                    },
+                    "source": "learning_synthesis",
                 },
                 "questions": quiz_questions,
                 "quiz_type": "knowledge_testing",
-                "generation_method": "legacy"
+                "generation_method": "legacy",
             }
-    
-    print("        - [yellow]No synthesis quiz questions found, returning empty result[/yellow]")
-    return {"error": "No quiz questions generated. This should be handled by synthesis."}
+
+    print(
+        "        - [yellow]No synthesis quiz questions found, returning empty result[/yellow]"
+    )
+    return {
+        "error": "No quiz questions generated. This should be handled by synthesis."
+    }
 
 
 @retry_with_exponential_backoff
 async def grade_open_ended_response(
     user_answer: str,
     question: str,
-    section_analysis: Dict[str, Any],
+    question_metadata: Dict[str, Any],  # NEW: What user could know
     runnable_config: RunnableConfig,
+    transcript_excerpt: str = None,  # NEW: Relevant content section
 ) -> Dict[str, Any]:
     """
-    Provide learning-focused feedback on an open-ended response using LLM analysis.
-    
+    Provide fair, transparent feedback based only on disclosed criteria.
+
     Args:
-        user_answer: The user's response to the open-ended question
-        question: The original open-ended question
-        section_analysis: The section analysis containing context
-        runnable_config: LangChain runnable configuration
-        
+        user_answer: The user's response
+        question: The full question as shown to user (with context)
+        question_metadata: The evaluation criteria that were shown to user
+        transcript_excerpt: Relevant section of original content
+        runnable_config: LangChain configuration
+
     Returns:
-        Dict containing learning-focused feedback without traditional scoring
+        Dict containing fair, criteria-aligned feedback
     """
-    print(f"        - [blue]Evaluating open-ended response with learning focus...[/blue]")
-    
-    # Prepare context for the LLM
-    context = {
-        "question": question,
-        "section_summary": section_analysis.get("1_sentence_summary", ""),
-        "key_points": section_analysis.get("key_points", []),
-        "lessons_and_concepts": section_analysis.get("lessons_and_concepts", []),
-        "notable_quotes": section_analysis.get("notable_quotes", [])
-    }
-    
-    context_json = json.dumps(context, indent=2)
-    
+    print(f"        - [blue]Evaluating response with transparent criteria...[/blue]")
+
+    # Extract what the user was explicitly told to address
+    evaluation_criteria = question_metadata.get("evaluation_criteria", [])
+    insight_principle = question_metadata.get("insight_principle", "")
+    supporting_quote = question_metadata.get("supporting_quote", "")
+
     llm, llm_options = clients.get_llm("best-lite", temperature=0.1)
     parser = JsonOutputParser()
-    
-    prompt = ChatPromptTemplate.from_messages([
-        (
-            "system",
-            """You are an expert learning coach and educational mentor. Your role is to help learners grow and deepen their understanding, not to judge or score them. 
 
-Focus on providing growth-oriented feedback that:
-- Celebrates what the learner has grasped well
-- Identifies opportunities for deeper exploration
-- Asks thoughtful questions to stimulate critical thinking
-- Connects ideas to broader concepts and real-world applications
-- Encourages a growth mindset and curiosity
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """You are a fair and transparent learning evaluator. You grade ONLY based on criteria that were disclosed to the learner.
 
-Your output must be a JSON object with this learning-focused structure:
+CRITICAL RULES:
+1. Only evaluate based on the criteria explicitly shown in the question
+2. Do NOT penalize for missing information that wasn't requested
+3. Do NOT expect knowledge beyond what the question asked for
+4. Focus on whether they addressed the specific points they were asked to address
+
+Your evaluation should be based on:
+- Did they address the specific points listed in "In your answer, please address"?
+- Do they show understanding of the principle that was explicitly mentioned?
+- Is their reasoning sound based on what was asked?
+
+Your output must be a JSON object with:
 {{
   "understanding_level": "emerging|developing|proficient|advanced",
-  "what_you_nailed": ["Specific insights and connections you demonstrated well"],
-  "growth_opportunities": ["Specific areas to explore further for deeper understanding"],
-  "reflection_prompt": "A single meaningful question for deeper self-reflection",
-  "encouragement": "Positive, growth-focused message to motivate continued learning"
+  "what_you_nailed": ["Specific things you addressed well from the requested points"],
+  "growth_opportunities": ["Ways to better address the specific points that were asked"],
+  "reflection_prompt": "A question to deepen thinking about the disclosed concept",
+  "encouragement": "Positive message focused on their engagement with the specific topic"
 }}
 
-Use encouraging, growth-oriented language. Avoid deficit-based phrasing. Instead of "you missed" or "you failed to", use "you might explore" or "consider diving deeper into".
+Understanding levels:
+- emerging: Attempted to address the points but missed key aspects
+- developing: Addressed most requested points with basic understanding
+- proficient: Clearly addressed all requested points with good understanding
+- advanced: Went beyond addressing the points with exceptional insight
 
 {format_instructions}""",
-        ),
-        (
-            "human",
-            """Please provide learning-focused feedback on the following learner response:
+            ),
+            (
+                "human",
+                """Evaluate this response based ONLY on the disclosed criteria:
 
---- LEARNER RESPONSE ---
-{user_answer}
-
---- QUESTION ---
+--- THE QUESTION AS SHOWN TO USER ---
 {question}
 
---- SECTION CONTEXT ---
-{context_json}
+--- EVALUATION CRITERIA (shown to user) ---
+The user was asked to address:
+{criteria_list}
 
-Remember: Your goal is to guide learning and encourage growth, not to score or judge.""",
-        ),
-    ])
-    
+--- USER'S ANSWER ---
+{user_answer}
+
+--- RELEVANT CONTEXT ---
+Principle being explored: {insight_principle}
+Supporting quote: {supporting_quote}
+
+Remember: Grade ONLY on whether they addressed what was explicitly asked. Be fair.""",
+            ),
+        ]
+    )
+
+    # Format criteria for prompt
+    criteria_list = "\n".join([f"• {criterion}" for criterion in evaluation_criteria])
+
     chain = prompt | llm | parser
-    
+
     try:
-        result = await chain.ainvoke({
-            "user_answer": user_answer,
-            "question": question,
-            "context_json": context_json,
-            "format_instructions": parser.get_format_instructions(),
-        }, config=runnable_config)
-        
-        # Ensure required fields exist with defaults
-        required_fields = {
-            "understanding_level": "developing",
-            "what_you_nailed": ["You engaged thoughtfully with the question"],
-            "growth_opportunities": ["Continue exploring the concepts presented"],
-            "reflection_prompt": "How might you apply this learning in your daily life?",
-            "encouragement": "Great work engaging with this material! Keep exploring and questioning."
+        result = await chain.ainvoke(
+            {
+                "question": question,
+                "criteria_list": criteria_list,
+                "user_answer": user_answer,
+                "insight_principle": insight_principle,
+                "supporting_quote": supporting_quote,
+                "format_instructions": parser.get_format_instructions(),
+            },
+            config=runnable_config,
+        )
+
+        # Add transparency note to feedback
+        result["grading_transparency"] = {
+            "criteria_used": evaluation_criteria,
+            "principle_tested": insight_principle,
+            "note": "You were evaluated only on the points explicitly mentioned in the question",
         }
-        
-        # Apply defaults for any missing fields
-        for field, default_value in required_fields.items():
-            if field not in result:
-                result[field] = default_value
-        
-        # Include the original question in the result for context
+
+        # Include original question for reference
         result["original_question"] = question
-        
-        print(f"        - [green]Learning feedback generated for {result['understanding_level']} level response[/green]")
+
+        print(
+            f"        - [green]Fair evaluation completed: {result['understanding_level']}[/green]"
+        )
         return result
-        
+
     except Exception as e:
-        print(f"        - [red]Error during feedback generation: {e}[/red]")
-        # Return a simplified error response with all required fields
-        error_result = {
+        print(f"        - [red]Error during evaluation: {e}[/red]")
+        return {
             "understanding_level": "developing",
-            "what_you_nailed": ["You took the time to respond thoughtfully"],
-            "growth_opportunities": ["Try again when the system is available"],
-            "reflection_prompt": "What's one insight from this content that you want to remember?",
-            "encouragement": "Keep exploring and learning! Technical issues won't stop your growth."
+            "what_you_nailed": ["You engaged with the question"],
+            "growth_opportunities": [
+                "Review the specific points requested in the question"
+            ],
+            "reflection_prompt": "What aspect of this concept would you like to explore further?",
+            "encouragement": "Keep learning and growing!",
+            "original_question": question,
+            "error": True,
         }
-        # Include the original question in the result for context
-        error_result["original_question"] = question
-        return error_result

@@ -98,10 +98,8 @@ logs/
 
 # Documentation and temp files
 *.md.backup
-output_result*.json
 oe_grading.json
 structured_transcript.json
 fetched_transcript.md
 prompt.md
 workflow.md
-great_additional_questions.md

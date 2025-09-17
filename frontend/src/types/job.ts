@@ -1,6 +1,7 @@
 // Job and data types consolidated from _global/interface.ts
 
 import { AnalysisSection, SynthesisResults, ArgumentStructure, Slide, QuizQuestion, OpenEndedQuestion } from './analysis';
+import { LibraryMeta } from './library';
 
 export type JobStatus = "COMPLETED" | "PROCESSING" | "FAILED" | "QUEUED";
 
@@ -71,6 +72,8 @@ export interface JobData {
 export interface JobDataWithShare extends JobData {
   isPublic?: boolean;
   publicShareId?: string;
+  libraryMeta?: LibraryMeta;
+  viewCount?: number;
 }
 
 export interface OpenEndedSubmission {

@@ -25,6 +25,7 @@ import {
   UserCircle,
   X,
   Zap,
+  BookOpen,
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 
@@ -115,6 +116,15 @@ const Navbar = () => {
           >
             <LayoutDashboard className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline ml-1">Dashboard</span>
+          </CustomButton>
+
+          <CustomButton
+            href="/library"
+            variant="secondary"
+            className="px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10 flex-shrink-0 min-w-0"
+          >
+            <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline ml-1">Library</span>
           </CustomButton>
 
           <NotificationBell />
@@ -241,6 +251,16 @@ const Navbar = () => {
                 >
                   <LayoutDashboard className="h-5 w-5" />
                   Dashboard
+                </CustomButton>
+              </div>
+              <div onClick={closeAllMenus} className="mb-2">
+                <CustomButton
+                  href="/library"
+                  variant="secondary"
+                  className="w-full justify-start text-base h-12"
+                >
+                  <BookOpen className="h-5 w-5" />
+                  Library
                 </CustomButton>
               </div>
 

@@ -27,8 +27,8 @@ interface UnifiedQuizDisplayProps {
   onMcqDeleteQuestion?: (index: number) => void;
   onOeQuestionChange?: (
     index: number,
-    field: keyof OpenEndedQuestion,
-    value: string | number
+    field: string,
+    value: string | string[]
   ) => void;
   onOeAddQuestion?: () => void;
   onOeDeleteQuestion?: (index: number) => void;

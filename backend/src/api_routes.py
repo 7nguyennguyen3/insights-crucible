@@ -17,13 +17,9 @@ from src.models import (
     TranscriptDetailResponse,
     TranscriptDetailRequest,
     OpenEndedSubmission,
-    GradingJob,
-    GradingResult,
 )
 from src.utils import (
     fetch_youtube_metadata,
-    extract_youtube_video_id,
-    format_iso_duration_to_readable,
 )
 from src import db_manager
 from src.security import verify_api_key
@@ -234,31 +230,28 @@ async def get_transcript_and_cache(
         character_count = len(full_text)
         print(f"DEBUG: Video ID {request.video_id} has {character_count} characters.")
 
-        # Save the complete transcript with timestamps to fetched_transcript.md
+        # Save the original, unaltered transcript to fetched_transcript.md
         try:
             with open("fetched_transcript.md", "w", encoding="utf-8") as f:
                 f.write(f"# YouTube Transcript - Video ID: {request.video_id}\n\n")
+                f.write("## Original Transcript Data\n\n")
 
-                # Save with timestamps if available
-                if (
-                    raw_transcript
-                    and len(raw_transcript) > 0
-                    and "start" in raw_transcript[0]
-                ):
-                    f.write("## Timestamped Transcript\n\n")
+                # Save the raw transcript data as-is
+                if raw_transcript:
                     for item in raw_transcript:
                         start_time = item.get("start", 0)
+                        duration = item.get("duration", 0)
                         text = item.get("text", "")
+
                         # Format timestamp as MM:SS
                         minutes = int(start_time // 60)
                         seconds = int(start_time % 60)
+
                         f.write(f"**[{minutes:02d}:{seconds:02d}]** {text}\n\n")
                 else:
-                    # Fallback to plain text if no timestamps
-                    f.write("## Plain Text Transcript\n\n")
-                    f.write(full_text)
+                    f.write("No transcript data available.\n")
 
-            print(f"DEBUG: Transcript saved to fetched_transcript.md")
+            print(f"DEBUG: Original transcript saved to fetched_transcript.md")
         except Exception as e:
             print(f"WARNING: Failed to save transcript to file: {e}")
 

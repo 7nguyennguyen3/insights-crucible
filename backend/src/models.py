@@ -255,9 +255,11 @@ class QuizMetadata(BaseModel):
 
 
 class OpenEndedQuestion(BaseModel):
-    """Open-ended question for deeper learning assessment."""
+    """Open-ended question for deeper learning assessment with transparent evaluation criteria."""
 
-    question: str
+    question: str  # Full question with context and criteria
+    metadata: Dict[str, Any] = Field(default_factory=dict)  # Transparent criteria and context
+    related_timestamp: str = "00:00"  # Timestamp for supporting quote
 
 
 class SingleQuiz(BaseModel):

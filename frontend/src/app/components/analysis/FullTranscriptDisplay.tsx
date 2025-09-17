@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { secondsToHHMMSS } from "@/app/utils/convertTime";
 import { Utterance } from "@/app/_global/interface";
 
@@ -8,9 +8,61 @@ interface FullTranscriptDisplayProps {
   transcript: Utterance[];
 }
 
+/**
+ */
+const HighlightedText = ({
+  text,
+  highlight,
+}: {
+  text: string;
+  highlight: string;
+}) => {
+  // If there's no highlight term, return the original text
+  if (!highlight.trim()) {
+    return <span>{text}</span>;
+  }
+
+  // Create a case-insensitive regular expression to find all occurrences of the highlight term
+  const regex = new RegExp(`(${highlight})`, "gi");
+  const parts = text.split(regex);
+
+  return (
+    <span>
+      {parts.map((part, i) =>
+        // Check if the part matches the highlight term (case-insensitively)
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <mark
+            key={i}
+            className="bg-yellow-300 dark:bg-yellow-500 rounded px-1 text-slate-800"
+          >
+            {part}
+          </mark>
+        ) : (
+          // Otherwise, render the part as plain text
+          part
+        )
+      )}
+    </span>
+  );
+};
+
 export const FullTranscriptDisplay: React.FC<FullTranscriptDisplayProps> = ({
   transcript,
 }) => {
+  // State to store the user's search term
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Memoize the filtered transcript to avoid re-calculating on every render
+  const filteredTranscript = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return transcript; // Return all items if search is empty
+    }
+    // Filter utterances to only include those that contain the search term
+    return transcript.filter((utterance) =>
+      utterance.text.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm, transcript]); // Recalculate only if searchTerm or transcript changes
+
   if (!transcript || transcript.length === 0) {
     return (
       <div className="text-center text-slate-500 dark:text-slate-400 py-8">
@@ -21,25 +73,38 @@ export const FullTranscriptDisplay: React.FC<FullTranscriptDisplayProps> = ({
 
   return (
     <div className="space-y-6">
-      {transcript.map((utterance, index) => {
-        return (
-          <div key={index} className="flex items-start gap-4">
-            <div className="flex-shrink-0 flex flex-col gap-2">
-              {/* Speaker badge - only show if speaker is available (upload sources) */}
+      {/* Search Input Field */}
+      <div className="mb-6 sticky top-0 bg-white dark:bg-slate-900 py-4 z-10">
+        <input
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search transcript..."
+          className="w-full px-4 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"
+        />
+      </div>
+
+      {/* Render the filtered and highlighted transcript */}
+      {filteredTranscript.length > 0 ? (
+        filteredTranscript.map((utterance) => (
+          <div key={utterance.start} className="flex items-start gap-4">
+            <div className="flex-shrink-0 flex flex-col items-end gap-2 w-28">
               {utterance.speaker && (
-                <div className={`
+                <div
+                  className={`
                   inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                  ${utterance.speaker === 'A'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                    : utterance.speaker === 'B'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                  ${
+                    utterance.speaker === "A"
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                      : utterance.speaker === "B"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
                   }
-                `}>
+                `}
+                >
                   Speaker {utterance.speaker}
                 </div>
               )}
-              {/* Timestamp */}
               <p className="font-mono text-sm text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
                 {secondsToHHMMSS(utterance.start)}
               </p>
@@ -47,12 +112,18 @@ export const FullTranscriptDisplay: React.FC<FullTranscriptDisplayProps> = ({
 
             <div className="flex-grow">
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {utterance.text}
+                {/* Use the helper to highlight the text */}
+                <HighlightedText text={utterance.text} highlight={searchTerm} />
               </p>
             </div>
           </div>
-        );
-      })}
+        ))
+      ) : (
+        // Show a message if no matches are found
+        <div className="text-center text-slate-500 dark:text-slate-400 py-8">
+          No matches found for "{searchTerm}".
+        </div>
+      )}
     </div>
   );
 };

@@ -11,3 +11,6 @@ export * from './ui';
 
 // API types
 export * from './api';
+
+// Library types
+export * from './library';

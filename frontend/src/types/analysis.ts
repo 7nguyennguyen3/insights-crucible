@@ -36,8 +36,14 @@ export interface QuizQuestion {
 export interface OpenEndedQuestion {
   question_id?: string;
   question: string;
-  supporting_quote: string;
   related_timestamp: string;
+  metadata: {
+    evaluation_criteria: string[];
+    supporting_quote: string;
+    quote_timestamp: string | null;
+    timestamp_source: string;
+    insight_principle: string;
+  };
   source_section?: number;
   difficulty?: string;
   quiz_number?: number;

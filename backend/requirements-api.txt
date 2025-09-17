@@ -15,3 +15,4 @@ pydantic==2.11.5
 rich==14.0.0
 pydantic-settings==2.10.1
 youtube_transcript_api==1.2.1
+httpx==0.28.1

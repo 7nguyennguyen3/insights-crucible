@@ -12,6 +12,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import apiClient from "@/lib/apiClient";
 import { toast } from "sonner";
 import { auth } from "@/lib/firebaseClient";
+import { LibraryManagement } from "@/components/library/LibraryManagement";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -367,6 +368,9 @@ export function AccountView() {
                 </Button>
               </CardFooter>
             </Card>
+
+            {/* Library Management Section */}
+            <LibraryManagement />
           </div>
           <div className="lg:col-span-2">
             <Card className="shadow-lg">

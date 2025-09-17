@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import apiClient from "@/lib/apiClient";
@@ -37,6 +37,16 @@ const PublicSharePage = () => {
   );
 
   const { exportToMarkdown } = useMarkdownExport(data || null);
+
+  // Track view when the page loads
+  useEffect(() => {
+    if (publicShareId && data) {
+      // Track the view (fire and forget)
+      apiClient.post(`/library/view/${publicShareId}`).catch(error => {
+        console.warn("Could not track view:", error);
+      });
+    }
+  }, [publicShareId, data]);
 
   const isEditMode = false;
   const emptyFunction = () => {};

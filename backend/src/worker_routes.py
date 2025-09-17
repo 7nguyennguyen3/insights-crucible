@@ -174,12 +174,13 @@ async def grade_open_ended_worker(
         token_tracker = BaseCallbackHandler()
         runnable_config = RunnableConfig(callbacks=[token_tracker])
 
-        # Grade the response using user answer from question data
+        # Grade the response using ONLY disclosed criteria (fair grading)
         grading_result = await grade_open_ended_response(
             user_answer=question_data["user_answer"],
             question=target_question["question"],
-            section_analysis=relevant_section,
-            runnable_config=runnable_config
+            question_metadata=target_question.get("metadata", {}),  # DISCLOSED ONLY
+            runnable_config=runnable_config,
+            transcript_excerpt=relevant_section.get("content", "")  # Optional context
         )
 
         # Update grading status with results in the new subcollection

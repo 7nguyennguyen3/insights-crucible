@@ -32,6 +32,7 @@ import { useJobData } from "@/hooks/useJobData";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
 import { useShareDialog } from "@/hooks/useShareDialog";
 import { useSimplePdfExport } from "@/hooks/useSimplePdfExport";
+import { LibraryDialog } from "@/components/library/LibraryDialog";
 
 // Utils
 import { getStructuredTranscript } from "@/lib/utils/transcriptParser";
@@ -57,6 +58,9 @@ const ResultsPage = () => {
     handleQuizQuestionChange,
     handleAddQuizQuestion,
     handleDeleteQuizQuestion,
+    handleOpenEndedQuestionChange,
+    handleAddOpenEndedQuestion,
+    handleDeleteOpenEndedQuestion,
     handleTakeawayChange,
     handleAddTakeaway,
     handleDeleteTakeaway,
@@ -81,6 +85,9 @@ const ResultsPage = () => {
     originalData?.publicShareId,
     mutate
   );
+
+  // Library dialog state
+  const [isLibraryDialogOpen, setIsLibraryDialogOpen] = useState(false);
 
   // Get structured transcript, parsing raw transcript if structured version not available
   const structuredTranscript = getStructuredTranscript(jobData);
@@ -209,6 +216,9 @@ const ResultsPage = () => {
                   onMcqQuestionChange={handleQuizQuestionChange}
                   onMcqAddQuestion={handleAddQuizQuestion}
                   onMcqDeleteQuestion={handleDeleteQuizQuestion}
+                  onOeQuestionChange={handleOpenEndedQuestionChange}
+                  onOeAddQuestion={handleAddOpenEndedQuestion}
+                  onOeDeleteQuestion={handleDeleteOpenEndedQuestion}
                   userId={user?.uid || ""}
                   jobId={jobId}
                   existingQuizResults={jobData.quiz_results || null}
@@ -302,6 +312,43 @@ const ResultsPage = () => {
                     )}
                   </Button>
                 </div>
+
+                {/* Library Options */}
+                <div className="border-t pt-4 space-y-3">
+                  <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Library Options
+                  </div>
+                  {originalData?.libraryMeta?.libraryEnabled ? (
+                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
+                      <p className="text-sm text-green-700 dark:text-green-300 mb-2">
+                        ✓ This analysis is published in the library
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsLibraryDialogOpen(true)}
+                        >
+                          Edit Library Entry
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                        Share your analysis with the community by adding it to the public library
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsLibraryDialogOpen(true)}
+                      >
+                        Add to Library
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <Button
                   variant="destructive"
                   className="w-full"
@@ -323,6 +370,19 @@ const ResultsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Library Dialog */}
+      <LibraryDialog
+        isOpen={isLibraryDialogOpen}
+        onClose={() => setIsLibraryDialogOpen(false)}
+        jobId={jobId}
+        jobTitle={jobData?.job_title || ""}
+        currentLibraryMeta={originalData?.libraryMeta}
+        onSuccess={() => {
+          mutate(); // Refresh job data
+          setIsLibraryDialogOpen(false);
+        }}
+      />
     </>
   );
 };

@@ -676,9 +676,28 @@ class AnalysisPipeline:
         original_transcript = None
         try:
             job_doc = self.db_manager.get_job_status(request.user_id, request.job_id)
-            if job_doc and "request_data" in job_doc:
-                request_data = job_doc["request_data"]
-                original_transcript = request_data.get("transcript")
+            if job_doc:
+                # Try multiple locations for transcript data
+                # 1. First try request_data (for some job types)
+                if "request_data" in job_doc:
+                    request_data = job_doc["request_data"]
+                    original_transcript = request_data.get("transcript")
+
+                # 2. Fallback to root level transcript (your case)
+                if not original_transcript:
+                    original_transcript = job_doc.get("transcript")
+
+                # 3. Fallback to structured_transcript field
+                if not original_transcript:
+                    original_transcript = job_doc.get("structured_transcript")
+
+                if original_transcript:
+                    transcript_type = type(original_transcript).__name__
+                    transcript_length = len(original_transcript) if isinstance(original_transcript, list) else 'unknown'
+                    print(f"[blue]Found transcript source: {transcript_type} with {transcript_length} entries[/blue]")
+                else:
+                    print(f"[yellow]No transcript found in any location[/yellow]")
+
         except Exception as e:
             print(f"[yellow]Warning: Could not fetch original transcript: {e}[/yellow]")
 
