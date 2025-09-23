@@ -1,3 +1,265 @@
+export const TERMS_OF_SERVICE_JSON = {
+  termsOfService: {
+    title: "Terms of Service for Insights Crucible",
+    effectiveDate: "January 22, 2025",
+    introduction: {
+      heading: "Introduction",
+      content:
+        'Welcome to Insights Crucible ("we," "us," or "our"). These Terms of Service ("Terms") govern your use of our website and services (collectively, the "Services") operated by Embercore LLC. By accessing or using our Services, you agree to be bound by these Terms.',
+    },
+    serviceDescription: {
+      heading: "1. Service Description",
+      content:
+        "Insights Crucible is an AI-powered content analysis platform that processes audio, video, and text content to generate actionable insights, summaries, and analyses.",
+      features: [
+        "Audio and video file transcription",
+        "AI-powered content analysis and insights generation",
+        "Text processing and analysis",
+        "Export capabilities (PDF, DOCX, Markdown)",
+        "Public sharing functionality",
+        "Analysis library and dashboard management",
+      ],
+    },
+    acceptanceOfTerms: {
+      heading: "2. Acceptance of Terms",
+      content:
+        "By creating an account or using our Services, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, you may not use our Services.",
+    },
+    eligibility: {
+      heading: "3. Eligibility",
+      content:
+        "You must be at least 13 years old (or 16 in the European Economic Area) to use our Services. By using our Services, you represent and warrant that you meet this age requirement and have the authority to enter into this agreement.",
+    },
+    userAccounts: {
+      heading: "4. User Accounts and Registration",
+      content:
+        "To access certain features of our Services, you must create an account using Google Firebase Authentication. You are responsible for:",
+      responsibilities: [
+        "Providing accurate and complete account information",
+        "Maintaining the confidentiality of your account credentials",
+        "All activities that occur under your account",
+        "Promptly notifying us of any unauthorized access to your account",
+      ],
+    },
+    paymentTerms: {
+      heading: "5. Payment Terms and Credits",
+      creditSystem: {
+        title: "A. Credit System",
+        description:
+          "Our Services operate on a credit-based system. Each analysis consumes one credit. We offer the following credit packages:",
+        packages: [
+          { name: "Starter Pack", credits: 30, price: 5 },
+          { name: "Professional Pack", credits: "75 (60 + 15 bonus)", price: 10 },
+          { name: "Ultimate Pack", credits: "170 (120 + 50 bonus)", price: 20 },
+        ],
+      },
+      paymentProcessing: {
+        title: "B. Payment Processing",
+        description:
+          "All payments are processed securely through Stripe. By making a purchase, you agree to Stripe's terms of service. We do not store your payment information.",
+      },
+      creditsAndRefunds: {
+        title: "C. Credits and Refunds",
+        terms: [
+          "Credits never expire",
+          "New users receive 30 free credits upon registration",
+          "Refunds are available within 30 days of purchase, subject to our discretion",
+          "Unused credits remain in your account indefinitely",
+        ],
+      },
+    },
+    acceptableUse: {
+      heading: "6. Acceptable Use Policy",
+      description: "You agree not to use our Services to:",
+      prohibitedActivities: [
+        "Upload content that is illegal, harmful, threatening, abusive, defamatory, or otherwise objectionable",
+        "Violate any applicable laws or regulations",
+        "Infringe upon the intellectual property rights of others",
+        "Attempt to gain unauthorized access to our systems or other users' accounts",
+        "Distribute malware, viruses, or other harmful code",
+        "Use the Services for commercial purposes without authorization",
+        "Reverse engineer, decompile, or attempt to derive source code from our Services",
+      ],
+    },
+    intellectualProperty: {
+      heading: "7. Content and Intellectual Property",
+      sections: [
+        {
+          title: "A. Your Content",
+          description:
+            'You retain ownership of all content you upload to our Services ("Your Content"). By uploading content, you grant us a limited, non-exclusive license to process, analyze, and store your content solely to provide our Services.',
+        },
+        {
+          title: "B. Our Intellectual Property",
+          description:
+            "Our Services, including all software, technology, designs, and content provided by us, are protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works based on our Services without our express written consent.",
+        },
+        {
+          title: "C. Third-Party Content",
+          description:
+            "Our Services may include content from third parties. We do not claim ownership of such content and respect the intellectual property rights of others.",
+        },
+      ],
+    },
+    dataProcessing: {
+      heading: "8. Data Processing and Privacy",
+      content:
+        "Our collection, use, and processing of your information is governed by our Privacy Policy, which is incorporated into these Terms by reference. By using our Services, you consent to our data practices as described in our Privacy Policy.",
+    },
+    thirdPartyServices: {
+      heading: "9. Third-Party Services",
+      description:
+        "Our Services integrate with the following third-party providers:",
+      providers: [
+        {
+          name: "Google",
+          services: "Firebase Authentication, Storage, Gemini AI",
+          purpose: "User authentication, file storage, and AI analysis",
+        },
+        {
+          name: "Stripe",
+          services: "Payment processing",
+          purpose: "Secure payment processing",
+        },
+        {
+          name: "AssemblyAI",
+          services: "Audio and video transcription",
+          purpose: "Transcription services",
+        },
+        {
+          name: "Tavily AI",
+          services: "Web search functionality",
+          purpose: "Enhanced research capabilities (when enabled)",
+        },
+      ],
+      disclaimer:
+        "Your use of these integrated services is subject to their respective terms of service and privacy policies.",
+    },
+    serviceAvailability: {
+      heading: "10. Service Availability and Modifications",
+      sections: [
+        {
+          title: "A. Availability",
+          description:
+            "We strive to maintain high availability of our Services but do not guarantee uninterrupted access. We may experience downtime for maintenance, updates, or technical issues.",
+        },
+        {
+          title: "B. Modifications",
+          description:
+            "We reserve the right to modify, suspend, or discontinue any aspect of our Services at any time, with or without notice. We will make reasonable efforts to notify users of significant changes.",
+        },
+      ],
+    },
+    userGeneratedContent: {
+      heading: "11. User-Generated Content",
+      content:
+        "You are solely responsible for any content you upload, submit, or share through our Services. We do not pre-screen content but reserve the right to remove content that violates these Terms or applicable laws.",
+    },
+    termination: {
+      heading: "12. Termination",
+      sections: [
+        {
+          title: "A. Termination by You",
+          description:
+            "You may terminate your account at any time through your account settings. Upon termination, your account information and associated content will be permanently deleted.",
+        },
+        {
+          title: "B. Termination by Us",
+          description:
+            "We may terminate or suspend your account immediately, without prior notice, if you breach these Terms or engage in prohibited activities.",
+        },
+        {
+          title: "C. Effect of Termination",
+          description:
+            "Upon termination, your right to use our Services ceases immediately. Sections of these Terms that by their nature should survive termination will remain in effect.",
+        },
+      ],
+    },
+    disclaimers: {
+      heading: "13. Disclaimers",
+      content:
+        'OUR SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED. WE DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.',
+      additionalDisclaimer:
+        "We do not warrant that our Services will be uninterrupted, error-free, or completely secure. The AI-generated content and analysis provided by our Services are for informational purposes only and should not be considered as professional advice.",
+    },
+    limitationOfLiability: {
+      heading: "14. Limitation of Liability",
+      content:
+        "TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL EMBERCORE LLC, ITS OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM YOUR USE OF OUR SERVICES.",
+      damagesCap:
+        "IN NO EVENT SHALL OUR TOTAL LIABILITY TO YOU FOR ALL DAMAGES, LOSSES, OR CAUSES OF ACTION EXCEED THE AMOUNT YOU HAVE PAID US IN THE TWELVE (12) MONTHS PRIOR TO THE EVENT GIVING RISE TO LIABILITY.",
+    },
+    indemnification: {
+      heading: "15. Indemnification",
+      description:
+        "You agree to defend, indemnify, and hold harmless Embercore LLC and its affiliates from and against any claims, damages, obligations, losses, liabilities, costs, or debt arising from:",
+      scenarios: [
+        "Your use of our Services",
+        "Your violation of these Terms",
+        "Your violation of any third-party rights",
+        "Any content you upload or share through our Services",
+      ],
+    },
+    disputeResolution: {
+      heading: "16. Dispute Resolution",
+      sections: [
+        {
+          title: "A. Governing Law",
+          description:
+            "These Terms are governed by and construed in accordance with the laws of the State of California, without regard to its conflict of law principles.",
+        },
+        {
+          title: "B. Jurisdiction",
+          description:
+            "Any legal action or proceeding arising under these Terms will be brought exclusively in the federal or state courts located in California, and you consent to the jurisdiction of such courts.",
+        },
+      ],
+    },
+    generalProvisions: {
+      heading: "17. General Provisions",
+      sections: [
+        {
+          title: "A. Entire Agreement",
+          description:
+            "These Terms, together with our Privacy Policy, constitute the entire agreement between you and us regarding our Services.",
+        },
+        {
+          title: "B. Severability",
+          description:
+            "If any provision of these Terms is found to be unenforceable, the remaining provisions will remain in full force and effect.",
+        },
+        {
+          title: "C. No Waiver",
+          description:
+            "Our failure to enforce any provision of these Terms does not constitute a waiver of that provision.",
+        },
+        {
+          title: "D. Assignment",
+          description:
+            "You may not assign or transfer your rights under these Terms without our written consent. We may assign our rights and obligations under these Terms without notice.",
+        },
+      ],
+    },
+    changesToTerms: {
+      heading: "18. Changes to Terms",
+      content:
+        'We may update these Terms from time to time. We will notify you of any changes by posting the new Terms on our website and updating the "Last Updated" date. Your continued use of our Services after such modifications constitutes acceptance of the updated Terms.',
+    },
+    contactUs: {
+      heading: "19. Contact Information",
+      description:
+        "If you have any questions about these Terms of Service, please contact us at:",
+      email: "jimmy@insightscrucible.com",
+      company: "Embercore LLC",
+      address: "1401 21st ST #5866",
+      city: "Sacramento",
+      state: "CA",
+      zipCode: "95811",
+      country: "United States",
+    },
+  },
+};
+
 export const PRIVACY_POLICY_JSON = {
   privacyPolicy: {
     title: "Privacy Policy for Insights Crucible",

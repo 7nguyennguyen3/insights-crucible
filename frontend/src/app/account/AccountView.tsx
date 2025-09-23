@@ -197,8 +197,9 @@ export function AccountView() {
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen w-full p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="bg-white dark:bg-slate-900 min-h-screen w-full">
+      <div className="py-24 md:py-32 lg:py-40 container mx-auto px-4">
+        <div className="max-w-7xl mx-auto space-y-8">
         <header>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             My Account
@@ -208,115 +209,120 @@ export function AccountView() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-8">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Account Summary</CardTitle>
-                <CardDescription>Your current credit balance and account info.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
+        {/* Account Summary - Horizontal Layout */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Account Summary</CardTitle>
+            <CardDescription>Your current credit balance and account info.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Account Info */}
+              <div className="lg:col-span-2 space-y-4">
                 <div className="space-y-1">
                   <Label>Email</Label>
                   <div className="text-sm text-slate-700 dark:text-slate-300 h-5">
                     {isProfileLoading ? (
-                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-5 w-32" />
                     ) : (
                       user?.email
                     )}
                   </div>
                 </div>
-                {/* No plan field needed for credit-based system */}
                 <div className="space-y-2">
                   <Label>Available Credits</Label>
-                  <div className="text-5xl font-bold text-slate-900 dark:text-slate-100 h-12 flex items-center">
+                  <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 h-8 flex items-center">
                     {isProfileLoading ? (
-                      <Skeleton className="h-12 w-24" />
+                      <Skeleton className="h-8 w-16" />
                     ) : (
                       (profile?.analyses_remaining ?? 0)
                     )}
                   </div>
                 </div>
-                {/* No billing dates needed for credit-based system */}
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4">
-                <div className="w-full space-y-3 pt-4 border-t">
-                  <Label className="font-semibold">
-                    Purchase Credit Packs
-                  </Label>
+              </div>
+
+              {/* Credit Packs */}
+              <div className="lg:col-span-7">
+                <div className="space-y-3">
+                  <Label className="font-semibold">Purchase Credit Packs</Label>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
                     Credits never expire. Choose a pack that fits your needs!
                   </p>
 
-                  {/* Starter Pack */}
-                  <Button
-                    variant="secondary"
-                    className="w-full justify-between"
-                    onClick={() =>
-                      handleCreateCheckout({
-                        priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PACK_PRICE_ID!,
-                      })
-                    }
-                    disabled={!!isCheckoutLoading}
-                  >
-                    <span className="flex items-center">30 Credits</span>
-                    <span className="font-bold">$5</span>
-                  </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {/* Starter Pack */}
+                    <Button
+                      variant="secondary"
+                      className="h-auto p-4 flex flex-col items-center justify-center space-y-1"
+                      onClick={() =>
+                        handleCreateCheckout({
+                          priceId: process.env.NEXT_PUBLIC_STRIPE_STARTER_PACK_PRICE_ID!,
+                        })
+                      }
+                      disabled={!!isCheckoutLoading}
+                    >
+                      <span className="text-sm">30 Credits</span>
+                      <span className="text-lg font-bold">$5</span>
+                    </Button>
 
-                  {/* Professional Pack */}
-                  <Button
-                    variant="secondary"
-                    className="w-full justify-between"
-                    onClick={() =>
-                      handleCreateCheckout({
-                        priceId: process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PACK_PRICE_ID!,
-                      })
-                    }
-                    disabled={!!isCheckoutLoading}
-                  >
-                    <span className="flex items-center">
-                      60{" "}
-                      <span className="text-green-600 dark:text-green-400 font-bold mx-1">
-                        + 15
-                      </span>{" "}
-                      Credits
-                      <Badge className="ml-2">Most Popular</Badge>
-                    </span>
-                    <span className="font-bold">$10</span>
-                  </Button>
+                    {/* Professional Pack */}
+                    <Button
+                      variant="secondary"
+                      className="h-auto p-4 flex flex-col items-center justify-center space-y-1 relative"
+                      onClick={() =>
+                        handleCreateCheckout({
+                          priceId: process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PACK_PRICE_ID!,
+                        })
+                      }
+                      disabled={!!isCheckoutLoading}
+                    >
+                      <Badge className="absolute -top-2 text-xs">Most Popular</Badge>
+                      <span className="text-sm">
+                        60{" "}
+                        <span className="text-green-600 dark:text-green-400 font-bold">
+                          + 15
+                        </span>{" "}
+                        Credits
+                      </span>
+                      <span className="text-lg font-bold">$10</span>
+                    </Button>
 
-                  {/* Ultimate Pack */}
-                  <Button
-                    variant="secondary"
-                    className="w-full justify-between"
-                    onClick={() =>
-                      handleCreateCheckout({
-                        priceId: process.env.NEXT_PUBLIC_STRIPE_ULTIMATE_PACK_PRICE_ID!,
-                      })
-                    }
-                    disabled={!!isCheckoutLoading}
-                  >
-                    <span className="flex items-center">
-                      120{" "}
-                      <span className="text-green-600 dark:text-green-400 font-bold mx-1">
-                        + 50
-                      </span>{" "}
-                      Credits
+                    {/* Ultimate Pack */}
+                    <Button
+                      variant="secondary"
+                      className="h-auto p-4 flex flex-col items-center justify-center space-y-1 relative"
+                      onClick={() =>
+                        handleCreateCheckout({
+                          priceId: process.env.NEXT_PUBLIC_STRIPE_ULTIMATE_PACK_PRICE_ID!,
+                        })
+                      }
+                      disabled={!!isCheckoutLoading}
+                    >
                       <Badge
                         variant="outline"
-                        className="ml-2 border-green-500 text-green-500"
+                        className="absolute -top-2 text-xs border-green-500 text-green-500"
                       >
                         Best Value
                       </Badge>
-                    </span>
-                    <span className="font-bold">$20</span>
-                  </Button>
+                      <span className="text-sm">
+                        120{" "}
+                        <span className="text-green-600 dark:text-green-400 font-bold">
+                          + 50
+                        </span>{" "}
+                        Credits
+                      </span>
+                      <span className="text-lg font-bold">$20</span>
+                    </Button>
+                  </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     <strong>Note:</strong> Bonus credits are included automatically in your total.
                   </p>
                 </div>
+              </div>
 
+              {/* Actions */}
+              <div className="lg:col-span-3 space-y-3">
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="w-full">
@@ -363,124 +369,125 @@ export function AccountView() {
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/account/setting">
                     <Settings className="mr-2 h-4 w-4" />
-                    Profile & Security Settings
+                    Profile Settings
                   </Link>
                 </Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Library Management Section */}
-            <LibraryManagement />
-          </div>
-          <div className="lg:col-span-2">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <History className="w-6 h-6" />
-                  <span>Analysis History</span>
-                </CardTitle>
-                <CardDescription>
-                  Your most recent analysis jobs.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Analysis Title</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Date</TableHead>
+        {/* Library Management - Full Width */}
+        <LibraryManagement />
+
+        {/* Analysis History - Full Width */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-6 h-6" />
+              <span>Analysis History</span>
+            </CardTitle>
+            <CardDescription>
+              Your most recent analysis jobs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Analysis Title</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isHistoryLoading && usageHistory.length === 0 ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={3}>
+                        <Skeleton className="h-8 w-full" />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isHistoryLoading && usageHistory.length === 0 ? (
-                      [...Array(5)].map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell colSpan={3}>
-                            <Skeleton className="h-8 w-full" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : historyError ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={3}
-                          className="text-center h-24 text-red-500"
-                        >
-                          Could not load analysis history.
-                        </TableCell>
-                      </TableRow>
-                    ) : usageHistory.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center h-24">
-                          <FileClock className="mx-auto h-12 w-12 text-slate-400 mb-2" />
-                          <p className="font-semibold">No analyses yet.</p>
-                          <p className="text-sm text-slate-500">
-                            Run your first analysis to see it here.
-                          </p>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      usageHistory.map((record) => (
-                        <TableRow key={record.id}>
-                          <TableCell className="font-medium">
-                            <Link
-                              href={`/results/${record.jobId}`}
-                              className="hover:underline"
-                            >
-                              {record.jobTitle ||
-                                `Analysis from ${new Date(
-                                  record.createdAt
-                                ).toLocaleDateString()}`}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                record.type === "audio"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                              className="capitalize"
-                            >
-                              {record.type === "audio" ? (
-                                <Mic className="w-3 h-3 mr-1" />
-                              ) : (
-                                <FileText className="w-3 h-3 mr-1" />
-                              )}
-                              {record.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right text-sm text-slate-500">
-                            {new Date(record.createdAt).toLocaleString([], {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-                {hasMore && (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      onClick={() => setSize(size + 1)}
-                      disabled={isLoadingMore}
-                      variant="outline"
+                  ))
+                ) : historyError ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="text-center h-24 text-red-500"
                     >
-                      {isLoadingMore ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        "Load More"
-                      )}
-                    </Button>
-                  </div>
+                      Could not load analysis history.
+                    </TableCell>
+                  </TableRow>
+                ) : usageHistory.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center h-24">
+                      <FileClock className="mx-auto h-12 w-12 text-slate-400 mb-2" />
+                      <p className="font-semibold">No analyses yet.</p>
+                      <p className="text-sm text-slate-500">
+                        Run your first analysis to see it here.
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  usageHistory.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">
+                        <Link
+                          href={`/results/${record.jobId}`}
+                          className="hover:underline"
+                        >
+                          {record.jobTitle ||
+                            `Analysis from ${new Date(
+                              record.createdAt
+                            ).toLocaleDateString()}`}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            record.type === "audio"
+                              ? "default"
+                              : "secondary"
+                          }
+                          className="capitalize"
+                        >
+                          {record.type === "audio" ? (
+                            <Mic className="w-3 h-3 mr-1" />
+                          ) : (
+                            <FileText className="w-3 h-3 mr-1" />
+                          )}
+                          {record.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-slate-500">
+                        {new Date(record.createdAt).toLocaleString([], {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </TableBody>
+            </Table>
+            {hasMore && (
+              <div className="flex justify-center mt-6">
+                <Button
+                  onClick={() => setSize(size + 1)}
+                  disabled={isLoadingMore}
+                  variant="outline"
+                >
+                  {isLoadingMore ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Load More"
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
         </div>
       </div>
     </div>

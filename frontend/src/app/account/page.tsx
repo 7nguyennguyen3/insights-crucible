@@ -20,18 +20,10 @@ import {
 const AccountPageSkeleton = () => {
   return (
     <div
-      className={`min-h-screen w-full ${backgroundVariants.universal} text-slate-800 dark:text-slate-200 relative overflow-hidden`}
+      className={`min-h-screen w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200`}
     >
-      {/* Background Elements */}
-      <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse" />
       <div
-        className="absolute top-1/3 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "2s" }}
-      />
-
-      <div
-        className={`relative ${spacingVariants.heroPadding} ${containerVariants.section}`}
+        className={`${spacingVariants.heroPadding} ${containerVariants.section}`}
       >
         <header className="text-center mb-16">
           <div className={`${typographyVariants.heroTitle} mb-6`}>
@@ -44,15 +36,89 @@ const AccountPageSkeleton = () => {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 space-y-8">
-              <Skeleton className="h-[400px] w-full" />
-              <Skeleton className="h-[300px] w-full" />
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Account Summary Skeleton */}
+          <div className="bg-white dark:bg-slate-800 border rounded-lg shadow-lg p-6">
+            <div className="mb-6">
+              <Skeleton className="h-6 w-32 mb-2" />
+              <Skeleton className="h-4 w-64" />
             </div>
-            <div className="lg:col-span-1 lg:sticky top-24 space-y-6">
-              <Skeleton className="h-[500px] w-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Account Info Skeleton */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-5 w-32" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-16" />
+                </div>
+              </div>
+
+              {/* Credit Packs Skeleton */}
+              <div className="lg:col-span-7 space-y-3">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-64" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+                <Skeleton className="h-3 w-80" />
+              </div>
+
+              {/* Actions Skeleton */}
+              <div className="lg:col-span-3 space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
             </div>
+          </div>
+
+          {/* Library Management Skeleton */}
+          <div className="bg-white dark:bg-slate-800 border rounded-lg shadow-lg p-6">
+            <div className="mb-6">
+              <Skeleton className="h-6 w-40 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <div className="space-y-6">
+              {/* Stats Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+
+              {/* Tags Skeleton */}
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-14" />
+                  <Skeleton className="h-6 w-18" />
+                </div>
+              </div>
+
+              {/* Table Skeleton */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-8 w-28" />
+                </div>
+                <Skeleton className="h-48 w-full" />
+              </div>
+            </div>
+          </div>
+
+          {/* Analysis History Skeleton */}
+          <div className="bg-white dark:bg-slate-800 border rounded-lg shadow-lg p-6">
+            <div className="mb-6">
+              <Skeleton className="h-6 w-36 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <Skeleton className="h-64 w-full" />
           </div>
         </div>
       </div>

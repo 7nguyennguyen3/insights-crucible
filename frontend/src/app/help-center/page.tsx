@@ -91,8 +91,9 @@ const HelpCenterPage = () => {
   }, [searchTerm]);
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
-      <div className="container mx-auto px-4 py-20 md:py-24">
+    <div className="bg-white dark:bg-slate-900 min-h-screen">
+      <div className="py-24 md:py-32 lg:py-40 container mx-auto px-4">
+        <div className="max-w-7xl mx-auto">
         {/* Header & Search Section */}
         <header className="text-center mb-12">
           <LifeBuoy className="mx-auto h-16 w-16 text-blue-500 mb-4" />
@@ -170,6 +171,7 @@ const HelpCenterPage = () => {
             </CardContent>
           </Card>
         </aside>
+        </div>
       </div>
     </div>
   );

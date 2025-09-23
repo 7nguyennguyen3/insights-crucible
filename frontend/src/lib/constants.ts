@@ -8,6 +8,7 @@ export const ROUTES = {
   AUTH: "/auth",
   AUTH_SIGNUP: "/auth?tab=signup",
   DEMO: "/demo",
+  LIBRARY: "/library",
   PRICING: "/#pricing",
   ENGINE: "/engine",
   DASHBOARD: "/dashboard",

@@ -97,9 +97,12 @@ secret/
 logs/
 
 # Documentation and temp files
-*.md.backup
-oe_grading.json
-structured_transcript.json
-fetched_transcript.md
-prompt.md
-workflow.md
+
+# Temporary development features (not for deployment)
+frontend/src/app/temp-youtube-fetch/
+frontend/src/app/api/temp-youtube-fetch/
+frontend/src/app/temp-debug-job/
+frontend/src/app/api/temp-debug-job/
+
+# Local development
+/references

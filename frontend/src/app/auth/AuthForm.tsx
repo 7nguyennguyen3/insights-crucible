@@ -53,7 +53,14 @@ export function AuthForm() {
 
   const handleSessionLogin = async (idToken: string) => {
     await axios.post("/api/auth/session-login", { idToken });
-    window.location.href = "/dashboard";
+
+    // Check for returnUrl parameter and redirect accordingly
+    const returnUrl = searchParams.get("returnUrl");
+    if (returnUrl) {
+      window.location.href = decodeURIComponent(returnUrl);
+    } else {
+      window.location.href = "/dashboard";
+    }
   };
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
@@ -137,13 +144,17 @@ export function AuthForm() {
 
   return (
     <div className="w-full max-w-md mx-4">
-      {/* Trust Indicators */}
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 text-sm mb-3">
-          <Shield className="w-4 h-4 text-teal-600" />
-          <span>Secure & Encrypted</span>
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>Free Credits Included</span>
+      {/* Enhanced Trust Indicators */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-6 text-slate-700 dark:text-slate-300 text-sm mb-4">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="font-medium">Secure & Encrypted</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <span className="font-medium">30 Free Credits</span>
+          </div>
         </div>
       </div>
 
@@ -152,7 +163,7 @@ export function AuthForm() {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <Card className={`${elevationVariants.floating} bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-stone-200/60 dark:border-amber-900/30`}>
+        <Card className="shadow-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
           <CardHeader className="text-center">
             <CardTitle className={`${typographyVariants.cardTitle} text-slate-900 dark:text-slate-100`}>
               {activeTab === "signin" ? "Welcome Back" : "Create an Account"}
@@ -175,7 +186,7 @@ export function AuthForm() {
           <div className="space-y-4">
             <Button
               variant="outline"
-              className="w-full h-12 bg-white/70 dark:bg-slate-700/70 hover:bg-white dark:hover:bg-slate-600 border-stone-200 dark:border-stone-600 hover:border-stone-300 dark:hover:border-stone-500 shadow-md hover:shadow-lg transition-all duration-200"
+              className="w-full h-12 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-200"
               onClick={handleGoogleSignIn}
               disabled={googleLoading || loading}
             >
@@ -189,18 +200,18 @@ export function AuthForm() {
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-stone-200 dark:border-amber-800/40" />
+                <span className="w-full border-t border-slate-200 dark:border-slate-700" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white/80 dark:bg-slate-800/80 px-3 py-1 text-slate-500 dark:text-slate-400 rounded-full">
+                <span className="bg-white dark:bg-slate-800 px-4 py-2 text-slate-500 dark:text-slate-400 font-medium">
                   Or continue with
                 </span>
               </div>
             </div>
 
-            <TabsList className="grid w-full grid-cols-2 bg-stone-100/80 dark:bg-slate-700/80 border border-stone-200/60 dark:border-amber-900/30">
-              <TabsTrigger value="signin" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600">
+              <TabsTrigger value="signin" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 font-medium">Sign In</TabsTrigger>
+              <TabsTrigger value="signup" className="data-[state=active]:bg-white dark:data-[state=active]:bg-slate-600 data-[state=active]:text-slate-900 dark:data-[state=active]:text-slate-100 font-medium">Sign Up</TabsTrigger>
             </TabsList>
 
             <form onSubmit={handleEmailPasswordSubmit}>
@@ -269,7 +280,7 @@ export function AuthForm() {
 
               <Button
                 type="submit"
-                className="w-full mt-6 h-12 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
+                className="w-full mt-6 h-12 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
                 disabled={loading || googleLoading}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -281,11 +292,16 @@ export function AuthForm() {
       </Card>
       </Tabs>
       
-      {/* Additional Trust Elements */}
-      <div className="mt-6 text-center">
-        <p className="text-xs text-slate-500 dark:text-slate-500 max-w-sm mx-auto leading-relaxed">
-          By continuing, you agree to our Terms of Service and Privacy Policy. 
-          Your data is encrypted and secure.
+      {/* Enhanced Trust Elements */}
+      <div className="mt-8 text-center">
+        <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+          By continuing, you agree to our{" "}
+          <span className="text-blue-600 dark:text-blue-400 font-medium">Terms of Service</span>{" "}
+          and{" "}
+          <span className="text-blue-600 dark:text-blue-400 font-medium">Privacy Policy</span>.
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-500 max-w-sm mx-auto leading-relaxed mt-2">
+          🔒 Your data is encrypted and secure.
         </p>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { ModelChoice, AnalysisPersona, TabType } from "@/types/engine";
 
 // Legacy feature options removed - focusing on core analysis types instead
 
-export const DEFAULT_MODEL_CHOICE: ModelChoice = "universal";
+export const DEFAULT_MODEL_CHOICE: ModelChoice = "slam-1";
 export const DEFAULT_ANALYSIS_PERSONA: AnalysisPersona = "deep_dive";
 export const DEFAULT_TAB: TabType = "youtube";
 
@@ -87,6 +87,32 @@ export const ANALYSIS_PERSONA_OPTIONS = {
       "Key takeaways with supporting quotes",
       "Multiple choice & open-ended quizzes",
     ],
+  },
+  NEURAL_SYNTHESIS: {
+    id: "neural_synthesis" as AnalysisPersona,
+    title: "Neural Synthesis",
+    description:
+      "Advanced AI-powered content synthesis that creates interconnected knowledge maps, identifies hidden patterns, and generates predictive insights from your content.",
+    category: "ADVANCED INTELLIGENCE",
+    features: [
+      "Knowledge graph visualization",
+      "Pattern recognition across topics",
+      "Predictive content recommendations",
+    ],
+    comingSoon: true,
+  },
+  INSIGHT_ENGINE: {
+    id: "insight_engine" as AnalysisPersona,
+    title: "Insight Engine",
+    description:
+      "Ultra-deep analytical processing that performs multi-dimensional content analysis, creates strategic frameworks, and generates actionable business intelligence.",
+    category: "STRATEGIC ANALYSIS",
+    features: [
+      "Multi-dimensional analysis",
+      "Strategic framework generation",
+      "Business intelligence reports",
+    ],
+    comingSoon: true,
   },
 };
 

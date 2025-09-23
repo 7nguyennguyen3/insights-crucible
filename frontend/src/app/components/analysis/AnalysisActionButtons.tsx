@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, FileText, Share2, Pencil, Save, FileDown } from "lucide-react";
+import { Copy, FileText, Share2, Pencil, Save, FileDown, Heart } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,8 @@ interface AnalysisActionButtonsProps {
   onExportToPowerPoint?: () => void;
   onExportPdf: () => void;
   onExportDocx: () => void;
+  onSaveAnalysis?: () => void;
+  isSavingAnalysis?: boolean;
 }
 
 export const AnalysisActionButtons: React.FC<AnalysisActionButtonsProps> = ({
@@ -40,10 +42,25 @@ export const AnalysisActionButtons: React.FC<AnalysisActionButtonsProps> = ({
   onExportToPowerPoint,
   onExportDocx,
   onExportPdf,
+  onSaveAnalysis,
+  isSavingAnalysis,
 }) => {
   if (isPublicPage) {
     return (
       <div className="flex items-center gap-2">
+        {/* Save to Dashboard Button */}
+        {onSaveAnalysis && (
+          <Button
+            variant="default"
+            onClick={onSaveAnalysis}
+            disabled={!hasData || isSavingAnalysis}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Heart className="h-4 w-4 mr-2" />
+            {isSavingAnalysis ? "Saving..." : "Save to Dashboard (0.5 credits)"}
+          </Button>
+        )}
+
         <Button
           variant="outline"
           onClick={onShowTranscript}
@@ -98,7 +115,7 @@ export const AnalysisActionButtons: React.FC<AnalysisActionButtonsProps> = ({
           {onShare && (
             <Button variant="outline" onClick={onShare}>
               <Share2 className="h-4 w-4 mr-2" />
-              Share
+              Public Sharing
             </Button>
           )}
 

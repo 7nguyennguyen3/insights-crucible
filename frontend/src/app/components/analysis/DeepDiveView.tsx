@@ -38,7 +38,7 @@ interface DeepDiveViewProps {
 
 const timeStringToSeconds = (timeStr: string): number => {
   if (!timeStr || timeStr === "N/A") return 0;
-  
+
   const parts = timeStr.split(":");
   if (parts.length === 0) return 0;
 
@@ -56,6 +56,30 @@ const timeStringToSeconds = (timeStr: string): number => {
   }
 
   return totalSeconds;
+};
+
+const formatTimeDisplay = (timeStr: string): string => {
+  if (!timeStr || timeStr === "N/A") return timeStr;
+
+  const parts = timeStr.split(":");
+  if (parts.length === 0) return timeStr;
+
+  // If already in H:MM:SS format, return as is
+  if (parts.length === 3) return timeStr;
+
+  // Convert MM:SS to H:MM:SS if minutes >= 60
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10) || 0;
+    const seconds = parts[1];
+
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${seconds}`;
+    }
+  }
+
+  return timeStr;
 };
 
 const getTakeawayTypeConfig = (type: ActionableTakeaway["type"]) => {
@@ -103,10 +127,22 @@ const DeepDiveView: React.FC<DeepDiveViewProps> = ({
     );
   }
 
+  // Sort results by start_time before rendering
+  const sortedResults = [...results].sort((a, b) => {
+    const aSeconds = timeStringToSeconds(a.start_time);
+    const bSeconds = timeStringToSeconds(b.start_time);
+    return aSeconds - bSeconds;
+  });
+
   return (
     <div className="space-y-6">
-      <Accordion type="single" collapsible className="space-y-4">
-        {results.map((section, index) => (
+      <Accordion
+        type="single"
+        collapsible
+        defaultValue={sortedResults.length > 0 ? (sortedResults[0].id || "section-0") : undefined}
+        className="space-y-4"
+      >
+        {sortedResults.map((section, index) => (
           <AccordionItem
             key={section.id || index}
             value={section.id || `section-${index}`}
@@ -116,7 +152,7 @@ const DeepDiveView: React.FC<DeepDiveViewProps> = ({
               <div className="flex flex-col items-start text-left w-full">
                 <div className="flex items-center justify-between w-full mb-2">
                   <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">
-                    {section.start_time} - {section.end_time}
+                    {formatTimeDisplay(section.start_time)} - {formatTimeDisplay(section.end_time)}
                   </span>
                 </div>
                 <EditableField
@@ -170,6 +206,12 @@ const DeepDiveView: React.FC<DeepDiveViewProps> = ({
                         quote_timestamp: (item as any).quote_timestamp
                       };
 
+                      // Debug quote timestamp
+                      console.log("🔍 DeepDive Debug - Item:", item);
+                      console.log("🔍 DeepDive Debug - Takeaway quote_timestamp:", takeaway.quote_timestamp);
+                      console.log("🔍 DeepDive Debug - Has quote_timestamp?", !!takeaway.quote_timestamp);
+                      console.log("🔍 DeepDive Debug - quote_timestamp.start:", takeaway.quote_timestamp?.start);
+
                       // Find the original index for edit operations
                       const sourceArray = section.actionable_takeaways || section.lessons_and_concepts || [];
                       const originalIndex = sourceArray.findIndex(original => original === item) ?? sortedIndex;
@@ -216,7 +258,7 @@ const DeepDiveView: React.FC<DeepDiveViewProps> = ({
                               </div>
                               {takeaway.quote_timestamp && (
                                 <span className="text-xs text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                                  {takeaway.quote_timestamp.start} - {takeaway.quote_timestamp.end}
+                                  {formatTimeDisplay(takeaway.quote_timestamp.start)}
                                 </span>
                               )}
                             </div>

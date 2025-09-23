@@ -7,6 +7,8 @@ import json
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from langchain_core.runnables import RunnableConfig
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 from rich import print
 from rich.panel import Panel
 
@@ -754,7 +756,7 @@ class AnalysisPipeline:
                     "quiz_metadata": {
                         "total_questions": len(quiz_questions),
                         "total_open_ended_questions": len(open_ended_questions),
-                        "estimated_time_minutes": len(quiz_questions) * 2 + len(open_ended_questions) * 5,
+                        "estimated_time_minutes": len(quiz_questions) * 1 + len(open_ended_questions) * 4,
                         "difficulty_distribution": {"easy": 1, "medium": 2, "hard": 0},
                         "source": "deep_dive_analysis"
                     },
@@ -856,6 +858,131 @@ class AnalysisPipeline:
 
         timing_metrics["content_generation_s"] = time.monotonic() - start_time
 
+    async def _generate_library_metadata(
+        self,
+        request: AnalysisRequest,
+        runnable_config: RunnableConfig,
+        timing_metrics: Dict[str, float],
+    ) -> Dict[str, Any]:
+        """
+        Generate suggested description and tags for library sharing.
+        """
+        if request.persona != "deep_dive":
+            # Only generate for deep_dive persona as requested
+            return {}
+
+        start_time = time.monotonic()
+
+        try:
+            print("[cyan]Generating library metadata suggestions...[/cyan]")
+
+            # Get job data to extract section results and metadata
+            job_doc = self.db_manager.get_job_status(request.user_id, request.job_id)
+            if not job_doc:
+                print("[yellow]Could not retrieve job data for library metadata generation[/yellow]")
+                return {}
+
+            # Extract section results from subcollections
+            try:
+                results_collection = self.db_manager.db.collection(
+                    f"saas_users/{request.user_id}/jobs/{request.job_id}/results"
+                )
+                results_docs = results_collection.get()
+                section_results = [doc.to_dict() for doc in results_docs]
+            except Exception as e:
+                print(f"[yellow]Could not retrieve section results: {e}[/yellow]")
+                section_results = []
+
+            # Extract key information for metadata generation
+            job_title = job_doc.get("job_title", "")
+            youtube_metadata = {
+                "youtube_title": job_doc.get("request_data", {}).get("youtube_video_title", ""),
+                "youtube_channel": job_doc.get("request_data", {}).get("youtube_channel_name", ""),
+                "source_type": job_doc.get("request_data", {}).get("source_type", "unknown")
+            }
+
+            # Collect section summaries and takeaways
+            section_summaries = []
+            all_takeaways = []
+
+            for section in section_results:
+                summary = section.get("1_sentence_summary", "")
+                if summary:
+                    section_summaries.append(summary)
+
+                takeaways = section.get("actionable_takeaways", [])
+                for takeaway in takeaways:
+                    if isinstance(takeaway, dict):
+                        takeaway_text = takeaway.get("takeaway", "")
+                        if takeaway_text:
+                            all_takeaways.append(takeaway_text)
+
+            if not section_summaries and not all_takeaways:
+                print("[yellow]No section data available for library metadata generation[/yellow]")
+                return {}
+
+            # Prepare content for LLM
+            content_data = {
+                "job_title": job_title,
+                "youtube_metadata": youtube_metadata,
+                "section_summaries": section_summaries[:5],  # Limit to first 5 sections
+                "key_takeaways": all_takeaways[:8]  # Limit to first 8 takeaways
+            }
+
+            content_json = json.dumps(content_data, indent=2)
+
+            parser = JsonOutputParser()
+
+            prompt = ChatPromptTemplate.from_messages([
+                (
+                    "system",
+                    """You are an expert content curator for an educational platform library. Your task is to generate compelling metadata for content analysis that will help users discover and understand the value of this content.
+
+You will be provided with analysis data including section summaries and key takeaways from educational content. Generate library metadata that makes this content easily discoverable and clearly communicates its value.
+
+Your output must be a JSON object with the following keys:
+
+- 'description': A 2-3 sentence description that captures the main value proposition and key insights. Make it engaging and informative for potential viewers. Focus on what users will learn or gain.
+
+- 'tags': An array of exactly 3-4 relevant tags that categorize this content. Use clear, searchable terms that users might filter by. Consider topics like: productivity, learning, leadership, communication, technology, business, health, creativity, etc.
+
+Guidelines:
+- Keep the description concise but compelling (50-120 words)
+- Tags should be single words or short phrases (1-2 words)
+- Focus on the educational value and practical applications
+- Make it appealing to users browsing the library
+- Use tags that are broad enough to be useful for filtering
+
+{format_instructions}""",
+                ),
+                (
+                    "human",
+                    """Based on the following content analysis data, generate library metadata.
+
+--- CONTENT ANALYSIS DATA ---
+{content_data}
+--- END CONTENT ANALYSIS DATA ---""",
+                ),
+            ])
+
+            chain = prompt | self.meta_analyzer.llm | parser
+
+            library_metadata = await chain.ainvoke({
+                "content_data": content_json,
+                "format_instructions": parser.get_format_instructions(),
+            }, config=runnable_config)
+
+            timing_metrics["library_metadata_generation_s"] = time.monotonic() - start_time
+
+            print(f"[green]Library metadata generated: {len(library_metadata.get('description', ''))} char description, {len(library_metadata.get('tags', []))} tags[/green]")
+
+            return library_metadata
+
+        except Exception as e:
+            print(f"[red]Error generating library metadata: {e}[/red]")
+            timing_metrics["library_metadata_generation_s"] = time.monotonic() - start_time
+            return {}
+
     async def _finalize_job(
         self,
         request: AnalysisRequest,
@@ -915,6 +1042,25 @@ class AnalysisPipeline:
         self.db_manager.create_usage_record(
             request.user_id, request.job_id, usage_record
         )
+
+        # Generate library metadata suggestions for deep_dive persona
+        try:
+            runnable_config = RunnableConfig(callbacks=[self.token_tracker])
+            library_metadata = await self._generate_library_metadata(
+                request, runnable_config, timing_metrics
+            )
+
+            if library_metadata:
+                # Save library metadata suggestions to the job document
+                self.db_manager.db.collection(
+                    f"saas_users/{request.user_id}/jobs"
+                ).document(request.job_id).update({
+                    "libraryDescriptionSuggestion": library_metadata.get("description", ""),
+                    "libraryTagsSuggestion": library_metadata.get("tags", [])
+                })
+                print(f"[green]Saved library metadata suggestions to job document[/green]")
+        except Exception as e:
+            print(f"[yellow]Warning: Could not generate library metadata: {e}[/yellow]")
 
         # Update final status
         self.db_manager.update_job_status(

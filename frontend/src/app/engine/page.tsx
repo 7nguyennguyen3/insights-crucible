@@ -103,10 +103,10 @@ const EnginePage = () => {
 
     if (!uploadToastId || filesInFlight.length === 0) return;
 
-    console.log('Toast update triggered:', {
+    console.log("Toast update triggered:", {
       filesUploaded,
       totalFiles: filesInFlight.length,
-      progress: uploadProgress
+      progress: uploadProgress,
     });
 
     const isComplete = filesUploaded === filesInFlight.length;
@@ -220,7 +220,7 @@ const EnginePage = () => {
 
       // Initialize progress for all files at 0%
       const initialProgress: { [fileName: string]: number } = {};
-      filesToUpload.forEach(file => {
+      filesToUpload.forEach((file) => {
         initialProgress[file.name] = 0;
       });
       actions.setUploadProgress(initialProgress);
@@ -262,18 +262,10 @@ const EnginePage = () => {
 
   return (
     <main
-      className={`min-h-screen w-full ${backgroundVariants.universal} text-slate-800 dark:text-slate-200 relative overflow-hidden`}
+      className={`min-h-screen w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200`}
     >
-      {/* Background Elements */}
-      <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse" />
       <div
-        className="absolute top-1/3 right-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "2s" }}
-      />
-
-      <div
-        className={`relative ${spacingVariants.heroPadding} ${containerVariants.section}`}
+        className={`${spacingVariants.heroPadding} ${containerVariants.section}`}
       >
         <header className="text-center mb-16">
           <h1 className={`${typographyVariants.heroTitle} mb-6`}>
@@ -305,55 +297,57 @@ const EnginePage = () => {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-2 space-y-8">
-            <InputTabsSection
-              activeTab={state.activeTab}
-              user={user}
-              canInteract={canInteract}
-              youtubeUrl={state.youtube.url}
-              videoDetails={state.youtube.videoDetails}
-              isFetchingMetadata={isFetchingMetadata}
-              onUrlChange={actions.setYouTubeUrl}
-              onFetchMetadata={() =>
-                youtubeProcessor.fetchYouTubeMetadata(state.youtube.url)
-              }
-              transcript={state.transcript}
-              onTranscriptChange={handleTranscriptChange}
-              selectedFiles={state.upload.selectedFiles}
-              modelChoice={state.modelChoice}
-              isDragActive={fileUploader.isDragActive}
-              dropzoneProps={fileUploader.dropzoneProps}
-              onModelChange={actions.setModelChoice}
-              onRemoveFile={fileUploader.removeFile}
-              onTabChange={handleTabChange}
-            />
+        <div className="w-full flex justify-center items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start w-full max-w-5xl">
+            <div className="lg:col-span-2 space-y-8">
+              <InputTabsSection
+                activeTab={state.activeTab}
+                user={user}
+                canInteract={canInteract}
+                youtubeUrl={state.youtube.url}
+                videoDetails={state.youtube.videoDetails}
+                isFetchingMetadata={isFetchingMetadata}
+                onUrlChange={actions.setYouTubeUrl}
+                onFetchMetadata={() =>
+                  youtubeProcessor.fetchYouTubeMetadata(state.youtube.url)
+                }
+                transcript={state.transcript}
+                onTranscriptChange={handleTranscriptChange}
+                selectedFiles={state.upload.selectedFiles}
+                modelChoice={state.modelChoice}
+                isDragActive={fileUploader.isDragActive}
+                dropzoneProps={fileUploader.dropzoneProps}
+                onModelChange={actions.setModelChoice}
+                onRemoveFile={fileUploader.removeFile}
+                onTabChange={handleTabChange}
+              />
 
-            <AnalysisPersonaSection
-              analysisPersona={state.analysisPersona}
-              canInteract={canInteract}
-              onPersonaChange={actions.setAnalysisPersona}
-            />
-          </div>
+              <AnalysisPersonaSection
+                analysisPersona={state.analysisPersona}
+                canInteract={canInteract}
+                onPersonaChange={actions.setAnalysisPersona}
+              />
+            </div>
 
-          <div className="lg:col-span-1 lg:sticky top-24 space-y-6">
-            <LaunchpadSection
-              activeTab={state.activeTab}
-              videoDetails={state.youtube.videoDetails}
-              selectedFiles={state.upload.selectedFiles}
-              analysisPersona={state.analysisPersona}
-              status={state.status}
-              costDetails={state.costDetails}
-              error={state.error}
-              filesUploaded={state.upload.filesUploaded}
-              profile={profile}
-              canInteract={canInteract}
-              isReadyForAnalysis={readyForAnalysis}
-              isChecking={isChecking}
-              onCalculateCost={handleCostCalculation}
-              onProcessConfirmation={handleProcessConfirmation}
-              onStartOver={handleStartOver}
-            />
+            <div className="lg:col-span-1 lg:sticky top-24 space-y-6">
+              <LaunchpadSection
+                activeTab={state.activeTab}
+                videoDetails={state.youtube.videoDetails}
+                selectedFiles={state.upload.selectedFiles}
+                analysisPersona={state.analysisPersona}
+                status={state.status}
+                costDetails={state.costDetails}
+                error={state.error}
+                filesUploaded={state.upload.filesUploaded}
+                profile={profile}
+                canInteract={canInteract}
+                isReadyForAnalysis={readyForAnalysis}
+                isChecking={isChecking}
+                onCalculateCost={handleCostCalculation}
+                onProcessConfirmation={handleProcessConfirmation}
+                onStartOver={handleStartOver}
+              />
+            </div>
           </div>
         </div>
       </div>

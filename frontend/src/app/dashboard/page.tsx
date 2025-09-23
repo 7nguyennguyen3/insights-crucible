@@ -6,6 +6,7 @@ import {
 } from "@/components/dashboard/EnhancedSearch";
 import { useFolders } from "@/hooks/useFolders";
 import { useJobs } from "@/hooks/useJobs";
+import { useLibraryActions } from "@/hooks/useLibrary";
 import apiClient from "@/lib/apiClient";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
@@ -22,6 +23,8 @@ import { toast } from "sonner";
 import { Job } from "../_global/interface";
 
 import JobCard from "@/components/dashboard/JobCard";
+import { BulkActionBar } from "@/components/dashboard/BulkActionBar";
+import { BulkLibraryDialog } from "@/components/library/BulkLibraryDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +54,8 @@ import {
   Calendar as CalendarIcon, // Added User icon for channel name
   Filter,
   Loader2,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import withAuth from "../auth/components/withAuth";
 import FolderSidebar from "../components/FolderSidebar";
@@ -58,6 +63,11 @@ import FolderSidebar from "../components/FolderSidebar";
 const DashboardPage = () => {
   const { user, loading: authLoading } = useAuthStore();
   const [activeFilter, setActiveFilter] = useState("all");
+
+  // Selection state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
+  const [isBulkLibraryDialogOpen, setIsBulkLibraryDialogOpen] = useState(false);
 
   const {
     jobs,
@@ -72,6 +82,7 @@ const DashboardPage = () => {
   } = useJobs(activeFilter);
 
   const { folders } = useFolders();
+  const { bulkAddToLibrary } = useLibraryActions();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -87,6 +98,73 @@ const DashboardPage = () => {
     videoName: "",
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Selection handlers
+  const handleJobSelect = (jobId: string, selected: boolean) => {
+    setSelectedJobIds(prev =>
+      selected
+        ? [...prev, jobId]
+        : prev.filter(id => id !== jobId)
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentPageJobIds = filteredJobs.map(job => job.id);
+    setSelectedJobIds(currentPageJobIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedJobIds([]);
+    setIsSelectionMode(false);
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (!isSelectionMode) {
+      setSelectedJobIds([]);
+    }
+  };
+
+  // Bulk actions
+  const handleBulkShare = () => {
+    setIsBulkLibraryDialogOpen(true);
+  };
+
+  const handleBulkLibraryShare = async (hybridMetadata: any) => {
+    const requestData = {
+      jobIds: selectedJobIds,
+      sharedMetadata: hybridMetadata.sharedMetadata,
+      individualOverrides: hybridMetadata.individualOverrides
+    };
+
+    const result = await bulkAddToLibrary(selectedJobIds, requestData);
+
+    // Refresh jobs data
+    mutateJobs();
+
+    // Clear selection after successful operation
+    handleClearSelection();
+
+    return result;
+  };
+
+  const handleBulkDelete = () => {
+    // TODO: Implement bulk delete
+    console.log('Bulk delete:', selectedJobIds);
+  };
+
+  const handleBulkMove = () => {
+    // TODO: Implement bulk move
+    console.log('Bulk move:', selectedJobIds);
+  };
+
+  const handleBulkStar = () => {
+    // TODO: Implement bulk star
+    console.log('Bulk star:', selectedJobIds);
+  };
+
+  // Get selected jobs for dialog
+  const selectedJobs = jobs.filter(job => selectedJobIds.includes(job.id));
 
   useEffect(() => {
     if (error) {
@@ -256,11 +334,10 @@ const DashboardPage = () => {
   return (
     <>
       <div
-        className={`min-h-screen w-full ${backgroundVariants.universal} text-slate-800 dark:text-slate-200 relative overflow-hidden`}
+        className={`min-h-screen w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200`}
       >
-        <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
         <div
-          className={`relative ${spacingVariants.heroPadding} ${containerVariants.section}`}
+          className={`${spacingVariants.heroPadding} ${containerVariants.section}`}
         >
           <div className="max-w-7xl mx-auto">
             <header className="mb-10">
@@ -287,6 +364,32 @@ const DashboardPage = () => {
                     <Filter className="mr-2 h-4 w-4" />
                     {isSidebarOpen ? "Hide Filters" : "Show Filters"}
                   </Button>
+                </div>
+
+                {/* Selection Mode Toggle */}
+                <div className="mb-4">
+                  <Button
+                    variant={isSelectionMode ? "default" : "outline"}
+                    onClick={toggleSelectionMode}
+                    className="mb-2"
+                  >
+                    {isSelectionMode ? (
+                      <>
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Exit Selection
+                      </>
+                    ) : (
+                      <>
+                        <Square className="mr-2 h-4 w-4" />
+                        Select Analyses
+                      </>
+                    )}
+                  </Button>
+                  {isSelectionMode && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Click on analyses to select them for bulk actions.
+                    </p>
+                  )}
                 </div>
                 <div className="mb-8">
                   <EnhancedSearch
@@ -396,6 +499,9 @@ const DashboardPage = () => {
                           onDelete={handleDeleteClick}
                           onToggleStar={handleToggleStar}
                           onMove={handleMoveJob}
+                          isSelectionMode={isSelectionMode}
+                          isSelected={selectedJobIds.includes(job.id)}
+                          onSelect={handleJobSelect}
                         />
                       ))}
                     </div>
@@ -420,6 +526,27 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedJobIds.length}
+        totalCount={filteredJobs.length}
+        onClearSelection={handleClearSelection}
+        onSelectAll={handleSelectAll}
+        onBulkShare={handleBulkShare}
+        onBulkDelete={handleBulkDelete}
+        onBulkMove={handleBulkMove}
+        onBulkStar={handleBulkStar}
+      />
+
+      {/* Bulk Library Dialog */}
+      <BulkLibraryDialog
+        isOpen={isBulkLibraryDialogOpen}
+        onClose={() => setIsBulkLibraryDialogOpen(false)}
+        selectedJobs={selectedJobs}
+        onBulkShare={handleBulkLibraryShare}
+      />
+
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}

@@ -106,7 +106,7 @@ export default function TempDebugJobPage() {
     if (!jobData) return;
 
     try {
-      // Remove 'words' field from structured_transcript if it exists
+      // Remove 'words' field from structured_transcript if it exists, but keep full transcript
       const cleanedData = {
         ...jobData,
         main_document: jobData.main_document ? {
@@ -123,7 +123,7 @@ export default function TempDebugJobPage() {
 
       await navigator.clipboard.writeText(JSON.stringify(cleanedData, null, 2));
       setHasCopied(true);
-      toast.success("JSON copied to clipboard (words field removed from transcript)");
+      toast.success("Full JSON copied to clipboard (words field removed from transcript)");
       setTimeout(() => setHasCopied(false), 2000);
     } catch (err) {
       toast.error("Failed to copy to clipboard");

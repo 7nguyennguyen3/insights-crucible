@@ -77,8 +77,9 @@ const ContactUsPage = () => {
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
-      <div className="container mx-auto px-4 py-20 md:py-32">
+    <div className="bg-white dark:bg-slate-900 min-h-screen">
+      <div className="py-24 md:py-32 lg:py-40 container mx-auto px-4">
+        <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <header className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
@@ -154,6 +155,7 @@ const ContactUsPage = () => {
               </form>
             </CardContent>
           </Card>
+        </div>
         </div>
       </div>
     </div>

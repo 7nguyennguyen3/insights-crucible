@@ -98,43 +98,23 @@ const Navbar = () => {
 
     if (user) {
       return (
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden sm:flex">
-            <CustomButton
-              href={ROUTES.ENGINE || "/engine"}
-              variant="primary"
-              className="shadow-lg px-4 py-2 text-sm h-10"
-            >
-              <Zap className="h-4 w-4" />
-              Launch Engine
-            </CustomButton>
-          </div>
-          <CustomButton
-            href={ROUTES.DASHBOARD || "/dashboard"}
-            variant="secondary"
-            className="px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10 flex-shrink-0 min-w-0"
-          >
-            <LayoutDashboard className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline ml-1">Dashboard</span>
-          </CustomButton>
-
-          <CustomButton
-            href="/library"
-            variant="secondary"
-            className="px-2 py-2 text-xs sm:px-4 sm:text-sm h-8 sm:h-10 flex-shrink-0 min-w-0"
-          >
-            <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline ml-1">Library</span>
-          </CustomButton>
-
-          <NotificationBell />
-
+        <div className="flex items-center gap-2">
+          <Link href={ROUTES.LIBRARY}>
+            <Button variant="ghost">Library</Button>
+          </Link>
+          <Link href={ROUTES.DASHBOARD}>
+            <Button variant="ghost">Dashboard</Button>
+          </Link>
+          <Link href={ROUTES.ENGINE}>
+            <Button variant="ghost">Engine</Button>
+          </Link>
+          <div className="border-l border-slate-200 dark:border-slate-700 h-6 mx-2"></div>
           <div className="relative" ref={profileMenuRef}>
             <Button
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               variant={"ghost"}
             >
-              <UserCircle className="scale-150" />
+              <UserCircle className="h-5 w-5 scale-[140%]" />
             </Button>
             <div
               className={`
@@ -162,7 +142,7 @@ const Navbar = () => {
                   onClick={closeAllMenus}
                   className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
-                  <User2 className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
+                  <User2 className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
                   Account
                 </Link>
                 <Link
@@ -170,15 +150,15 @@ const Navbar = () => {
                   onClick={closeAllMenus}
                   className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
-                  <Settings className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
-                  Setting
+                  <Settings className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
+                  Settings
                 </Link>
                 <Link
                   href="/roadmap"
                   onClick={closeAllMenus}
                   className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
-                  <Map className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
+                  <Map className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
                   Roadmap
                 </Link>
                 <Link
@@ -186,7 +166,7 @@ const Navbar = () => {
                   onClick={closeAllMenus}
                   className="flex items-center w-full text-left px-3 py-2 text-sm rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
-                  <Tags className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />{" "}
+                  <Tags className="h-4 w-4 mr-3 text-slate-500 dark:text-slate-400" />
                   Pricing
                 </Link>
                 <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
@@ -205,8 +185,8 @@ const Navbar = () => {
 
     return (
       <div className="flex items-center gap-2">
-        <Link href="/demo">
-          <Button variant="ghost">Demo</Button>
+        <Link href={ROUTES.LIBRARY}>
+          <Button variant="ghost">Library</Button>
         </Link>
         <Link href="/roadmap">
           <Button variant="ghost">Roadmap</Button>
@@ -233,87 +213,76 @@ const Navbar = () => {
           {user ? (
             <>
               {/* Logged-in user links */}
-              <div onClick={closeAllMenus}>
-                <CustomButton
-                  href={ROUTES.ENGINE || "/engine"}
-                  variant="primary"
-                  className="w-full justify-start text-base h-12"
-                >
-                  <Zap className="h-5 w-5" />
-                  Launch Engine
-                </CustomButton>
-              </div>
-              <div onClick={closeAllMenus} className="my-2">
-                <CustomButton
-                  href={ROUTES.DASHBOARD || "/dashboard"}
-                  variant="secondary"
-                  className="w-full justify-start text-base h-12"
-                >
-                  <LayoutDashboard className="h-5 w-5" />
-                  Dashboard
-                </CustomButton>
-              </div>
-              <div onClick={closeAllMenus} className="mb-2">
-                <CustomButton
-                  href="/library"
-                  variant="secondary"
-                  className="w-full justify-start text-base h-12"
-                >
-                  <BookOpen className="h-5 w-5" />
-                  Library
-                </CustomButton>
-              </div>
-
-              {/* A separator for visual clarity */}
+              <Link
+                href={ROUTES.LIBRARY}
+                onClick={closeAllMenus}
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Library
+              </Link>
+              <Link
+                href={ROUTES.DASHBOARD}
+                onClick={closeAllMenus}
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href={ROUTES.ENGINE}
+                onClick={closeAllMenus}
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Engine
+              </Link>
               <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
 
               <Link
                 href="/account"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <User2 className="h-5 w-5 mr-3 text-slate-500" /> Account
+                Account
               </Link>
               <Link
                 href="/account/setting"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Settings className="h-5 w-5 mr-3 text-slate-500" /> Setting
+                Settings
               </Link>
               <Link
                 href="/roadmap"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Map className="h-5 w-5 mr-3 text-slate-500" /> Roadmap
+                Roadmap
               </Link>
               <Link
                 href="/#pricing"
                 onClick={closeAllMenus}
-                className="flex items-center px-3 py-3 text-base font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <Tags className="h-5 w-5 mr-3 text-slate-500" /> Pricing
+                Pricing
               </Link>
 
               <div className="border-t border-slate-200 dark:border-slate-700 my-2"></div>
 
               <button
                 onClick={handleSignOut}
-                className="w-full text-left flex items-center px-3 py-3 text-base font-medium rounded-md text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                className="w-full text-left block px-3 py-3 rounded-md text-base font-medium text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
               >
-                <LogOut className="h-5 w-5 mr-3" /> Sign Out
+                Sign Out
               </button>
             </>
           ) : (
             <>
               {/* Logged-out user links */}
               <Link
-                href="/demo"
+                href={ROUTES.LIBRARY}
                 onClick={closeAllMenus}
                 className="block px-3 py-3 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                Demo
+                Library
               </Link>
               <Link
                 href="/roadmap"
@@ -385,8 +354,7 @@ const Navbar = () => {
           </div>
           <div className="md:hidden flex items-center gap-2">
             {" "}
-            {/* Added gap-2 for spacing between bell and menu icon */}
-            {user && <NotificationBell />}
+            {/* Mobile menu icon only */}
             <button
               ref={mobileMenuTriggerRef}
               id="mobile-menu-button"

@@ -47,3 +47,24 @@ export interface FileDuration {
 export interface UploadProgress {
   [fileName: string]: number;
 }
+
+// Bulk YouTube metadata types
+export interface VideoMetadata {
+  id: string;
+  url: string;
+  title: string;
+  channelName: string;
+  thumbnailUrl: string;
+  duration: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface BulkVideoResponse {
+  results: VideoMetadata[];
+  totalProcessed: number;
+  successCount: number;
+  errorCount: number;
+}
+
+export type BulkFetchStatus = "idle" | "processing" | "completed" | "error";

@@ -21,7 +21,13 @@
       "Bash(dir:*)",
       "Bash(npm run build:*)",
       "WebFetch(domain:www.assemblyai.com)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(curl:*)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "Bash(copy:*)",
+      "Bash(findstr:*)",
+      "WebFetch(domain:www.helloatlas.io)"
     ],
     "deny": [],
     "ask": []

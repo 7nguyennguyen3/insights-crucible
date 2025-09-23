@@ -259,12 +259,12 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 mb-20">
-      <header className="mb-10">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+    <div className="max-w-5xl mx-auto min-h-screen py-12 px-4 sm:px-6 lg:px-8 mb-20">
+      <header className="mt-30">
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           Settings
         </h1>
-        <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
+        <p className="my-2 text-lg text-slate-600 dark:text-slate-400">
           Manage your account and password settings.
         </p>
       </header>

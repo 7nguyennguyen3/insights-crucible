@@ -31,6 +31,7 @@ import React, { useState, useEffect } from "react";
 import { EditableField } from "@/app/components/analysis/EditableField";
 import { BatchLearningFeedbackDisplay } from "./BatchLearningFeedbackDisplay";
 import { useOpenEndedGrading } from "@/hooks/useOpenEndedGrading";
+import { OpenEndedQuestionProgress } from "@/types/job";
 
 interface OpenEndedQuestionsDisplayProps {
   questions: OpenEndedQuestion[];
@@ -73,6 +74,8 @@ export const OpenEndedQuestionsDisplay: React.FC<
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userResponses, setUserResponses] = useState<UserResponse[]>([]);
+  const [submittedAnswers, setSubmittedAnswers] = useState<boolean[]>([]);
+  const [showingFeedback, setShowingFeedback] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState("");
@@ -82,12 +85,62 @@ export const OpenEndedQuestionsDisplay: React.FC<
   const [showCompactResults, setShowCompactResults] = useState(!!existingOpenEndedResults && !isEditMode);
   const [showDetailedResults, setShowDetailedResults] = useState(false);
   const [expandedAnswers, setExpandedAnswers] = useState<Set<string>>(new Set());
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
+  const [loadedProgress, setLoadedProgress] = useState<OpenEndedQuestionProgress[]>([]);
 
   // Initialize grading hooks
   const { submitAllAndGetFeedback, isSubmitting, error, clearError } =
     useOpenEndedGrading();
 
-  // Initialize user responses array when questions change
+  // Load existing progress from backend
+  const loadProgress = async () => {
+    if (!userId || !jobId) return;
+
+    try {
+      const response = await fetch(`/api/open-ended-progress?jobId=${jobId}&userId=${userId}`);
+      if (response.ok) {
+        const result = await response.json();
+        setLoadedProgress(result.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to load progress:", error);
+    }
+  };
+
+  // Save progress to backend
+  const saveProgress = async (questionIndex: number, answer: string, isSubmitted: boolean = false) => {
+    if (!userId || !jobId || !questions[questionIndex]) return;
+
+    const questionId = questions[questionIndex].question_id || `question_${questionIndex}`;
+
+    setIsSavingProgress(true);
+    try {
+      const response = await fetch('/api/open-ended-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobId,
+          userId,
+          questionId,
+          questionIndex,
+          userAnswer: answer,
+          isSubmitted,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save progress');
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    } finally {
+      setIsSavingProgress(false);
+    }
+  };
+
+  // Initialize user responses array and load progress when questions change
   useEffect(() => {
     if (questions.length > 0) {
       const initialResponses = questions.map((_, index) => ({
@@ -95,8 +148,35 @@ export const OpenEndedQuestionsDisplay: React.FC<
         answer: "",
       }));
       setUserResponses(initialResponses);
+      setSubmittedAnswers(new Array(questions.length).fill(false));
+
+      // Load existing progress
+      loadProgress();
     }
-  }, [questions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, userId, jobId]);
+
+  // Apply loaded progress to state
+  useEffect(() => {
+    if (loadedProgress.length > 0 && questions.length > 0) {
+      const updatedResponses = questions.map((_, index) => {
+        const progress = loadedProgress.find(p => p.question_index === index);
+        return {
+          questionIndex: index,
+          answer: progress?.user_answer || "",
+          savedAt: progress?.updated_at ? new Date(progress.updated_at.seconds * 1000) : undefined,
+        };
+      });
+
+      const updatedSubmitted = questions.map((_, index) => {
+        const progress = loadedProgress.find(p => p.question_index === index);
+        return progress?.is_submitted || false;
+      });
+
+      setUserResponses(updatedResponses);
+      setSubmittedAnswers(updatedSubmitted);
+    }
+  }, [loadedProgress, questions]);
 
   // Update current answer when question changes
   useEffect(() => {
@@ -104,7 +184,14 @@ export const OpenEndedQuestionsDisplay: React.FC<
       (r) => r.questionIndex === currentQuestionIndex
     );
     setCurrentAnswer(response?.answer || "");
-  }, [currentQuestionIndex, userResponses]);
+
+    // Show feedback if this question was already submitted
+    if (submittedAnswers[currentQuestionIndex]) {
+      setShowingFeedback(true);
+    } else {
+      setShowingFeedback(false);
+    }
+  }, [currentQuestionIndex, userResponses, submittedAnswers]);
 
   const handleAnswerChange = (value: string) => {
     setCurrentAnswer(value);
@@ -116,9 +203,32 @@ export const OpenEndedQuestionsDisplay: React.FC<
         : response
     );
     setUserResponses(updatedResponses);
+
+    // Auto-save progress (debounced to avoid too many API calls)
+    if (userId && jobId && value.trim().length > 10) {
+      const timeoutId = setTimeout(() => {
+        saveProgress(currentQuestionIndex, value, false);
+      }, 1000); // Save after 1 second of no changes
+
+      return () => clearTimeout(timeoutId);
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
+    if (!currentAnswer.trim() || submittedAnswers[currentQuestionIndex]) return;
+
+    // Mark this answer as submitted
+    const newSubmittedAnswers = [...submittedAnswers];
+    newSubmittedAnswers[currentQuestionIndex] = true;
+    setSubmittedAnswers(newSubmittedAnswers);
+    setShowingFeedback(true);
+
+    // Save submitted answer to backend
+    await saveProgress(currentQuestionIndex, currentAnswer, true);
   };
 
   const handleNextQuestion = () => {
+    setShowingFeedback(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -128,7 +238,12 @@ export const OpenEndedQuestionsDisplay: React.FC<
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
+      setShowingFeedback(false);
       setCurrentQuestionIndex(currentQuestionIndex - 1);
+      // Check if previous question was submitted to show feedback
+      if (submittedAnswers[currentQuestionIndex - 1]) {
+        setShowingFeedback(true);
+      }
     }
   };
 
@@ -178,6 +293,8 @@ export const OpenEndedQuestionsDisplay: React.FC<
         answer: "",
       }))
     );
+    setSubmittedAnswers(new Array(questions.length).fill(false));
+    setShowingFeedback(false);
     setCurrentAnswer("");
     setQuizStarted(false);
     setIsCompleted(false);
@@ -185,6 +302,7 @@ export const OpenEndedQuestionsDisplay: React.FC<
     setShowDetailedResults(false);
     setShowingBatchFeedback(false);
     setBatchFeedback([]);
+    setLoadedProgress([]);
   };
 
   const getAnsweredCount = () => {
@@ -629,18 +747,44 @@ export const OpenEndedQuestionsDisplay: React.FC<
 
   // Quiz taking interface - Start screen
   if (!quizStarted) {
+    const submittedCount = submittedAnswers.filter(Boolean).length;
+    const hasProgress = submittedCount > 0 || userResponses.some(r => r.answer.trim().length > 0);
+
     return (
       <Card className="w-full">
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center">
             <BookOpen className="w-6 h-6 mr-3 text-blue-500" />
-            Open-Ended Reflection
+            {hasProgress ? "Continue Reflection" : "Open-Ended Reflection"}
           </CardTitle>
           <CardDescription>
-            Deepen your understanding through thoughtful written responses
+            {hasProgress
+              ? "Continue your thoughtful responses where you left off"
+              : "Deepen your understanding through thoughtful written responses"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
+          {hasProgress && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-center mb-2">
+                <CheckCircle className="w-4 h-4 text-blue-500 mr-2" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                  Progress Found
+                </span>
+              </div>
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                You've completed {submittedCount} of {questions.length} questions
+              </p>
+              <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2 mt-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(submittedCount / questions.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-500">
@@ -667,11 +811,20 @@ export const OpenEndedQuestionsDisplay: React.FC<
           </div>
 
           <Button
-            onClick={() => setQuizStarted(true)}
+            onClick={() => {
+              setQuizStarted(true);
+              // If there's progress, go to the first incomplete question
+              if (hasProgress) {
+                const firstIncompleteIndex = submittedAnswers.findIndex(submitted => !submitted);
+                if (firstIncompleteIndex !== -1) {
+                  setCurrentQuestionIndex(firstIncompleteIndex);
+                }
+              }
+            }}
             className="w-full max-w-sm mx-auto"
             size="lg"
           >
-            Start Reflection
+            {hasProgress ? "Continue Reflection" : "Start Reflection"}
           </Button>
         </CardContent>
       </Card>
@@ -728,25 +881,53 @@ export const OpenEndedQuestionsDisplay: React.FC<
           )}
 
           <div className="flex flex-col gap-2">
-            {userId && jobId && answeredCount > 0 && (
-              <Button
-                onClick={handleSubmitAllAnswers}
-                size="lg"
-                className="w-full bg-purple-600 hover:bg-purple-700"
-                disabled={isGettingBatchFeedback || isSubmitting}
-              >
-                {isGettingBatchFeedback || isSubmitting ? (
+            {answeredCount > 0 && (
+              <>
+                {userId && jobId ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Getting AI Feedback...
+                    <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3 mb-2">
+                      <div className="flex items-center mb-1">
+                        <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                          Personalized AI Grading
+                        </span>
+                      </div>
+                      <p className="text-sm text-purple-800 dark:text-purple-300">
+                        This quiz features personalized, custom LLM grading tailored to your responses.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleSubmitAllAnswers}
+                      size="lg"
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      disabled={isGettingBatchFeedback || isSubmitting}
+                    >
+                      {isGettingBatchFeedback || isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Getting AI Feedback...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Submit & Get AI Feedback
+                        </>
+                      )}
+                    </Button>
                   </>
                 ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Submit & Get AI Feedback
-                  </>
+                  <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+                    <div className="flex items-center mb-1">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Custom Grading Unavailable
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Custom grading unavailable for public view - only available to the analysis owner.
+                    </p>
+                  </div>
                 )}
-              </Button>
+              </>
             )}
             <Button onClick={resetQuiz} variant="outline" className="w-full">
               <RotateCcw className="h-4 w-4 mr-2" /> Start Over
@@ -854,13 +1035,16 @@ export const OpenEndedQuestionsDisplay: React.FC<
             placeholder="Share your thoughts, insights, and reflections..."
             className="min-h-[200px] resize-vertical"
             maxLength={2000}
+            disabled={submittedAnswers[currentQuestionIndex]}
           />
 
           <div className="flex justify-between items-center mt-2 text-xs text-slate-500 dark:text-slate-400">
             <span>{currentAnswer.length}/2000 characters</span>
-            {currentAnswer.length > 0 && (
-              <span className="text-green-600">Auto-saved</span>
-            )}
+            {submittedAnswers[currentQuestionIndex] ? (
+              <span className="text-green-600 font-medium">✓ Submitted</span>
+            ) : currentAnswer.length > 0 ? (
+              <span className="text-blue-600">Auto-saved</span>
+            ) : null}
           </div>
         </div>
 
@@ -878,21 +1062,60 @@ export const OpenEndedQuestionsDisplay: React.FC<
           </div>
         )}
 
+        {/* Feedback section - shown after answer is submitted */}
+        {submittedAnswers[currentQuestionIndex] && showingFeedback && currentQuestion.generic_answer && (
+          <div className="mt-6 p-4 rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+            <div className="flex items-center mb-2">
+              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              <span className="font-medium text-green-700 dark:text-green-400">
+                Sample Response
+              </span>
+            </div>
+            <p className="text-sm text-green-800 dark:text-green-300 mb-3">
+              Here's an example of how this question could be answered:
+            </p>
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                {currentQuestion.generic_answer}
+              </p>
+            </div>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+              Compare this with your response to deepen your understanding.
+            </p>
+          </div>
+        )}
+
         <div className="flex justify-between">
           <Button
             variant="outline"
             onClick={handlePreviousQuestion}
-            disabled={currentQuestionIndex === 0}
+            disabled={currentQuestionIndex === 0 || (submittedAnswers[currentQuestionIndex] && !showingFeedback)}
           >
             Previous
           </Button>
 
-          <Button
-            onClick={handleNextQuestion}
-            disabled={currentAnswer.trim().length < 10}
-          >
-            {currentQuestionIndex === questions.length - 1 ? "Finish" : "Next"}
-          </Button>
+          {!submittedAnswers[currentQuestionIndex] ? (
+            <Button
+              onClick={handleSubmitAnswer}
+              disabled={currentAnswer.trim().length < 10 || isSavingProgress}
+            >
+              {isSavingProgress ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                'Submit Answer'
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleNextQuestion}
+              disabled={isSavingProgress}
+            >
+              {currentQuestionIndex === questions.length - 1 ? "Finish" : "Next Question"}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

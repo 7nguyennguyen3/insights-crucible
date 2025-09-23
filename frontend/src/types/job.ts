@@ -8,7 +8,7 @@ export type JobStatus = "COMPLETED" | "PROCESSING" | "FAILED" | "QUEUED";
 export interface Job {
   id: string;
   status: JobStatus;
-  createdAt: string;
+  createdAt: any; // Firestore Timestamp
   job_title: string;
   progress?: number;
   isStarred?: boolean;
@@ -22,6 +22,9 @@ export interface Job {
   analysisPersona?: string;
   audioFilename?: string;
   durationSeconds?: number;
+  libraryDescriptionSuggestion?: string;
+  libraryTagsSuggestion?: string[];
+  libraryMeta?: LibraryMeta;
 }
 
 export interface Utterance {
@@ -36,6 +39,7 @@ export interface JobData {
   status: JobStatus;
   job_title: string;
   structured_transcript?: Utterance[];
+  transcript?: any[]; // Raw transcript data in various formats
   results: AnalysisSection[];
   synthesis_results?: SynthesisResults;
   argument_structure?: ArgumentStructure;
@@ -43,6 +47,7 @@ export interface JobData {
     config: {
       analysis_persona: "deep_dive";
     };
+    source_type?: string; // e.g., "youtube", "upload", "paste"
   };
   generated_slide_outline?: Slide[];
   generated_quiz_questions?: {
@@ -73,6 +78,8 @@ export interface JobDataWithShare extends JobData {
   isPublic?: boolean;
   publicShareId?: string;
   libraryMeta?: LibraryMeta;
+  libraryDescriptionSuggestion?: string;
+  libraryTagsSuggestion?: string[];
   viewCount?: number;
 }
 
@@ -124,8 +131,21 @@ export interface OpenEndedQuestionResult {
   updated_at?: any; // Firestore Timestamp
 }
 
+export interface OpenEndedQuestionProgress {
+  id: string;
+  job_id: string;
+  user_id: string;
+  question_id: string;
+  question_index: number;
+  user_answer: string;
+  is_submitted: boolean;
+  submitted_at?: any; // Firestore Timestamp
+  updated_at: any; // Firestore Timestamp
+}
+
 export interface OpenEndedResults {
   open_ended_answers: OpenEndedQuestionResult[];
   completed_at: any; // Firestore Timestamp
   user_id: string;
+  progress?: OpenEndedQuestionProgress[]; // Added for incremental progress tracking
 }

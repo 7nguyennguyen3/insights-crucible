@@ -267,8 +267,14 @@ class TestSectionAwareQuizGenerator(unittest.TestCase):
         
         # Mock open-ended questions for the test
         open_ended_questions = [
-            {"question": "How would you explain this concept in simple terms?"},
-            {"question": "How would you apply this in real life?"}
+            {
+                "question": "How would you explain this concept in simple terms?",
+                "generic_answer": "This concept means understanding how ideas connect to make learning stick better."
+            },
+            {
+                "question": "How would you apply this in real life?",
+                "generic_answer": "You can use this by connecting new information to things you already know when studying or learning."
+            }
         ]
 
         response = self.quiz_generator._create_multi_quiz_response(generated_quizzes, open_ended_questions, sections)
@@ -311,9 +317,18 @@ class TestSectionAwareQuizGenerator(unittest.TestCase):
 
             # Mock successful open-ended question generation
             mock_generate_open_ended.return_value = [
-                {"question": "How would you explain this concept in simple terms?"},
-                {"question": "How would you apply this in real life?"},
-                {"question": "What personal experiences relate to this?"}
+                {
+                    "question": "How would you explain this concept in simple terms?",
+                    "generic_answer": "This concept means understanding how ideas connect to make learning stick better."
+                },
+                {
+                    "question": "How would you apply this in real life?",
+                    "generic_answer": "You can use this by connecting new information to things you already know when studying or learning."
+                },
+                {
+                    "question": "What personal experiences relate to this?",
+                    "generic_answer": "Think about times when you remembered something better because it reminded you of something else you already knew."
+                }
             ]
 
             result = await self.quiz_generator.generate_quizzes(sections, self.runnable_config)

@@ -202,14 +202,15 @@ const ResultsPage = () => {
                     jobData.generated_quiz_questions.open_ended_questions || []
                   }
                   mcqEstimatedTimeMinutes={
-                    jobData.generated_quiz_questions.quiz_metadata
-                      ?.estimated_time_minutes
+                    jobData.generated_quiz_questions.questions?.length
+                      ? jobData.generated_quiz_questions.questions.length * 1
+                      : undefined
                   }
                   oeEstimatedTimeMinutes={
                     jobData.generated_quiz_questions.quiz_metadata
                       ?.total_open_ended_questions
                       ? jobData.generated_quiz_questions.quiz_metadata
-                          .total_open_ended_questions * 5
+                          .total_open_ended_questions * 4
                       : undefined
                   }
                   isEditMode={isEditMode}
@@ -281,92 +282,104 @@ const ResultsPage = () => {
       )}
 
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Share Analysis</DialogTitle>
+            <DialogTitle>Public Sharing & Library</DialogTitle>
             <DialogDescription>
-              {shareUrl
-                ? "Anyone with this link can view the analysis. Revoke access to make it private again."
-                : "Generate a public link to share a read-only version of this analysis."}
+              Share your analysis publicly or add it to the community library for others to discover.
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4 space-y-4">
-            {shareUrl ? (
-              <>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={shareUrl}
-                    className="flex-1 p-2 border rounded-md bg-slate-100 dark:bg-slate-800 text-sm"
-                  />
+          <div className="mt-4 space-y-6">
+            {/* Library Section - Now First */}
+            <div className="space-y-3">
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                📚 Community Library
+              </div>
+              {originalData?.libraryMeta?.libraryEnabled ? (
+                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
+                  <p className="text-sm text-green-700 dark:text-green-300 mb-2">
+                    ✓ This analysis is published in the library
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsLibraryDialogOpen(true)}
+                    >
+                      Edit Library Entry
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                    Make your analysis discoverable in the public library for others to learn from
+                  </p>
                   <Button
-                    onClick={copyShareLinkToClipboard}
-                    size="icon"
+                    size="sm"
                     variant="outline"
+                    onClick={() => setIsLibraryDialogOpen(true)}
+                    disabled={!shareUrl}
                   >
-                    {hasCopied ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
+                    {shareUrl ? "Add to Library" : "Generate Public Link First"}
                   </Button>
                 </div>
+              )}
+            </div>
 
-                {/* Library Options */}
-                <div className="border-t pt-4 space-y-3">
-                  <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Library Options
+            {/* Public Link Section */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                🔗 Direct Public Link
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                {shareUrl
+                  ? "Share this link directly with anyone. Required for library entries."
+                  : "Create a shareable link that anyone can access. This enables library publishing."}
+              </p>
+
+              {shareUrl ? (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="flex-1 p-2 border rounded-md bg-slate-100 dark:bg-slate-800 text-sm"
+                    />
+                    <Button
+                      onClick={copyShareLinkToClipboard}
+                      size="icon"
+                      variant="outline"
+                    >
+                      {hasCopied ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
-                  {originalData?.libraryMeta?.libraryEnabled ? (
-                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
-                      <p className="text-sm text-green-700 dark:text-green-300 mb-2">
-                        ✓ This analysis is published in the library
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setIsLibraryDialogOpen(true)}
-                        >
-                          Edit Library Entry
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
-                        Share your analysis with the community by adding it to the public library
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsLibraryDialogOpen(true)}
-                      >
-                        Add to Library
-                      </Button>
-                    </div>
-                  )}
-                </div>
 
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleRevokeShareLink}
+                    disabled={isLinkLoading}
+                  >
+                    {isLinkLoading ? "Revoking..." : "Revoke Public Access"}
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  variant="destructive"
                   className="w-full"
-                  onClick={handleRevokeShareLink}
+                  onClick={handleCreateShareLink}
                   disabled={isLinkLoading}
                 >
-                  {isLinkLoading ? "Revoking..." : "Revoke Public Link"}
+                  {isLinkLoading ? "Generating..." : "Generate Public Link"}
                 </Button>
-              </>
-            ) : (
-              <Button
-                className="w-full"
-                onClick={handleCreateShareLink}
-                disabled={isLinkLoading}
-              >
-                {isLinkLoading ? "Generating..." : "Generate Public Link"}
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -378,6 +391,8 @@ const ResultsPage = () => {
         jobId={jobId}
         jobTitle={jobData?.job_title || ""}
         currentLibraryMeta={originalData?.libraryMeta}
+        suggestedDescription={originalData?.libraryDescriptionSuggestion}
+        suggestedTags={originalData?.libraryTagsSuggestion}
         onSuccess={() => {
           mutate(); // Refresh job data
           setIsLibraryDialogOpen(false);

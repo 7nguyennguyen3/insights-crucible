@@ -57,18 +57,12 @@ export async function GET(
       ...doc.data(),
     }));
 
-    // Truncate transcript to first 5 items if it exists
-    const processedJobData = { ...jobData };
-    if (processedJobData.transcript && Array.isArray(processedJobData.transcript)) {
-      processedJobData.transcript = processedJobData.transcript.slice(0, 5);
-    }
-
     // Build structured response that clearly shows database paths
     const rawJobData = {
       main_document: {
         path: `saas_users/${userId}/jobs/${jobDocSnap.id}`,
         document_id: jobDocSnap.id,
-        data: processedJobData
+        data: jobData
       },
       subcollections: {} as any
     };

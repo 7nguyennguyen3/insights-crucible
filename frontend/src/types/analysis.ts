@@ -37,6 +37,7 @@ export interface OpenEndedQuestion {
   question_id?: string;
   question: string;
   related_timestamp: string;
+  generic_answer?: string; // Added for answer revealing functionality
   metadata: {
     evaluation_criteria: string[];
     supporting_quote: string;
@@ -121,4 +122,4 @@ export interface DeepDiveSection extends BaseAnalysisSection {
 export type AnalysisSection = DeepDiveSection;
 
 // Analysis persona type
-export type AnalysisPersona = "deep_dive";
+export type AnalysisPersona = "deep_dive" | "neural_synthesis" | "insight_engine";

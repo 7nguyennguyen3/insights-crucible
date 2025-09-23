@@ -73,16 +73,16 @@ export const InputTabsSection = ({
           className="w-full"
           onValueChange={(value) => onTabChange(value as TabType)}
         >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="youtube" disabled={!user}>
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2 h-auto sm:h-9 w-full sm:w-fit">
+            <TabsTrigger value="youtube" disabled={!user} className="h-10 sm:h-auto">
               <FaYoutube className="w-4 h-4 mr-2" />
               YouTube URL
             </TabsTrigger>
-            <TabsTrigger value="paste" disabled={!user}>
+            <TabsTrigger value="paste" disabled={!user} className="h-10 sm:h-auto">
               <FileText className="w-4 h-4 mr-2" />
               Paste Transcript
             </TabsTrigger>
-            <TabsTrigger value="upload" disabled={!user}>
+            <TabsTrigger value="upload" disabled={!user} className="h-10 sm:h-auto">
               <UploadCloud className="w-4 h-4 mr-2" />
               Upload Files
             </TabsTrigger>

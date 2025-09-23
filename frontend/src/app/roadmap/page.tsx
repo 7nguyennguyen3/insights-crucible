@@ -15,6 +15,13 @@ import {
   Users,
   Share2,
   Loader2,
+  Play,
+  Upload,
+  BookOpen,
+  Download,
+  Globe,
+  BarChart3,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -124,17 +131,16 @@ const RoadmapPage = () => {
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200">
+    <div className="min-h-screen w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
       {/* --- HERO SECTION --- */}
       <section className="py-20 md:py-24">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 max-w-4xl mx-auto">
-            The Future of Insight
+            The Future of Learning
           </h1>
           <p className="mt-6 text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
-            We're perfecting single-file analysis today to build a platform that
-            synthesizes your entire project tomorrow. See what's here, what's
-            next, and where we're going.
+            Transform any content into structured learning experiences with AI-powered analysis,
+            interactive quizzes, and professional exports. See what you can do today and what's coming next.
           </p>
         </div>
       </section>
@@ -149,21 +155,39 @@ const RoadmapPage = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <RoadmapCard
-                icon={BrainCircuit}
-                title="Single-File Deep Dive"
-                description="Our core engine deconstructs any single document or audio file, extracting themes, arguments, and key takeaways with high precision."
+                icon={Play}
+                title="Multi-Format Content Analysis"
+                description="Process YouTube videos, audio files, and text content with AI-powered deep dive analysis that extracts key insights, themes, and actionable takeaways."
                 status="Now"
               />
               <RoadmapCard
-                icon={Zap}
-                title="Instant Content Repurposing"
-                description="Turn any analysis into a polished blog post or a compelling Twitter (X) thread with one click, sharing your insights effortlessly."
+                icon={BookOpen}
+                title="Interactive Learning System"
+                description="Transform content into structured learning with AI-generated quizzes, multiple choice questions, and open-ended assessments for active learning."
                 status="Now"
               />
               <RoadmapCard
-                icon={FileText}
-                title="Multiple Analysis Personas"
-                description="Choose between a general report for research or a 'Consultant Workbench' for strategic, presentation-ready insights."
+                icon={Download}
+                title="Professional Export Options"
+                description="Export your analyses to polished PDF reports, Word documents, or Markdown files for sharing and professional presentation."
+                status="Now"
+              />
+              <RoadmapCard
+                icon={Globe}
+                title="Public Sharing & Library"
+                description="Share analyses publicly with generated links and contribute to the community library where others can discover your insights."
+                status="Now"
+              />
+              <RoadmapCard
+                icon={Upload}
+                title="Bulk Processing System"
+                description="Upload multiple files at once for batch processing, perfect for analyzing entire podcast series or document collections."
+                status="Now"
+              />
+              <RoadmapCard
+                icon={Layers}
+                title="Analysis Management"
+                description="Organize analyses with folders, search functionality, and dashboard overview for managing your growing library of insights."
                 status="Now"
               />
             </div>
@@ -176,21 +200,27 @@ const RoadmapPage = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <RoadmapCard
-                icon={Layers}
-                title="Cross-File Thematic Analysis"
-                description="The next big leap. Upload multiple files—a whole folder of interviews—and let our AI discover the overlapping themes, recurring pain points, and group consensus across the entire set."
+                icon={BrainCircuit}
+                title="Cross-File Analysis"
+                description="Analyze multiple files together to discover overlapping themes, contradictions, and patterns across your entire content collection."
                 status="Next"
               />
               <RoadmapCard
-                icon={Share2}
-                title="Advanced Export & Sharing"
-                description="Export your analysis reports to beautifully formatted PDF and Word documents, or share an editable web link with your colleagues and clients."
+                icon={BarChart3}
+                title="Enhanced Learning Analytics"
+                description="Track learning progress, quiz performance, and knowledge retention with detailed analytics and personalized learning recommendations."
+                status="Next"
+              />
+              <RoadmapCard
+                icon={Users}
+                title="Team Collaboration"
+                description="Share workspaces with team members, collaborate on analyses, and create shared knowledge bases for organizations."
                 status="Next"
               />
               <RoadmapCard
                 icon={MessageSquareQuote}
-                title="Quote & Source Tracking"
-                description="Easily find and manage all key quotes from your sources. Click any quote in your report to see exactly where it came from in the original transcript."
+                title="Advanced Quote Management"
+                description="Enhanced quote extraction, source tracking, and the ability to jump directly from insights to their original timestamps in content."
                 status="Next"
               />
             </div>
@@ -203,21 +233,27 @@ const RoadmapPage = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               <RoadmapCard
-                icon={Users}
-                title="Team Workspaces & Collaboration"
-                description="Share projects, co-analyze documents, and leave comments for your team members, turning individual insight into collective intelligence."
+                icon={Settings}
+                title="Custom Analysis Types"
+                description="Define your own analysis prompts and templates beyond the current deep dive format. Create specialized analysis workflows for different use cases."
+                status="Later"
+              />
+              <RoadmapCard
+                icon={Share2}
+                title="Integration Ecosystem"
+                description="Connect with Google Drive, Dropbox, Notion, Slack, and other tools for seamless content import and insight distribution across your workflow."
                 status="Later"
               />
               <RoadmapCard
                 icon={Lightbulb}
-                title="Custom Analysis Prompts"
-                description="Go beyond our built-in analysis types. Guide the AI with your own prompts and questions to find the specific insights you need."
+                title="AI Learning Companion"
+                description="Advanced AI that learns your interests and analysis patterns to suggest content, provide personalized insights, and guide your learning journey."
                 status="Later"
               />
               <RoadmapCard
                 icon={CheckCircle}
-                title="Third-Party Integrations"
-                description="Connect Insights Crucible to your favorite tools. Automatically import from Google Drive & Dropbox, and export to Notion & Slack."
+                title="Enterprise Solutions"
+                description="Advanced security, compliance features, custom deployment options, and dedicated support for organizations processing sensitive content."
                 status="Later"
               />
             </div>
@@ -228,7 +264,7 @@ const RoadmapPage = () => {
       {/* --- FINAL CTA --- */}
       <section className="pb-20 md:pb-24">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center bg-white dark:bg-slate-900 p-10 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className="max-w-3xl mx-auto text-center bg-white dark:bg-slate-800/50 p-10 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
               Have an Idea?
             </h2>

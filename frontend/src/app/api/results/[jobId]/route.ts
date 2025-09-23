@@ -89,19 +89,23 @@ export async function GET(
       results: resultsData,
       synthesis_results: jobData?.synthesis_results || null,
       argument_structure: jobData?.argument_structure || null,
-      
+
       // Learning accelerator specific fields
       learning_synthesis: jobData?.learning_synthesis || null,
       generated_quiz_questions: jobData?.generated_quiz_questions || null,
-      
+
       // Quiz results for showing previous quiz completion
       quiz_results: jobData?.quiz_results || null,
-      
+
       // Open-ended question results for showing previous open-ended completion
       open_ended_results: openEndedResults,
-      
+
+      // Library sharing fields
       isPublic: jobData?.isPublic || false,
       publicShareId: jobData?.publicShareId || null,
+      libraryMeta: jobData?.libraryMeta || null,
+      libraryDescriptionSuggestion: jobData?.libraryDescriptionSuggestion || null,
+      libraryTagsSuggestion: jobData?.libraryTagsSuggestion || null,
     };
 
     return NextResponse.json(finalResponse);

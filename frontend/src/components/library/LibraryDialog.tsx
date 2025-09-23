@@ -20,6 +20,8 @@ interface LibraryDialogProps {
   jobId: string;
   jobTitle: string;
   currentLibraryMeta?: LibraryMeta;
+  suggestedDescription?: string;
+  suggestedTags?: string[];
   onSuccess?: () => void;
 }
 
@@ -53,6 +55,8 @@ export const LibraryDialog: React.FC<LibraryDialogProps> = ({
   jobId,
   jobTitle,
   currentLibraryMeta,
+  suggestedDescription,
+  suggestedTags,
   onSuccess
 }) => {
   const { addToLibrary, updateLibraryMetadata, isLoading } = useLibraryActions();
@@ -66,18 +70,19 @@ export const LibraryDialog: React.FC<LibraryDialogProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (currentLibraryMeta) {
+        // Edit mode - use existing library metadata
         setDescription(currentLibraryMeta.libraryDescription || "");
         setTags(currentLibraryMeta.libraryTags || []);
         setCategory(currentLibraryMeta.libraryCategory || "");
       } else {
-        // Reset form for new entries
-        setDescription("");
-        setTags([]);
+        // New entry mode - use suggested values if available
+        setDescription(suggestedDescription || "");
+        setTags(suggestedTags || []);
         setCategory("");
       }
       setNewTag("");
     }
-  }, [isOpen, currentLibraryMeta]);
+  }, [isOpen, currentLibraryMeta, suggestedDescription, suggestedTags, isEditMode]);
 
   const handleAddTag = () => {
     if (newTag && !tags.includes(newTag)) {
@@ -145,6 +150,11 @@ export const LibraryDialog: React.FC<LibraryDialogProps> = ({
           <div>
             <Label htmlFor="description" className="text-sm font-medium">
               Public Description *
+              {!isEditMode && suggestedDescription && (
+                <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
+                  (AI-suggested)
+                </span>
+              )}
             </Label>
             <Textarea
               id="description"
@@ -155,8 +165,21 @@ export const LibraryDialog: React.FC<LibraryDialogProps> = ({
               className="mt-1"
               maxLength={500}
             />
-            <div className="text-xs text-slate-500 mt-1">
-              {description.length}/500 characters
+            <div className="flex items-center justify-between mt-1">
+              <div className="text-xs text-slate-500">
+                {description.length}/500 characters
+              </div>
+              {!isEditMode && suggestedDescription && suggestedDescription.trim() && description !== suggestedDescription && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7 px-3 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 font-medium"
+                  onClick={() => setDescription(suggestedDescription)}
+                >
+                  Use AI Suggestion
+                </Button>
+              )}
             </div>
           </div>
 
@@ -180,7 +203,14 @@ export const LibraryDialog: React.FC<LibraryDialogProps> = ({
 
           {/* Tags */}
           <div>
-            <Label className="text-sm font-medium">Tags</Label>
+            <Label className="text-sm font-medium">
+              Tags
+              {!isEditMode && suggestedTags && suggestedTags.length > 0 && (
+                <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
+                  (AI-suggested)
+                </span>
+              )}
+            </Label>
 
             {/* Current Tags */}
             {tags.length > 0 && (
@@ -210,6 +240,41 @@ export const LibraryDialog: React.FC<LibraryDialogProps> = ({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+
+            {/* AI Suggested Tags */}
+            {!isEditMode && suggestedTags && Array.isArray(suggestedTags) && suggestedTags.length > 0 && (
+              <div className="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-green-700 dark:text-green-300">AI-suggested tags:</div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7 px-3 bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/60 font-medium"
+                    onClick={() => {
+                      const newTags = suggestedTags.filter(tag => !tags.includes(tag));
+                      setTags([...tags, ...newTags]);
+                    }}
+                  >
+                    Add All
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {suggestedTags
+                    .filter(tag => !tags.includes(tag))
+                    .map(tag => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 text-xs bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 transition-colors"
+                      onClick={() => handleSuggestedTag(tag)}
+                    >
+                      + {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Suggested Tags */}
             <div>

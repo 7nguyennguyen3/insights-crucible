@@ -96,7 +96,7 @@ async def generate_quiz_questions(
                 "quiz_metadata": {
                     "total_questions": len(quiz_questions),
                     "estimated_time_minutes": len(quiz_questions)
-                    * 2,  # 2 minutes per question
+                    * 1,  # 1 minute per question
                     "difficulty_distribution": {
                         "easy": 1,
                         "medium": len(quiz_questions) - 1,

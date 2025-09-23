@@ -71,8 +71,9 @@ export const AnalysisPageLayout = forwardRef<
 
     return (
       <>
-        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen w-full p-4 sm:p-6 lg:p-8">
-          <div className="max-w-5xl mx-auto space-y-12">
+        <div className="bg-white dark:bg-slate-900 min-h-screen w-full">
+          <div className="py-24 md:py-32 lg:py-40 container mx-auto px-4">
+            <div className="max-w-7xl mx-auto space-y-12">
             <header className="mb-10">
               <div className="flex justify-between items-center flex-wrap gap-4">
                 {header}
@@ -82,6 +83,7 @@ export const AnalysisPageLayout = forwardRef<
 
             {/* This is where the specific view (General or Consultant) will be rendered */}
             <main>{children}</main>
+            </div>
           </div>
         </div>
 

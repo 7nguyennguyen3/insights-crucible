@@ -8,6 +8,7 @@ import Link from "next/link";
 import { FaGithub, FaLinkedin, FaXTwitter } from "react-icons/fa6";
 import React, { useState, useEffect } from "react"; // Import useEffect
 import PrivacyPolicyModal from "./PrivacyPolicyModel";
+import TermsOfServiceModal from "./TermsOfServiceModal";
 
 const Footer = () => {
   // Initialize currentYear as null or an empty string for SSR
@@ -19,6 +20,7 @@ const Footer = () => {
   }, []); // Empty dependency array means this runs once on mount
 
   const [isPrivacyPolicyOpen, setIsPrivacyPolicyOpen] = useState(false);
+  const [isTermsOfServiceOpen, setIsTermsOfServiceOpen] = useState(false);
 
   const handleOpenPrivacyPolicy = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -27,6 +29,15 @@ const Footer = () => {
 
   const handleClosePrivacyPolicy = () => {
     setIsPrivacyPolicyOpen(false);
+  };
+
+  const handleOpenTermsOfService = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsTermsOfServiceOpen(true);
+  };
+
+  const handleCloseTermsOfService = () => {
+    setIsTermsOfServiceOpen(false);
   };
 
   return (
@@ -90,12 +101,13 @@ const Footer = () => {
             </h3>
             <ul className="space-y-3">
               <li>
-                <Link
-                  href="/legal/terms"
-                  className="text-base text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-500"
+                <a
+                  href="#"
+                  onClick={handleOpenTermsOfService}
+                  className="cursor-pointer text-base text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-500"
                 >
                   Terms of Service
-                </Link>
+                </a>
               </li>
               <li>
                 <a
@@ -135,16 +147,15 @@ const Footer = () => {
                 <FaXTwitter className="h-6 w-6" />
               </a>
 
-              {/* Assuming you want to keep GitHub link, if not, remove this <a> tag */}
-              {/* <a
-                href="https://github.com/your-github" // Replace with your actual GitHub
+              <a
+                href="https://github.com/7nguyennguyen3/insights-crucible"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-slate-900 dark:hover:text-white"
               >
                 <span className="sr-only">GitHub</span>
                 <FaGithub className="h-6 w-6" />
-              </a> */}
+              </a>
 
               <a
                 href="https://www.linkedin.com/company/insights-crucible"
@@ -172,6 +183,12 @@ const Footer = () => {
       <PrivacyPolicyModal
         isOpen={isPrivacyPolicyOpen}
         onClose={handleClosePrivacyPolicy}
+      />
+
+      {/* Terms of Service Modal */}
+      <TermsOfServiceModal
+        isOpen={isTermsOfServiceOpen}
+        onClose={handleCloseTermsOfService}
       />
     </footer>
   );

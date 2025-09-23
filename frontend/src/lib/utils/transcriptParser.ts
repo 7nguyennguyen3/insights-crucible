@@ -131,12 +131,13 @@ export function parseYouTubeTranscript(youtubeTranscript: any[]): Utterance[] {
     if (item.text && typeof item.text === 'string') {
       const text = item.text.trim();
       if (text && !text.match(/^\[.*\]$/)) { // Skip bracketed items like [Music]
-        utterances.push({
+        const utterance = {
           // No speaker field for YouTube transcripts
           text: text,
           start: Math.floor(item.start || 0),
           end: Math.floor((item.start || 0) + (item.duration || 0))
-        });
+        };
+        utterances.push(utterance);
       }
     }
   }
@@ -150,6 +151,7 @@ export function parseYouTubeTranscript(youtubeTranscript: any[]): Utterance[] {
  * For other sources (YouTube, paste), speaker information is not available
  */
 export function getStructuredTranscript(jobData: any): Utterance[] {
+
   // Priority 1: Use structured_transcript if available (preferred format)
   // This contains speaker info for upload sources
   if (jobData?.structured_transcript && Array.isArray(jobData.structured_transcript)) {

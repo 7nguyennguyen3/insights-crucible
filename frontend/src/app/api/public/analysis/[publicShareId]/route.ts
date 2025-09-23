@@ -9,8 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ publicShareId: string }> } // <-- 1. Type is a Promise
 ) {
   const { publicShareId } = await params;
+
   try {
     if (!publicShareId) {
+      console.log("🔍 API Route Debug - Missing publicShareId");
       return NextResponse.json(
         { error: "Share ID is required" },
         { status: 400 }
@@ -26,7 +28,7 @@ export async function GET(
 
     if (querySnapshot.empty) {
       console.log(
-        `[Public API] No public job found for shareId: ${publicShareId}`
+        `🔍 API Route Debug - No public job found for shareId: ${publicShareId}`
       );
       return NextResponse.json(
         { error: "Analysis not found or share link is inactive" },
@@ -51,13 +53,13 @@ export async function GET(
       job_title: jobData.job_title,
       request_data: jobData.request_data,
       results: resultsData,
-      structured_transcript: jobData.structured_transcript || [],
+      structured_transcript: jobData.structured_transcript || null, // Don't return empty array, let parser handle fallback
+      transcript: jobData.transcript || null, // Add for getStructuredTranscript fallback
       status: jobData.status,
       job_id: jobDoc.id,
-      // --- ADD THESE TWO LINES ---
-      synthesis_results: jobData.synthesis_results || null,
-      argument_structure: jobData.argument_structure || null,
-      generated_slide_outline: jobData.generated_slide_outline || null,
+      generated_quiz_questions: jobData.generated_quiz_questions || null,
+      quiz_results: jobData.quiz_results || null,
+      open_ended_results: jobData.open_ended_results || null,
     };
 
     return NextResponse.json(publicData);

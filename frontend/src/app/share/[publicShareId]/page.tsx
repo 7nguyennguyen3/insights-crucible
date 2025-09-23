@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import apiClient from "@/lib/apiClient";
-import { Loader2 } from "lucide-react";
-import {
-  JobData,
-} from "@/app/_global/interface";
+import { Loader2, ChevronUp } from "lucide-react";
+import { JobData } from "@/app/_global/interface";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
+import { useSaveAnalysis } from "@/hooks/useSaveAnalysis";
+import { UnifiedQuizDisplay } from "@/components/analysis/UnifiedQuizDisplay";
+import { Button } from "@/components/ui/button";
+
+// Utils
+import { getStructuredTranscript } from "@/lib/utils/transcriptParser";
 
 // --- Layout & View Components ---
 import {
@@ -38,11 +42,61 @@ const PublicSharePage = () => {
 
   const { exportToMarkdown } = useMarkdownExport(data || null);
 
+  // Save analysis hook
+  const { saveAnalysis, isLoading: isSavingAnalysis } = useSaveAnalysis({
+    onSuccess: (response) => {
+      // Hook will handle the success toast and navigation
+    },
+    onError: (error) => {
+      // Hook will handle the error toast
+    },
+  });
+
+  // Get structured transcript, parsing raw transcript if structured version not available
+  const structuredTranscript = getStructuredTranscript(data);
+
+  // Enhanced debug logging for transcript issues
+
+  // Scroll to top button state and logic
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop =
+        window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollToTop(scrollTop > 300);
+    };
+
+    // Throttle scroll events for performance
+    let timeoutId: NodeJS.Timeout;
+    const throttledHandleScroll = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(handleScroll, 100);
+    };
+
+    window.addEventListener("scroll", throttledHandleScroll);
+    return () => {
+      window.removeEventListener("scroll", throttledHandleScroll);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   // Track view when the page loads
   useEffect(() => {
     if (publicShareId && data) {
       // Track the view (fire and forget)
-      apiClient.post(`/library/view/${publicShareId}`).catch(error => {
+      apiClient.post(`/library/view/${publicShareId}`).catch((error) => {
         console.warn("Could not track view:", error);
       });
     }
@@ -51,6 +105,16 @@ const PublicSharePage = () => {
   const isEditMode = false;
   const emptyFunction = () => {};
   const emptyAsyncFunction = async () => {}; // For handlers that might be async
+
+  // Handle save analysis
+  const handleSaveAnalysis = () => {
+    if (publicShareId && data) {
+      saveAnalysis({
+        publicShareId,
+        customTitle: undefined, // Let the backend generate a default title
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -71,71 +135,148 @@ const PublicSharePage = () => {
   const persona = data.request_data?.config?.analysis_persona || "deep_dive";
 
   return (
-    <AnalysisPageLayout
-      ref={layoutRef}
-      isLoading={false}
-      jobTitle={data.job_title}
-      transcript={data.structured_transcript}
-      header={
-        <AnalysisHeader
-          isPublicPage={true}
-          jobTitle={data.job_title}
-          jobId={""}
-          isEditMode={isEditMode}
-          onTitleChange={emptyFunction}
-        />
-      }
-      actionButtons={
-        <AnalysisActionButtons
-          isPublicPage={true}
-          hasData={!!data}
-          hasTranscript={!!data.structured_transcript?.length}
-          onShowTranscript={() => layoutRef.current?.openTranscriptDialog()}
-          onExportMarkdown={exportToMarkdown}
-          isEditMode={isEditMode}
-          onEdit={emptyFunction}
-          onSave={emptyAsyncFunction}
-          onCancel={emptyFunction}
-          onShare={emptyFunction}
-          onExportDocx={emptyFunction}
-          onExportPdf={emptyFunction}
-        />
-      }
-    >
-      <div id="analysis-report-content">
-        {/* --- Header for detailed results --- */}
-        <div className="my-12">
-          <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2">
-            Analysis Sections
-          </h2>
-        </div>
+    <>
+      <AnalysisPageLayout
+        ref={layoutRef}
+        isLoading={false}
+        jobTitle={data.job_title}
+        transcript={structuredTranscript}
+        header={
+          <AnalysisHeader
+            isPublicPage={true}
+            jobTitle={data.job_title}
+            jobId={""}
+            isEditMode={isEditMode}
+            onTitleChange={emptyFunction}
+          />
+        }
+        actionButtons={
+          <AnalysisActionButtons
+            isPublicPage={true}
+            hasData={!!data}
+            hasTranscript={!!structuredTranscript?.length}
+            onShowTranscript={() => layoutRef.current?.openTranscriptDialog()}
+            onExportMarkdown={exportToMarkdown}
+            isEditMode={isEditMode}
+            onEdit={emptyFunction}
+            onSave={emptyAsyncFunction}
+            onCancel={emptyFunction}
+            onShare={emptyFunction}
+            onExportDocx={emptyFunction}
+            onExportPdf={emptyFunction}
+            onSaveAnalysis={handleSaveAnalysis}
+            isSavingAnalysis={isSavingAnalysis}
+          />
+        }
+      >
+        <div id="analysis-report-content">
+          {/* Learning Assessment - Quiz Questions */}
+          {data.generated_quiz_questions &&
+            (data.generated_quiz_questions.questions?.length > 0 ||
+              (data.generated_quiz_questions.open_ended_questions?.length ||
+                0) > 0) && (
+              <div className="mb-12">
+                {/* Learning Philosophy Note */}
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
+                    The difficulty is where the learning happens. These
+                    questions help your brain actively process and connect
+                    information.
+                  </p>
+                  <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
+                    "Difficulties in learning are desirable when they trigger
+                    processes that support learning and remembering." — Robert
+                    Bjork
+                  </blockquote>
+                </div>
 
-        {/* --- Deep Dive Analysis --- */}
-        <DeepDiveView
-          results={data.results as any}
-          isEditMode={false}
-          onFieldChange={emptyFunction}
-          onTakeawayChange={emptyFunction}
-          onAddTakeaway={emptyFunction}
-          onDeleteTakeaway={emptyFunction}
-        />
+                <UnifiedQuizDisplay
+                  multipleChoiceQuestions={
+                    data.generated_quiz_questions.questions || []
+                  }
+                  openEndedQuestions={
+                    data.generated_quiz_questions.open_ended_questions || []
+                  }
+                  mcqEstimatedTimeMinutes={
+                    data.generated_quiz_questions.questions?.length
+                      ? data.generated_quiz_questions.questions.length * 1
+                      : undefined
+                  }
+                  oeEstimatedTimeMinutes={
+                    data.generated_quiz_questions.quiz_metadata
+                      ?.total_open_ended_questions
+                      ? data.generated_quiz_questions.quiz_metadata
+                          .total_open_ended_questions * 4
+                      : undefined
+                  }
+                  isEditMode={false}
+                  onMcqQuestionChange={emptyFunction}
+                  onMcqAddQuestion={emptyFunction}
+                  onMcqDeleteQuestion={emptyFunction}
+                  onOeQuestionChange={emptyFunction}
+                  onOeAddQuestion={emptyFunction}
+                  onOeDeleteQuestion={emptyFunction}
+                  userId="" // Empty for public users
+                  jobId={publicShareId}
+                  existingQuizResults={null}
+                  existingOpenEndedResults={null}
+                />
+              </div>
+            )}
 
-        {data.generated_slide_outline && (
-          <div className="mt-12">
-            <SlideDeckDisplay
-              slides={data.generated_slide_outline}
-              isEditMode={false}
-              onAddSlide={emptyFunction}
-              onDeleteSlide={emptyFunction}
-              onSlideTitleChange={emptyFunction}
-              onAddBullet={emptyFunction}
-              onDeleteBullet={emptyFunction}
-              onSlideChange={emptyFunction}
-            />
+          {/* Analysis Sections */}
+          <div className="my-12">
+            <h2
+              className="text-2xl font-bold text-slate-700
+          dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
+            >
+              {data?.request_data?.config?.analysis_persona === "deep_dive"
+                ? "Analysis Sections"
+                : "Learning Sections"}
+            </h2>
           </div>
-        )}
-      </div>
-    </AnalysisPageLayout>
+
+          {/* Conditional View based on Persona */}
+          {data?.request_data?.config?.analysis_persona === "deep_dive" && (
+            <DeepDiveView
+              results={data.results}
+              isEditMode={false}
+              onFieldChange={emptyFunction}
+              onTakeawayChange={emptyFunction}
+              onAddTakeaway={emptyFunction}
+              onDeleteTakeaway={emptyFunction}
+            />
+          )}
+        </div>
+      </AnalysisPageLayout>
+
+      {/* Scroll to Top Button */}
+      {showScrollToTop && (
+        <Button
+          onClick={scrollToTop}
+          size="icon"
+          variant="outline"
+          className={`
+          fixed bottom-6 right-6 z-50
+          transition-all duration-300 ease-in-out
+          shadow-xl hover:shadow-2xl
+          bg-white/95 dark:bg-slate-800/95
+          backdrop-blur-sm
+          border border-slate-300/80 dark:border-slate-600/80
+          hover:border-slate-400 dark:hover:border-slate-500
+          hover:bg-white dark:hover:bg-slate-700
+          hover:scale-110
+          size-12 md:size-14
+          rounded-full
+          group
+          ring-1 ring-slate-200/50 dark:ring-slate-700/50
+        `}
+          aria-label="Scroll to top"
+        >
+          <ChevronUp className="h-5 w-5 md:h-6 md:w-6 group-hover:scale-110 transition-transform duration-200" />
+        </Button>
+      )}
+    </>
   );
 };
 

@@ -29,6 +29,10 @@ export interface LibraryEntry {
   duration?: number; // in seconds
   sourceType: 'youtube' | 'upload' | 'paste';
   thumbnailUrl?: string; // For YouTube videos
+  // YouTube-specific metadata
+  youtubeVideoTitle?: string; // Original video title
+  youtubeChannelName?: string; // Channel name
+  youtubeUrl?: string; // Original YouTube URL
   // Preview data for display
   previewData?: {
     sampleQuote?: string;

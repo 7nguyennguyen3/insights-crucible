@@ -53,10 +53,6 @@ class SectionAwareQuizGenerator:
         Returns:
             Dict containing multiple quizzes with metadata
         """
-        # Save input parameters to MD file for analysis
-        self._save_input_parameters_to_md(
-            section_analyses, runnable_config, original_transcript
-        )
 
         if not section_analyses:
             return {"error": "No sections provided for quiz generation"}
@@ -367,6 +363,7 @@ For each question, provide:
 - 'question_text': The complete question in conversational language
 - 'insight_principle': The core insight (keep this simple too)
 - 'evaluation_criteria': 2-3 specific points written in everyday language
+- 'generic_answer': A simple, easy-to-understand answer to the question (just a string, not a list)
 
 Output format: JSON object with 'questions' array containing exactly {num_questions} question objects
 
@@ -416,6 +413,7 @@ Remember:
                 formatted_questions.append(
                     {
                         "question": q.get("question_text", ""),
+                        "generic_answer": q.get("generic_answer", ""),
                         "metadata": {
                             "insight_principle": q.get("insight_principle", ""),
                             "evaluation_criteria": q.get("evaluation_criteria", []),
@@ -592,7 +590,7 @@ Remember:
                 "section_range": quiz_group.section_range,
                 "total_questions": len(enhanced_questions),
                 "estimated_time_minutes": len(enhanced_questions)
-                * 2,  # 2 minutes per question
+                * 1,  # 1 minute per question
                 "difficulty_distribution": self._calculate_difficulty_distribution(
                     enhanced_questions
                 ),
@@ -638,8 +636,8 @@ Remember:
                 "total_questions": len(all_questions),
                 "total_open_ended_questions": len(open_ended_questions),
                 "total_sections": len(section_analyses),
-                "estimated_time_minutes": len(all_questions) * 2
-                + len(open_ended_questions) * 3,  # 2 min MCQ, 3 min open-ended
+                "estimated_time_minutes": len(all_questions) * 1
+                + len(open_ended_questions) * 4,  # 1 min MCQ, 4 min open-ended
                 "content_duration_minutes": total_duration,
                 "quiz_distribution": quiz_metadata,
                 "generation_approach": "section_aware_multi_quiz",
@@ -686,98 +684,3 @@ Remember:
                 continue
 
         return total_seconds / 60.0
-
-    def _save_input_parameters_to_md(
-        self,
-        section_analyses: List[SectionAnalysis],
-        runnable_config: RunnableConfig,
-        original_transcript: str = None,
-    ) -> None:
-        """
-        Save the input parameters to a markdown file for analysis.
-
-        Args:
-            section_analyses: List of analyzed sections
-            runnable_config: LangChain runnable configuration
-            original_transcript: Original transcript with timestamps (optional)
-        """
-        import datetime
-        import os
-
-        # Create timestamp for filename
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"quiz_generation_input_{timestamp}.md"
-
-        # Create the markdown content
-        md_content = f"""# Quiz Generation Input Parameters
-
-Generated at: {datetime.datetime.now().isoformat()}
-
-## Section Analyses ({len(section_analyses)} sections)
-
-"""
-
-        # Add section analyses details
-        for i, section in enumerate(section_analyses):
-            md_content += f"""### Section {i+1}
-- **Title**: {section.title}
-- **Start Time**: {section.start_time}
-- **End Time**: {section.end_time}
-- **Summary**: {section.summary}
-
-#### Entities
-"""
-            for entity in section.entities:
-                md_content += f"- **{entity.name}**: {entity.explanation}\n"
-
-            md_content += f"""
-#### Quotes
-"""
-            for quote in section.quotes:
-                md_content += f"- {quote}\n"
-
-            md_content += f"""
-#### Additional Data
-```json
-{json.dumps(section.additional_data, indent=2)}
-```
-
-"""
-
-        # Add runnable config
-        md_content += f"""## Runnable Config
-
-```json
-{json.dumps(dict(runnable_config) if runnable_config else {}, indent=2, default=str)}
-```
-
-## Original Transcript
-
-**Type**: {type(original_transcript).__name__}
-**Length**: {len(str(original_transcript)) if original_transcript else 0} characters
-
-"""
-
-        if original_transcript:
-            if isinstance(original_transcript, list):
-                md_content += f"""**Structure**: List with {len(original_transcript)} items
-
-### First 3 items (if available):
-```json
-{json.dumps(original_transcript[:3], indent=2)}
-```
-"""
-            else:
-                md_content += f"""**Content (first 1000 characters)**:
-```
-{str(original_transcript)[:1000]}
-```
-"""
-
-        # Save to file
-        try:
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(md_content)
-            print(f"[green]✓ Saved input parameters to {filename}[/green]")
-        except Exception as e:
-            print(f"[red]✗ Failed to save input parameters: {e}[/red]")

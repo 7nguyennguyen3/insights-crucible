@@ -153,6 +153,8 @@ python -m uvicorn src.main:app --reload --port 8000
 
 The API will be available at `http://localhost:8000`
 
+**💡 Local Development Tip:** For full functionality with Google Cloud Tasks, you'll need to set up ngrok to create a public tunnel to your local backend. Install ngrok and run `ngrok http 8000`, then add the generated URL to your `.env` file as `WORKER_SERVICE_URL`. See the [Contributing Guide](CONTRIBUTING.md#setting-up-ngrok-for-local-development) for detailed setup instructions.
+
 ## ⚙️ Configuration
 
 ### Environment Variables
@@ -173,6 +175,9 @@ TAVILY_API_KEY=your_tavily_key
 PROJECT_ID=your_gcp_project_id
 CLOUD_TASKS_QUEUE=your_task_queue
 CLOUD_TASKS_LOCATION=your_location
+
+# Local Development (use ngrok for Cloud Tasks integration)
+WORKER_SERVICE_URL=https://your-ngrok-url.ngrok.io
 
 # Firebase
 FIREBASE_CREDENTIALS=your_firebase_credentials_json

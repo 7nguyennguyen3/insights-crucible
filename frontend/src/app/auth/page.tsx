@@ -31,15 +31,12 @@ export default async function AuthPage() {
 
   // If no cookie exists, or if the cookie was invalid, render the form.
   return (
-    <div className={`flex items-center justify-center min-h-screen ${backgroundVariants.universal} relative overflow-hidden`}>
-      {/* Background Elements */}
-      <div className={`absolute inset-0 ${gridPatterns.subtle}`} />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/8 rounded-full blur-3xl animate-pulse" />
-      <div 
-        className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-teal-500/8 rounded-full blur-3xl animate-pulse"
-        style={{ animationDelay: "2s" }}
-      />
-      
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 text-slate-800 dark:text-slate-200 relative overflow-hidden">
+      {/* Subtle background pattern - matching landing page */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-200/20 to-transparent dark:via-slate-700/20"></div>
+      </div>
+
       <div className="relative z-10">
         <React.Suspense fallback={<AuthSkeleton />}>
           <AuthForm />

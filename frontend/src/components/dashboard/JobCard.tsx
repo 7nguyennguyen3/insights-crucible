@@ -39,6 +39,7 @@ import {
   User,
   Clock,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { formatDurationForDisplay } from "@/lib/utils/duration";
 import { Folder } from "@/hooks/useFolders";
@@ -104,6 +105,10 @@ interface JobCardProps {
   onDelete: (job: Job) => void;
   onToggleStar: (job: Job) => void;
   onMove: (jobId: string, folderId: string | null) => void;
+  // Selection props
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (jobId: string, selected: boolean) => void;
 }
 
 const JobCard: React.FC<JobCardProps> = ({
@@ -113,50 +118,89 @@ const JobCard: React.FC<JobCardProps> = ({
   onDelete,
   onToggleStar,
   onMove,
+  isSelectionMode = false,
+  isSelected = false,
+  onSelect,
 }) => {
   const statusProps = getStatusProps(job.status);
   const sourceTypeProps = getSourceTypeProps(job.sourceType);
   const isProcessing = job.status === "PROCESSING";
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only handle selection if in selection mode and not clicking on buttons/interactive elements
+    if (isSelectionMode && onSelect && e.target === e.currentTarget) {
+      e.preventDefault();
+      onSelect(job.id, !isSelected);
+    }
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    if (onSelect) {
+      onSelect(job.id, checked);
+    }
+  };
+
   return (
     <Card
-      className="flex flex-col overflow-hidden transition-shadow duration-300 py-0
-    border-slate-200 dark:border-slate-800 hover:shadow-lg dark:bg-slate-900/50"
+      className={cn(
+        "flex flex-col overflow-hidden transition-all duration-300 py-0 border-slate-200 dark:border-slate-800 hover:shadow-lg dark:bg-slate-900/50",
+        isSelectionMode && "cursor-pointer",
+        isSelected && "ring-2 ring-blue-500 border-blue-500"
+      )}
+      onClick={handleCardClick}
     >
       <CardHeader className="relative p-0 m-0">
-        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
-            onClick={() => onToggleStar(job)}
-          >
-            <Star
-              className={cn(
-                "h-4 w-4 transition-all",
-                job.isStarred
-                  ? "text-amber-500 fill-amber-400"
-                  : "text-slate-500"
-              )}
-              strokeWidth={job.isStarred ? 2.5 : 1.5}
+        {/* Selection checkbox */}
+        {isSelectionMode && (
+          <div className="absolute top-3 left-3 z-10">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={handleCheckboxChange}
+              className="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 shadow-sm"
             />
-            <span className="sr-only">Toggle Favorite</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onRename(job)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Rename
-              </DropdownMenuItem>
+          </div>
+        )}
+
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+          {!isSelectionMode && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleStar(job);
+              }}
+            >
+              <Star
+                className={cn(
+                  "h-4 w-4 transition-all",
+                  job.isStarred
+                    ? "text-amber-500 fill-amber-400"
+                    : "text-slate-500"
+                )}
+                strokeWidth={job.isStarred ? 2.5 : 1.5}
+              />
+              <span className="sr-only">Toggle Favorite</span>
+            </Button>
+          )}
+          {!isSelectionMode && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onRename(job)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Rename
+                </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <MoveIcon className="mr-2 h-4 w-4" />
@@ -183,16 +227,17 @@ const JobCard: React.FC<JobCardProps> = ({
                   ))}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-500"
-                onClick={() => onDelete(job)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-500"
+                  onClick={() => onDelete(job)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <div className="aspect-video w-full overflow-hidden relative">
@@ -322,7 +367,7 @@ const JobCard: React.FC<JobCardProps> = ({
       </CardContent>
 
       <CardFooter className="p-4 pt-2">
-        {job.status === "COMPLETED" ? (
+        {job.status === "COMPLETED" && !isSelectionMode ? (
           <Link href={`/results/${job.id}`} className="w-full" passHref>
             <Button className="w-full">
               <Eye className="w-4 h-4 mr-2" />
@@ -330,7 +375,7 @@ const JobCard: React.FC<JobCardProps> = ({
             </Button>
           </Link>
         ) : (
-          <Button className="w-full" disabled>
+          <Button className="w-full" disabled={isSelectionMode || job.status !== "COMPLETED"}>
             {job.status === "PROCESSING" && (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             )}
@@ -338,7 +383,7 @@ const JobCard: React.FC<JobCardProps> = ({
               <AlertCircle className="w-4 h-4 mr-2" />
             )}
             {job.status === "QUEUED" && <Loader2 className="w-4 h-4 mr-2" />}
-            {job.status}
+            {job.status === "COMPLETED" && isSelectionMode ? "Selected" : job.status}
           </Button>
         )}
       </CardFooter>

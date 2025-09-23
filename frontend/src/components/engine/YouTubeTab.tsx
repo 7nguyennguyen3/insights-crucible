@@ -26,7 +26,7 @@ export const YouTubeTab = ({
 }: YouTubeTabProps) => {
   return (
     <div className="pt-4 space-y-4">
-      <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <Textarea
           id="youtube-url"
           placeholder={
@@ -47,6 +47,7 @@ export const YouTubeTab = ({
             !youtubeUrl.trim() ||
             isFetchingMetadata
           }
+          className="w-full sm:w-auto"
         >
           {isFetchingMetadata ? (
             <Loader2 className="w-4 h-4 animate-spin" />

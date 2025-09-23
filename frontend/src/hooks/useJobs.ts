@@ -13,6 +13,7 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { Job } from "@/app/_global/interface";
+import { convertFirestoreTimestamp } from "@/lib/utils";
 
 const PAGE_SIZE = 6;
 
@@ -58,7 +59,7 @@ const jobsFetcher = async (
       jobsData.push({
         id: doc.id,
         status: data.status,
-        createdAt: data.createdAt?.toDate().toISOString(),
+        createdAt: convertFirestoreTimestamp(data.createdAt),
         job_title: data.job_title,
         progress: data.progress,
         isStarred: data.isStarred || false,
@@ -72,6 +73,9 @@ const jobsFetcher = async (
         analysisPersona: data.analysisPersona || data.request_data?.config?.analysis_persona,
         audioFilename: data.request_data?.audio_filename || data.audioFilename,
         durationSeconds: data.request_data?.duration_seconds || data.durationSeconds,
+        libraryDescriptionSuggestion: data.libraryDescriptionSuggestion,
+        libraryTagsSuggestion: data.libraryTagsSuggestion,
+        libraryMeta: data.libraryMeta,
       });
     });
 
