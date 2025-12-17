@@ -4,6 +4,7 @@ Audio processing and transcription service.
 
 import os
 import asyncio
+import time
 from typing import Dict, Any, List
 import httpx
 from rich import print
@@ -45,23 +46,27 @@ class AssemblyAIProcessor(AudioProcessor):
         )
         
         try:
-            # Download audio from GCS
+            start_time = time.time()
+
+            # Generate signed URL for direct access from GCS
+            url_start = time.time()
             bucket = self.gcs_client.bucket(self.bucket_name)
             blob = bucket.blob(storage_path)
-            audio_bytes = await asyncio.to_thread(blob.download_as_bytes)
-            
-            headers = {"authorization": self.api_key}
-            
-            # Upload audio to AssemblyAI
-            upload_response = await self.httpx_client.post(
-                "https://api.assemblyai.com/v2/upload",
-                headers=headers,
-                content=audio_bytes,
+
+            # Generate a signed URL that expires in 1 hour
+            audio_url = await asyncio.to_thread(
+                blob.generate_signed_url,
+                version="v4",
+                expiration=3600,  # 1 hour
+                method="GET"
             )
-            upload_response.raise_for_status()
-            audio_url = upload_response.json()["upload_url"]
-            
+            url_time = time.time() - url_start
+            print(f"   [dim]⏱️  Generated signed URL: {url_time:.2f}s[/dim]")
+
+            headers = {"authorization": self.api_key}
+
             # Submit transcription request
+            submit_start = time.time()
             payload = {
                 "audio_url": audio_url,
                 "speech_model": model_name,
@@ -74,16 +79,27 @@ class AssemblyAIProcessor(AudioProcessor):
             )
             submit_response.raise_for_status()
             transcript_id = submit_response.json()["id"]
-            
-            # Poll for completion
+            submit_time = time.time() - submit_start
+            print(f"   [dim]⏱️  Job submission: {submit_time:.2f}s[/dim]")
+
+            # Poll for completion with adaptive intervals
+            poll_start = time.time()
+            poll_interval = 1  # Start with 1 second
+            max_interval = 5
+            poll_count = 0
             while True:
-                await asyncio.sleep(5)
+                poll_count += 1
+                await asyncio.sleep(poll_interval)
                 poll_endpoint = f"https://api.assemblyai.com/v2/transcript/{transcript_id}"
                 poll_response = await self.httpx_client.get(poll_endpoint, headers=headers)
                 poll_response.raise_for_status()
                 result = poll_response.json()
-                
+
                 if result["status"] == "completed":
+                    poll_time = time.time() - poll_start
+                    total_time = time.time() - start_time
+                    print(f"   [dim]⏱️  Polling: {poll_time:.2f}s ({poll_count} requests)[/dim]")
+                    print(f"   [bold yellow]⏱️  TOTAL TIME: {total_time:.2f}s[/bold yellow]")
                     print("   [green]✓[/green] [dim]Polling complete.[/dim]")
                     audio_duration = result.get("audio_duration", 0)
                     
@@ -123,6 +139,9 @@ class AssemblyAIProcessor(AudioProcessor):
                     raise Exception(
                         f"AssemblyAI transcription failed: {result.get('error')}"
                     )
+
+                # Gradually increase polling interval (exponential backoff)
+                poll_interval = min(poll_interval * 1.5, max_interval)
         
         except httpx.HTTPStatusError as e:
             print(f"[bold red]API Error:[/bold red] {e.response.status_code} - {e.response.text}")

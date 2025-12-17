@@ -17,14 +17,15 @@ from ..services.enrichment import EntityEnricher
 from ..utils import format_seconds_to_timestamp
 from ..config import get_persona_config
 
-# Import timestamp extraction function
+# Import timestamp extraction functions
 try:
-    from ...find_quote_timestamps import add_timestamps_to_actionable_takeaways
-    print("[green]Successfully imported timestamp extraction function[/green]")
+    from ...find_quote_timestamps import add_timestamps_to_actionable_takeaways, add_timestamps_to_notable_quotes
+    print("[green]Successfully imported timestamp extraction functions[/green]")
 except ImportError as e:
     # Fallback if import fails
     add_timestamps_to_actionable_takeaways = None
-    print(f"[yellow]Failed to import timestamp extraction function: {e}[/yellow]")
+    add_timestamps_to_notable_quotes = None
+    print(f"[yellow]Failed to import timestamp extraction functions: {e}[/yellow]")
 
 
 class SectionProcessingResult:
@@ -358,6 +359,45 @@ class SectionProcessor:
                 {"name": e.name, "explanation": e.explanation}
                 for e in analysis.entities
             ]
+
+            # Add precise timestamps to notable quotes for podcaster and other personas
+            print(f"[blue]{self.persona} persona: Adding timestamps to notable quotes...[/blue]")
+            print(f"[blue]  - Structured transcript available: {self.structured_transcript is not None}[/blue]")
+            print(f"[blue]  - Notable quotes in result: {len(base_dict.get('notable_quotes', []))}[/blue]")
+
+            if self.structured_transcript:
+                print(f"[blue]  - Structured transcript entries count: {len(self.structured_transcript)}[/blue]")
+
+            # Add timestamps using structured transcript
+            if (add_timestamps_to_notable_quotes is not None and
+                self.structured_transcript and
+                base_dict.get("notable_quotes")):
+
+                try:
+                    print(f"[blue]Adding precise timestamps to {len(base_dict['notable_quotes'])} notable quotes...[/blue]")
+                    enhanced_quotes = add_timestamps_to_notable_quotes(
+                        base_dict["notable_quotes"],
+                        self.structured_transcript
+                    )
+                    base_dict["notable_quotes"] = enhanced_quotes
+
+                    # Verify timestamps were added
+                    timestamps_added = sum(1 for quote in enhanced_quotes
+                                         if isinstance(quote, dict) and quote.get('timestamp') not in ['00:00', None])
+                    print(f"[green][+] Successfully added precise timestamps to {timestamps_added}/{len(enhanced_quotes)} notable quotes[/green]")
+
+                    # Show sample results
+                    if enhanced_quotes:
+                        sample_quote = enhanced_quotes[0]
+                        if isinstance(sample_quote, dict):
+                            print(f"[green]  - Sample quote timestamp: {sample_quote.get('timestamp', 'N/A')}[/green]")
+
+                except Exception as e:
+                    print(f"[red]Error: Failed to add timestamps to notable quotes: {e}[/red]")
+                    import traceback
+                    print(f"[red]Full traceback: {traceback.format_exc()}[/red]")
+            else:
+                print(f"[yellow]Skipping notable quote timestamp extraction - no structured transcript available[/yellow]")
 
             # For other personas, include contextual_briefing and all additional data
             base_dict["contextual_briefing"] = analysis.contextual_briefing

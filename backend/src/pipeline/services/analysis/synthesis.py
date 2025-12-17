@@ -209,10 +209,13 @@ class PodcasterSynthesizer(MetaAnalyzer):
                 notable_quotes = []
                 for quote_obj in analysis.quotes:
                     if isinstance(quote_obj, dict):
+                        # Preserve precise timestamp if it was extracted during section processing
+                        # Otherwise fall back to section start time
+                        timestamp = quote_obj.get("timestamp", analysis.start_time)
                         notable_quotes.append({
                             "quote": quote_obj.get("quote", ""),
                             "context": quote_obj.get("context", ""),
-                            "timestamp": analysis.start_time
+                            "timestamp": timestamp
                         })
 
                 section_info = {

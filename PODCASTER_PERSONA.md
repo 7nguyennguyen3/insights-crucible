@@ -234,10 +234,12 @@ Output (Show Notes JSON)
   - Specific and concrete (not vague)
 
 - **Notable Quotes Selection** ✅
-  - Top 5-8 shareable quotes with timestamps
+  - Top 5-8 shareable quotes with precise timestamps
+  - **Precise Timestamp Extraction**: Uses fuzzy matching to find exact quote locations in transcript
   - Scoring algorithm prioritizes 30-100 word range for completeness
   - Duplicate removal
   - Context preservation
+  - Timestamps extracted at section-level using structured transcript data
 
 - **Chapter Markers** ✅
   - Timestamp-based navigation
@@ -333,12 +335,12 @@ All outputs will be stored in the standard analysis result structure under a `sh
       {
         "quote": "Your attention is the most valuable currency in the digital economy, and every app is designed to extract as much of it as possible without you noticing.",
         "context": "Discussion on attention economy and app design",
-        "timestamp": "00:12:34"
+        "timestamp": "00:07:23"  // Precise location within section, not section start
       },
       {
         "quote": "The problem isn't that we lack willpower - it's that we're fighting billion-dollar algorithms specifically engineered to exploit our cognitive weaknesses.",
         "context": "Analysis of behavioral design in social platforms",
-        "timestamp": "00:23:45"
+        "timestamp": "00:19:47"  // Exact quote location extracted via fuzzy matching
       }
     ],
     "chapters": [
@@ -378,6 +380,47 @@ All outputs will be stored in the standard analysis result structure under a `sh
 
 ---
 
+## Timestamp Extraction System
+
+### How Precise Quote Timestamps Work
+
+The podcaster persona uses an advanced timestamp extraction system to pinpoint the exact moment each notable quote appears in the episode, rather than just providing the section start time.
+
+**Two-Stage Matching Process:**
+
+1. **Exact Word Matching**:
+   - Creates concatenated text blocks from adjacent transcript entries
+   - Searches for quote text using progressive word-count matching (6→5→4→3 words)
+   - Handles quotes that span multiple transcript segments
+
+2. **Fuzzy Matching Fallback**:
+   - If exact matching fails, uses similarity scoring (85%+ threshold)
+   - Resilient to minor transcription errors or word variations
+   - Employs sliding window search across transcript
+
+**Technical Implementation:**
+- Located in `backend/src/find_quote_timestamps.py`
+- Function: `add_timestamps_to_notable_quotes()`
+- Integrated at section processing level in `backend/src/pipeline/orchestrators/section_processor.py`
+- Uses structured transcript data from AssemblyAI or paste jobs
+
+**Benefits:**
+- Podcasters can jump directly to quote moments for clip creation
+- Accurate timestamps for social media video clips
+- Better listener experience with precise navigation
+- Enables automated clip generation in future features
+
+**Example:**
+```json
+{
+  "quote": "Your attention is the most valuable currency in the digital economy...",
+  "context": "Discussion on attention economy",
+  "timestamp": "00:12:47"  // Exact location, not just section start
+}
+```
+
+---
+
 ## Design Decisions
 
 ### Why Timestamps Are Critical
@@ -385,6 +428,7 @@ All outputs will be stored in the standard analysis result structure under a `sh
 - Listeners skip to relevant sections
 - Social clips need exact start/end times
 - Platform chapters require timestamp markers
+- **NEW**: Precise quote timestamps enable direct navigation to shareable moments
 
 ### Why Speaker-Agnostic
 - Not all podcasts have guests
@@ -400,6 +444,13 @@ All outputs will be stored in the standard analysis result structure under a `sh
 ---
 
 ## Recent Updates
+
+### December 2025 - Precise Quote Timestamp Extraction ✅
+- **NEW**: Implemented precise timestamp extraction for notable quotes
+- Notable quotes now show exact location (e.g., "00:12:47") instead of section start time
+- Uses two-stage matching: exact word matching + fuzzy fallback (85%+ similarity)
+- Integrated at section-level processing for all personas using notable_quotes
+- Enables accurate clip creation and better navigation for podcasters
 
 ### December 2025 - Launch Asset Package Complete ✅
 - **Title Variations**: Implemented 4 marketing angle variations (Curiosity Gap, Benefit-Driven, Contrarian, Direct)

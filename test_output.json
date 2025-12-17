@@ -1,185 +1,171 @@
 {
-  "analysis_type": "podcaster",
-  "transcript_info": {
-    "duration_seconds": 2190,
-    "total_sections": 3,
-    "section_duration_avg": "12 minutes"
-  },
-
-  "section_analyses": [
-    {
-      "section_number": 1,
-      "timestamp_start": "00:00:00",
-      "timestamp_end": "00:12:15",
-      "section_title": "Introduction and The Rise of AI Tools",
-      "key_points": [
-        "The explosive growth of AI productivity tools in 2024-2025",
-        "Why traditional task management apps are becoming obsolete",
-        "The shift from manual planning to AI-assisted workflow optimization"
-      ],
-      "notable_quotes": [
-        {
-          "quote": "We're not just automating tasks anymore - we're automating the entire decision-making process around how we structure our workday. That's a fundamental shift in how humans interact with productivity systems.",
-          "context": "Discussion on the evolution of AI productivity tools",
-          "timestamp": "00:03:45",
-          "word_count": 35
+  "main_document": {
+    "path": "saas_users/Y9YOWHYq7RVVPZ2KSTf0YTA6J9w1/jobs/jGMil0bfwrLE9mihgiBz",
+    "document_id": "jGMil0bfwrLE9mihgiBz",
+    "data": {
+      "request_data": {
+        "youtube_video_title": "The Fight For The $150 Million Emerald Industry In Colombia | So Expensive | Business Insider",
+        "user_id": "Y9YOWHYq7RVVPZ2KSTf0YTA6J9w1",
+        "config": {
+          "analysis_persona": "podcaster"
         },
-        {
-          "quote": "The companies that win in the next decade won't be the ones with the best features. They'll be the ones that make AI feel invisible, like it's just part of your natural workflow.",
-          "context": "Predictions for the future of productivity software",
-          "timestamp": "00:09:22",
-          "word_count": 38
-        }
-      ],
-      "summary": "Introduction to the podcast episode focusing on the transformation of productivity tools through AI integration. Sets the stage for exploring how automation is changing work habits and tool adoption patterns."
-    },
-    {
-      "section_number": 2,
-      "timestamp_start": "00:12:15",
-      "timestamp_end": "00:24:30",
-      "section_title": "The Psychology of Digital Distraction",
-      "key_points": [
-        "How notification design exploits cognitive biases",
-        "The 'context-switching tax' on deep work and productivity",
-        "Research findings on attention restoration and focus recovery times",
-        "Why async communication is gaining traction among remote teams"
-      ],
-      "notable_quotes": [
-        {
-          "quote": "Every time you switch contexts, you're not just losing two minutes - you're losing up to 23 minutes of peak cognitive performance. That's not a productivity problem, that's a design problem with how we've built our digital workspaces.",
-          "context": "Explaining the cognitive cost of context switching",
-          "timestamp": "00:15:47",
-          "word_count": 45
-        },
-        {
-          "quote": "The average knowledge worker checks their phone 96 times per day. That's once every 10 minutes during waking hours. We've normalized a level of interruption that would have been considered pathological just 15 years ago.",
-          "context": "Statistics on digital distraction",
-          "timestamp": "00:19:03",
-          "word_count": 41
-        }
-      ],
-      "summary": "Deep dive into the neuroscience and psychology behind why modern digital tools fragment our attention. Explores research on context-switching costs and strategies for maintaining focus in a hyper-connected world."
-    },
-    {
-      "section_number": 3,
-      "timestamp_start": "00:24:30",
-      "timestamp_end": "00:36:45",
-      "section_title": "Building Sustainable Productivity Systems",
-      "key_points": [
-        "The three-tier system: capture, process, execute",
-        "Why most productivity systems fail within 30 days",
-        "The role of friction vs. automation in habit formation",
-        "Calendar blocking strategies that actually work for creatives",
-        "The importance of weekly reviews for system maintenance"
-      ],
-      "notable_quotes": [
-        {
-          "quote": "Your productivity system should feel like putting on a well-worn jacket, not like assembling IKEA furniture every morning. If it requires willpower to maintain, it's already broken.",
-          "context": "Philosophy on sustainable productivity systems",
-          "timestamp": "00:27:11",
-          "word_count": 32
-        },
-        {
-          "quote": "I tell people to start with the smallest possible system that solves their biggest pain point. You don't need 47 browser extensions and a color-coded calendar. You need one reliable place to capture what matters and a 10-minute weekly habit to process it.",
-          "context": "Advice for beginners building productivity systems",
-          "timestamp": "00:32:58",
-          "word_count": 51
-        }
-      ],
-      "summary": "Practical frameworks for building productivity systems that last. Covers the fundamentals of task capture, processing workflows, and execution strategies while emphasizing simplicity and sustainability over complexity."
-    }
-  ],
-
-  "synthesized_output": {
-    "show_notes": {
-      "title_variations": {
-        "curiosity_gap": "Why Your Productivity System Is Quietly Sabotaging Your Best Work",
-        "benefit_driven": "How to Build a Productivity System That Actually Lasts Beyond 30 Days",
-        "contrarian": "Stop Optimizing Everything: Why Less Productivity Tools Mean More Focus",
-        "direct": "AI Tools, Context-Switching Costs, and Sustainable Productivity Frameworks"
+        "youtube_channel_name": "Business Insider",
+        "source_type": "youtube",
+        "youtube_url": "https://www.youtube.com/watch?v=2cO3SSN1-qc",
+        "youtube_duration": "PT22M55S",
+        "transcript_id": "fe2e0f7c-1161-4a2f-921d-828cdb5a2407",
+        "youtube_thumbnail_url": "https://i.ytimg.com/vi/2cO3SSN1-qc/hqdefault.jpg"
       },
-      "episode_description": "In this episode, you'll discover why constant context-switching is costing you up to 23 minutes of peak cognitive performance every single time you check your phone. We dive deep into the psychology of digital distraction and explore practical frameworks for building productivity systems that actually stick - without requiring superhuman willpower or 47 browser extensions.\n\nYou'll learn the three-tier system that helps you capture, process, and execute on what matters most. We also explore how to thoughtfully integrate AI into your daily workflow, understanding when automation adds value and when it just adds complexity. Whether you're drowning in notifications, struggling to maintain focus, or simply looking for a system that works with your brain instead of against it, this episode delivers actionable insights you can implement immediately.",
-      "key_points": [
-        "The explosive growth of AI productivity tools and why traditional task management is becoming obsolete",
-        "How notification design exploits cognitive biases and the 23-minute cost of context-switching",
-        "The three-tier productivity system framework: capture, process, execute",
-        "Why most productivity systems fail within 30 days and how to build ones that last",
-        "The role of friction vs. automation in habit formation",
-        "Calendar blocking strategies that actually work for creative professionals",
-        "How to start with the smallest possible system that solves your biggest pain point"
-      ],
-      "notable_quotes": [
+      "folderId": null,
+      "createdAt": {
+        "_seconds": 1765958168,
+        "_nanoseconds": 277000000
+      },
+      "transcript": [
         {
-          "quote": "Every time you switch contexts, you're not just losing two minutes - you're losing up to 23 minutes of peak cognitive performance. That's not a productivity problem, that's a design problem with how we've built our digital workspaces.",
-          "context": "Explaining the cognitive cost of context switching",
-          "timestamp": "00:15:47"
+          "duration": 4.84,
+          "start": 1.959,
+          "text": "this pile of Dov came from one of the"
         },
         {
-          "quote": "The average knowledge worker checks their phone 96 times per day. That's once every 10 minutes during waking hours. We've normalized a level of interruption that would have been considered pathological just 15 years ago.",
-          "context": "Statistics on digital distraction",
-          "timestamp": "00:19:03"
+          "duration": 5.76,
+          "start": 4.04,
+          "text": "most valuable Emerald mines in the"
         },
         {
-          "quote": "Your productivity system should feel like putting on a well-worn jacket, not like assembling IKEA furniture every morning. If it requires willpower to maintain, it's already broken.",
-          "context": "Philosophy on sustainable productivity systems",
-          "timestamp": "00:27:11"
+          "duration": 6.281,
+          "start": 6.799,
+          "text": "world hundreds of people scavenge"
         },
         {
-          "quote": "I tell people to start with the smallest possible system that solves their biggest pain point. You don't need 47 browser extensions and a color-coded calendar. You need one reliable place to capture what matters and a 10-minute weekly habit to process it.",
-          "context": "Advice for beginners building productivity systems",
-          "timestamp": "00:32:58"
+          "duration": 5.68,
+          "start": 9.8,
+          "text": "through waste by hand to uncover a few"
+        },
+        {
+          "duration": 2.4,
+          "start": 13.08,
+          "text": "tiny"
         }
       ],
-      "chapters": [
-        {
-          "timestamp": "00:00:00",
-          "title": "Introduction and The Rise of AI Tools",
-          "summary": "Introduction to the podcast episode focusing on the transformation of productivity tools through AI integration. Sets the stage for exploring how automation is changing work habits and tool adoption patterns."
-        },
-        {
-          "timestamp": "00:12:15",
-          "title": "The Psychology of Digital Distraction",
-          "summary": "Deep dive into the neuroscience and psychology behind why modern digital tools fragment our attention. Explores research on context-switching costs and strategies for maintaining focus in a hyper-connected world."
-        },
-        {
-          "timestamp": "00:24:30",
-          "title": "Building Sustainable Productivity Systems",
-          "summary": "Practical frameworks for building productivity systems that last. Covers the fundamentals of task capture, processing workflows, and execution strategies while emphasizing simplicity and sustainability over complexity."
-        }
-      ],
-      "social_content": {
-        "linkedin_post": "I spent years thinking I had a productivity problem.\n\nTurns out, I had a context-switching problem.\n\nHere's the thing nobody tells you:\n\nEvery time you check Slack, glance at your email, or peek at your phone, you're not losing 2 minutes. You're losing 23 minutes of peak cognitive performance.\n\nThat's not me being dramatic. That's what the research shows.\n\nThe average knowledge worker checks their phone 96 times per day. Once every 10 minutes. We've normalized a level of interruption that would have been considered pathological 15 years ago.\n\nBut here's what changed everything for me:\n\nI stopped trying to build the perfect productivity system. I started with the smallest possible system that solved my biggest pain point.\n\nNo 47 browser extensions. No color-coded calendar. Just one reliable place to capture what matters and a 10-minute weekly habit to process it.\n\nYour productivity system should feel like putting on a well-worn jacket, not like assembling IKEA furniture every morning. If it requires willpower to maintain, it's already broken.\n\nWhat's your biggest productivity friction point right now?\n\nLink to full episode in comments where we break down the three-tier system that actually works.",
-        "twitter_thread": [
-          "You're not unproductive.\n\nYou're context-switching yourself into cognitive exhaustion.\n\nHere's what 23 minutes of lost focus actually costs you:",
-          "Every time you switch tasks - checking email, Slack, your phone - you lose up to 23 minutes of peak cognitive performance.\n\nNot 2 minutes. 23 minutes.\n\nThat's a design problem, not a discipline problem.",
-          "The average person checks their phone 96 times per day.\n\nThat's once every 10 minutes during waking hours.\n\nWe've normalized interruption patterns that destroy deep work.",
-          "Most productivity systems fail within 30 days.\n\nWhy? Because they require willpower to maintain.\n\nIf your system feels like assembling IKEA furniture every morning, it's already broken.",
-          "The solution isn't more tools.\n\nIt's one reliable capture system + a 10-minute weekly processing habit.\n\nStart with the smallest possible system that solves your biggest pain point.",
-          "Stop optimizing. Start simplifying.\n\nYour brain needs friction reduction, not another browser extension.\n\nFull breakdown of the three-tier productivity framework in the episode - link in bio."
+      "show_notes": {
+        "chapters": [
+          {
+            "timestamp": "00:01",
+            "title": "Colombia's Emerald Riches",
+            "summary": "This section delves into the complex world of Colombian emerald mining, contrasting the struggles of artisanal miners with the operations of large foreign investors. It explores the geological formation of emeralds, the historical conflicts over their control, and the economic realities for local communities versus international stakeholders."
+          }
         ],
-        "youtube_description": "Discover why your productivity system keeps failing and learn the three-tier framework that actually works. In this episode, we break down the hidden cost of context-switching (it's 23 minutes, not 2), explore the psychology of digital distraction, and reveal how to build systems that work with your brain instead of against it.\n\n📌 KEY TOPICS COVERED:\n• The 23-minute cognitive cost of every context switch\n• Why 96 phone checks per day is destroying your deep work\n• The three-tier productivity framework: capture, process, execute\n• Why most systems fail within 30 days (and how to build ones that last)\n• How to use AI tools without adding more complexity\n• Calendar blocking strategies for creative professionals\n\nCHAPTERS:\n0:00 - Introduction and The Rise of AI Tools\n12:15 - The Psychology of Digital Distraction\n24:30 - Building Sustainable Productivity Systems\n\nWhether you're drowning in notifications, struggling to maintain focus, or tired of productivity systems that require superhuman willpower, this episode gives you a framework you can implement immediately.\n\n🔔 SUBSCRIBE for more evidence-based content on productivity, focus, and building systems that actually stick.\n💬 COMMENT below: What's your biggest productivity friction point right now?\n👍 LIKE if you're ready to stop optimizing and start simplifying."
+        "title_variations": {
+          "curiosity_gap": "The Hidden Dangers Behind Colombia's Most Prized Emeralds",
+          "benefit_driven": "Unearthing Wealth: How Colombian Emeralds Shape Global Markets",
+          "contrarian": "Why Big Business Is Ruining Colombia's Emerald Legacy",
+          "direct": "Colombian Emerald Mining: Artisans, Investors, and Geological Secrets"
+        },
+        "total_sections": 1,
+        "episode_description": "Uncover the captivating allure and complex realities behind Colombia's legendary emeralds. In this episode, we journey deep into the heart of emerald country, exploring the unique geological conditions that create these coveted gemstones and the vibrant, saturated green hues that make them so distinctive. You'll discover the stark contrast between the precarious lives of artisanal miners, the 'guacos,' who sift through mine runoff, and the vast operations of international investors vying for control of these precious resources.\n\nWe'll delve into:\n* The fascinating geological processes that form Colombian emeralds.\n* The historical struggles and conflicts surrounding emerald mining.\n* The economic disparities between local miners and foreign corporations.\n* The challenges faced by 'guacos' in their quest for valuable stones.\n\nWhether you're a gem enthusiast, interested in global economics, or curious about the human stories behind precious commodities, this episode offers a compelling look at the glittering world of Colombian emeralds and the people whose lives are intertwined with their extraction.",
+        "key_points": [
+          "Emeralds form in unique geological conditions in Colombia, particularly in shale deposits, which contribute to their distinctive saturated green color.",
+          "Artisanal miners, known as 'guacos,' face significant challenges in finding valuable stones, often relying on mine runoff and facing competition from large-scale foreign operations.",
+          "The history of Colombian emerald mining is marked by conflict, including the 'Green Wars,' and shifts in control from local leaders ('dons') to international corporations.",
+          "While foreign investment has modernized mines and created jobs, the majority of profits from Colombia's emerald industry are not retained by local communities."
+        ],
+        "social_content": {
+          "youtube_description": "Discover the captivating world of Colombian emeralds, from the deep mines to the global market! In this video, we uncover the fascinating history, the geological wonders, and the economic realities behind one of the world's most prized gemstones. Learn about the challenges faced by artisanal miners and the impact of large-scale foreign investment on this vital industry.\n\n✨ What You'll Learn:\n\n💎 The geological secrets behind Colombia's emerald formation.\n⛏️ The stark contrast between artisanal and large-scale emerald mining operations.\n⚔️ The historical conflicts and socio-economic impacts of emerald control.\n🌍 The global market dynamics and the future of Colombian emeralds.\n\nCHAPTERS:\n0:01 Colombia's Emerald Riches: Mining, History, and Economics\n\nThis episode provides an in-depth look at the multifaceted emerald industry in Colombia, offering insights into its rich history and complex present. \n\nIf you enjoyed this deep dive into Colombian emeralds, please hit the like button, subscribe for more fascinating content, and share your thoughts in the comments below!",
+          "twitter_thread": [
+            "Did you know Colombia's emeralds are some of the most sought-after in the world? But the story behind them is far from glittering. ✨ Let's dive into the complex reality of Colombian emerald mining. 🧵👇",
+            "Emeralds aren't just pretty rocks! They form under very specific geological conditions in Colombia, often in shale deposits. This unique environment gives them their signature, deeply saturated green color. 💎",
+            "Meet the 'guacos' – artisanal miners who often sift through mine runoff for precious stones. They face tough competition and the constant challenge of finding valuable emeralds, unlike large foreign operations. ⛏️",
+            "The history of Colombian emeralds is steeped in conflict. From local 'dons' controlling the trade to the violent 'Green Wars,' control has shifted dramatically over the centuries. ⚔️",
+            "Modern mining brings foreign investment & jobs, but the economic reality is stark. The vast majority of profits from Colombia's emerald wealth don't stay with the local communities who live there. 💰",
+            "It's a tale of geological marvels, historical struggles, and economic disparities. The true value of Colombian emeralds is more than just their carat weight. #Emeralds #Colombia #Mining",
+            "Want to understand the full story of Colombia's emerald riches, from the earth to the global market? Listen to the full episode for a deeper dive! [Link to Episode]"
+          ],
+          "linkedin_post": "Ever wonder where those stunning emeralds come from?\n\nI was listening to a podcast about Colombia's emerald mines, and it painted a picture far more complex than just pretty green rocks. It's a story of geology, history, and a whole lot of economics.\n\nThese emeralds form under super specific conditions, deep in the earth. But the real story is about the people. You have these 'guacos,' the artisanal miners, sifting through mine runoff, hoping for a lucky find. They're the ones on the ground, facing tough conditions.\n\nThen you have the big players – large foreign corporations. They've brought in modern tech and created jobs, which is great. But the podcast highlighted a stark reality: while the mines are in Colombia, most of the profits from these incredible gems aren't staying in the local communities that have been tied to this land for generations.\n\nIt's a classic tale of resource extraction, isn't it? How do we ensure that the wealth generated from a nation's natural treasures benefits the people who live there, not just the international investors?\n\nWhat's your take on balancing local needs with global investment in resource-rich regions?"
+        },
+        "notable_quotes": [
+          {
+            "quote": "The sulfur absorbs some of the iron that would normally go into an emerald less iron means a more saturated green color and for Emerald buyers color is King.",
+            "context": "Explaining the geological factors that create the desirable color in Colombian emeralds.",
+            "timestamp": "00:01"
+          },
+          {
+            "quote": "This is muso miners have fought over the town's emeralds for centuries.",
+            "context": "Highlighting the long history of conflict and competition surrounding emerald mining in the region.",
+            "timestamp": "00:01"
+          },
+          {
+            "quote": "The real money has always been made by those at the top.",
+            "context": "Summarizing the historical and ongoing economic disparity in the emerald industry.",
+            "timestamp": "00:01"
+          }
+        ]
       },
-      "total_sections": 3
-    },
-    "metadata": {
-      "analysis_duration_seconds": 2190,
-      "total_word_count_estimated": 5500,
-      "total_key_points": 7,
-      "total_notable_quotes": 4,
-      "total_chapters": 3,
-      "persona": "podcaster"
+      "job_title": "Emeralds: Riches, Risks, Realities",
+      "progress": "Analysis of 1 sections complete.",
+      "status": "COMPLETED",
+      "updatedAt": {
+        "_seconds": 1765958186,
+        "_nanoseconds": 383000000
+      }
     }
   },
-
-  "notes": {
-    "section_analysis_process": "Each section is analyzed independently to extract key points, notable quotes with timestamps, and a summary. The AI focuses on production value rather than educational insights.",
-    "synthesis_process": "All section analyses are combined to generate the final launch assets package. The synthesizer generates: (1) 4 title variations with different marketing angles, (2) SEO-optimized episode description, (3) compiled key points, (4) best quotes (prioritizing 30-100 word range), (5) chapter markers, and (6) platform-native social content (LinkedIn, Twitter, YouTube). All social content generators run concurrently for optimal performance.",
-    "new_features": {
-      "title_variations": "Generates 4 distinct marketing angles: Curiosity Gap (creates intrigue), Benefit-Driven (clear outcome), Contrarian (challenges beliefs), and Direct (straightforward description). Allows podcasters to A/B test or choose based on audience.",
-      "social_content_pack": "Platform-native promotional content generated concurrently. LinkedIn uses storytelling 'bro-etry' format (200-300 words). Twitter thread breaks down one concept into 5-7 tweets under 280 chars. YouTube description includes SEO optimization, emoji bullets, full chapter timestamps, and CTAs.",
-      "performance": "All generators run in parallel using asyncio.gather() with individual fallback mechanisms to prevent one failure from blocking others."
-    },
-    "quote_selection": "Notable quotes are scored by word count and completeness. Quotes between 30-100 words are preferred as they're substantial enough to be meaningful but short enough to be shareable on social media.",
-    "timestamp_format": "All timestamps are in HH:MM:SS format for easy editing and chapter marker integration across podcast platforms."
+  "subcollections": {
+    "results": {
+      "path": "saas_users/Y9YOWHYq7RVVPZ2KSTf0YTA6J9w1/jobs/jGMil0bfwrLE9mihgiBz/results",
+      "document_count": 1,
+      "documents": [
+        {
+          "id": "section_000",
+          "notable_quotes": [
+            {
+              "quote": "The sulfur absorbs some of the iron that would normally go into an emerald less iron means a more saturated green color and for Emerald buyers color is King.",
+              "context": "Explaining the geological factors that create the desirable color in Colombian emeralds."
+            },
+            {
+              "quote": "This is muso miners have fought over the town's emeralds for centuries.",
+              "context": "Highlighting the long history of conflict and competition surrounding emerald mining in the region."
+            },
+            {
+              "quote": "The real money has always been made by those at the top.",
+              "context": "Summarizing the historical and ongoing economic disparity in the emerald industry."
+            }
+          ],
+          "key_points": [
+            "Emeralds form in unique geological conditions in Colombia, particularly in shale deposits, which contribute to their distinctive saturated green color.",
+            "Artisanal miners, known as 'guacos,' face significant challenges in finding valuable stones, often relying on mine runoff and facing competition from large-scale foreign operations.",
+            "The history of Colombian emerald mining is marked by conflict, including the 'Green Wars,' and shifts in control from local leaders ('dons') to international corporations.",
+            "While foreign investment has modernized mines and created jobs, the majority of profits from Colombia's emerald industry are not retained by local communities."
+          ],
+          "contextual_briefing": {},
+          "1_sentence_summary": "This section delves into the complex world of Colombian emerald mining, contrasting the struggles of artisanal miners with the operations of large foreign investors. It explores the geological formation of emeralds, the historical conflicts over their control, and the economic realities for local communities versus international stakeholders.",
+          "end_time": "22:53",
+          "generated_title": "Colombia's Emerald Riches",
+          "entities": [
+            {
+              "name": "Colombian Emeralds",
+              "explanation": "Colombian emeralds are highly prized for their intense, saturated green color, often with a blue-green tone, due to their formation in unique shale deposits. The Muzo region is particularly famous for producing the most sought-after shades."
+            },
+            {
+              "name": "Artisanal Mining",
+              "explanation": "Artisanal and small-scale mining (ASM) refers to mining activities conducted on a limited scale, often by individuals or small groups using basic tools and working in the informal sector. This type of mining can have significant environmental and social impacts, but formalization efforts aim to make it safer, more equitable, and more productive."
+            },
+            {
+              "name": "Foreign Investment",
+              "explanation": "Foreign investment in Colombia's emerald mining sector has increased, leading to modernization of practices and consolidation of the industry. While this can bring benefits like increased yields and reduced manual labor, it also raises questions about local miners' participation and the distribution of profits."
+            },
+            {
+              "name": "Green Wars",
+              "explanation": "The 'Green Wars' refer to periods of intense and violent conflict in Colombia's emerald industry, primarily during the 1970s and 1980s. These battles were fought between emerald barons, and sometimes involved paramilitaries, guerrillas, and drug traffickers vying for control of lucrative emerald mines."
+            },
+            {
+              "name": "Muso",
+              "explanation": "Muzo is a region in Colombia renowned for producing emeralds of a deep, saturated green color, considered the most desirable shade in the international market. The unique geological conditions in Muzo contribute to the exceptional quality of its emeralds."
+            }
+          ],
+          "start_time": "00:01"
+        }
+      ]
+    }
   }
 }

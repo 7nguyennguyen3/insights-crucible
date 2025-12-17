@@ -315,3 +315,53 @@ def add_timestamps_to_actionable_takeaways(
     )
 
     return enhanced_takeaways
+
+
+def add_timestamps_to_notable_quotes(
+    notable_quotes: List[Dict[str, Any]],
+    structured_transcript: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """
+    Add precise timestamps to notable quotes by matching quote text with transcript.
+
+    This function is used for podcaster persona to find exact timestamps for shareable quotes.
+
+    Args:
+        notable_quotes: List of quote dictionaries with 'quote' and 'context' fields
+        structured_transcript: List of transcript entries with timing data
+
+    Returns:
+        Enhanced quotes with 'timestamp' field updated to exact match location
+    """
+    if not notable_quotes or not structured_transcript:
+        return notable_quotes
+
+    enhanced_quotes = []
+    matches_found = 0
+
+    for quote_obj in notable_quotes:
+        if not isinstance(quote_obj, dict):
+            enhanced_quotes.append(quote_obj)
+            continue
+
+        # Copy the quote object
+        enhanced_quote = quote_obj.copy()
+
+        # Try to find timestamp for the quote text
+        quote_text = quote_obj.get("quote", "")
+        if quote_text:
+            timestamp_info = find_quote_timestamp_with_fuzzy_fallback(
+                quote_text, structured_transcript
+            )
+            if timestamp_info:
+                # Update the timestamp field with the exact match
+                enhanced_quote["timestamp"] = timestamp_info.get("start", enhanced_quote.get("timestamp", "00:00"))
+                matches_found += 1
+
+        enhanced_quotes.append(enhanced_quote)
+
+    print(
+        f"[green]Notable quote timestamp extraction: Found {matches_found}/{len(notable_quotes)} exact timestamps[/green]"
+    )
+
+    return enhanced_quotes

@@ -1,1790 +1,2142 @@
-# YouTube Transcript - Video ID: mr4Pw66_490
+# YouTube Transcript - Video ID: MzAIP_WJ-jE
 
 ## Original Transcript Data
 
-**[00:00]** There's one belief that keeps most
+**[00:00]** Here are brutally honest truths that
 
-**[00:01]** entrepreneurs trapped and unable to
+**[00:01]** will give you an unfair advantage. I'm
 
-**[00:03]** grow. They stay stuck. And when I
+**[00:03]** Alex Shamoszi and the founder of
 
-**[00:06]** started, I made the same mistakes that
+**[00:04]** acquisitions.com. It's a portfolio of
 
-**[00:08]** everyone makes. So, I used to think no
+**[00:06]** companies that generate hundreds of
 
-**[00:09]** [music] one can, you know, grow my
+**[00:07]** millions of dollars in revenue per year
 
-**[00:11]** business like me. If you want it done
+**[00:08]** in aggregate. And a lot of my success in
 
-**[00:12]** right, you got to do it yourself. No one
+**[00:10]** business has come from finding and
 
-**[00:14]** can do it like I can do it. Never let
+**[00:12]** exploiting unfair advantages. So
 
-**[00:16]** anyone else handle the money, never
+**[00:14]** hopefully this video helps you do the
 
-**[00:17]** outsource sales, never outsource
+**[00:16]** same. So let's start with number one.
 
-**[00:18]** marketing, never outsource anything.
+**[00:18]** Pain is the price of
 
-**[00:20]** Right? It's all these different people
+**[00:20]** progress. The fastest growth periods are
 
-**[00:21]** who tell me these things. And it's
+**[00:23]** often the most miserable. If you want to
 
-**[00:22]** interesting because they were a little
+**[00:26]** progress, get used to pain. If you think
 
-**[00:23]** bit ahead of me in business. I think,
+**[00:28]** about what actually occurs when you
 
-**[00:24]** "Oh, they must be right." But they were
+**[00:30]** grow, you stretch past your point of
 
-**[00:25]** just limited business owners like anyone
+**[00:32]** comfort. So even if you're growing a
 
-**[00:26]** else. And it wasn't until I broke that
+**[00:33]** muscle, like you stretch it, you break
 
-**[00:28]** belief or that that system of thinking
+**[00:35]** it down, it's painful. If you have
 
-**[00:30]** that I was able to build real companies,
+**[00:37]** growing pains, like as a kid, it's like
 
-**[00:32]** ones that make money even if I'm not
+**[00:39]** you grew too fast and your joints are in
 
-**[00:35]** involved in the money-making. And so, in
+**[00:40]** a lot of pain. If you're a company and
 
-**[00:36]** this video, I'll show you five steps
+**[00:43]** you expand, this is technically supposed
 
-**[00:38]** that will let you hit your money goals
+**[00:45]** to be good stuff, but it doesn't make it
 
-**[00:40]** by building a business that runs without
+**[00:46]** any less painful. Elite athletes don't
 
-**[00:42]** you, or rather that can create value
+**[00:49]** get stronger during easy workouts. If we
 
-**[00:44]** without you being required.
+**[00:52]** want progress, we must accept the price
 
-**[00:46]** Conceptually, this is the big idea. A
+**[00:55]** of pain that's attached to it. You
 
-**[00:48]** business that requires you isn't a
+**[00:57]** cannot both want progress and live an
 
-**[00:50]** business. And I'm going to say that the
+**[00:59]** easy life. These two things conflict.
 
-**[00:51]** technical sense, anything that generates
+**[01:01]** Number two, happy but not satisfied. So,
 
-**[00:52]** a profit with an LLC is a business. But
+**[01:05]** let me explain this. So, you're allowed
 
-**[00:54]** in terms of the intention of the vast
+**[01:08]** to be happy before you hit your goal,
 
-**[00:56]** majority of people who begin a business,
+**[01:10]** just not satisfied. And so, there's a
 
-**[00:57]** it's for freedom. And then what ends up
+**[01:12]** very big difference between being
 
-**[00:59]** happening is that you create more
+**[01:14]** content with your life, content with
 
-**[01:00]** liabilities, more dependencies. You lose
+**[01:15]** your work, and complacent, meaning
 
-**[01:03]** your optionality. You lose your freedom.
+**[01:17]** you're not going to take any more
 
-**[01:06]** And you have a job you cannot quit.
+**[01:18]** action. There's this great Haitian
 
-**[01:09]** Tough. What's interesting about this is
+**[01:19]** proverb, which is behind mountains are
 
-**[01:11]** that I want to talk about transitioning
+**[01:22]** more mountains. It's kind of like after
 
-**[01:13]** this thing from an Iron Man suit where
+**[01:24]** every peak, you can just see more peaks
 
-**[01:15]** it just enhances your ability to do but
+**[01:25]** ahead of you. The work works on you more
 
-**[01:17]** still requires you to run. Not like the
+**[01:28]** than you work on it. For me, I remember
 
-**[01:18]** newer Iron Man suits which didn't
+**[01:30]** I had a year that I basically went into
 
-**[01:20]** require a person. Let's not get into it.
+**[01:31]** retirement trying to figure out what I
 
-**[01:21]** The businesses are valueless without
+**[01:33]** wanted to do. And the thesis that I came
 
-**[01:23]** you. All right. And if you can get the
+**[01:35]** out with was that hard work is the goal.
 
-**[01:25]** Iron Man suit to become upgraded so it
+**[01:38]** And so, the fact that there's something
 
-**[01:28]** can run and go fight the bad guys or
+**[01:39]** that happens as a result of hard work is
 
-**[01:29]** make the profit without you, then it
+**[01:41]** really just a secondary effect. It's a
 
-**[01:31]** becomes something that is inherently
+**[01:43]** consequence, but the goal is the work
 
-**[01:32]** valuable to anyone. And once something
+**[01:45]** itself. I, you know, I had a friend this
 
-**[01:34]** goes from valuable to you to valuable to
+**[01:47]** morning who messaged me. They're like,
 
-**[01:36]** anyone, it means it's something that
+**[01:48]** "Why do you still work?" And I was like,
 
-**[01:38]** other people would want to buy. When
+**[01:49]** "Because it's the thing that I enjoy
 
-**[01:40]** it's something that other people want to
+**[01:51]** doing most." And when I looked back on
 
-**[01:41]** buy, it's something that is valuable and
+**[01:53]** my life, when I didn't work, I was bored
 
-**[01:43]** inherently has worth. And so, let me
+**[01:56]** and felt depressed. And when I do work,
 
-**[01:45]** give you some simple math here. Let's
+**[01:58]** I am stressed, but I do have moments
 
-**[01:46]** say you have two businesses. One that
+**[02:00]** that I really enjoy as well. I took this
 
-**[01:48]** does I'm going to use simple math. You
+**[02:02]** as a kind of a foundational truth for
 
-**[01:50]** can remove zeros if it hurts your
+**[02:04]** me, not for everyone, that there is
 
-**[01:51]** eyeballs to think of more zeros. All
+**[02:06]** misery on both sides. So, I might as
 
-**[01:52]** right? Let's say you've got a $10
+**[02:07]** well be productive and useful. And the
 
-**[01:54]** million a year business over here top
+**[02:09]** only way to be productive and useful is
 
-**[01:55]** line. $10 million business over here
+**[02:11]** to be happy about the process, but not
 
-**[01:56]** doing top line. So 10 and 10. Okay.
+**[02:14]** satisfied so you can continue to provide
 
-**[01:58]** Which business do you want? Well, you
+**[02:16]** value to the world. Now, number three,
 
-**[02:00]** need more information, right? Of course.
+**[02:19]** ignore critics. Now, this is probably
 
-**[02:01]** Now let's say that both businesses are
+**[02:21]** easy to say, hard to do. So, let me let
 
-**[02:04]** 10 million top line 2 million bottom
+**[02:25]** me break this down a little bit more.
 
-**[02:06]** line. $8 million of cost in both. Now
+**[02:26]** So, friendly reminder that most people
 
-**[02:08]** which business do you want? You still
+**[02:29]** are fat, poor pansies. Don't listen to
 
-**[02:09]** need more information of course. Now
+**[02:31]** them when they try to deter you from
 
-**[02:12]** let's say that of this 10 topline, $2
+**[02:33]** doing whatever it takes to succeed. So,
 
-**[02:13]** million bottom line businesses. This one
+**[02:35]** the average person will always try to
 
-**[02:16]** the owner is running 80 hours a week is
+**[02:37]** keep you average. It makes sense that if
 
-**[02:18]** c like every day of the week they're
+**[02:40]** you want to be extraordinary, you will
 
-**[02:20]** working and is required to work.
+**[02:42]** do things that an ordinary person would
 
-**[02:22]** different than choosing to work as a
+**[02:43]** see as extra, right? And so a lot of
 
-**[02:23]** side note, but I won't get into that for
+**[02:47]** people, and this is this is the really
 
-**[02:25]** now. The second business, the owner
+**[02:48]** hard part that I had to come to terms
 
-**[02:27]** never is there and just owns it like you
+**[02:49]** with, is that a lot of people want to
 
-**[02:30]** would own a stock on the stock market.
+**[02:51]** see you fail because it justifies the
 
-**[02:32]** Now, think about which of these business
+**[02:53]** risk that they chose not to take. We
 
-**[02:34]** owners is richer. Now, at the onset,
+**[02:54]** always have to think about listening to
 
-**[02:37]** you'd think, oh, well, they're both the
+**[02:55]** the people who are closest to our goals,
 
-**[02:38]** same topline, both same bottom line. But
+**[02:57]** not closest to us. And if you want a
 
-**[02:40]** the difference is actually very
+**[02:59]** more violent version of this, your
 
-**[02:41]** dramatic. And so, let me explain. So
+**[03:01]** critics are going to eventually die and
 
-**[02:43]** this guy, first guy, very frustrated
+**[03:05]** their opinion isn't going to matter
 
-**[02:46]** entrepreneur Fred, he makes $2 million a
+**[03:07]** then, which means it probably also
 
-**[02:48]** year and then he pays his 50% taxes and
+**[03:08]** doesn't matter now. So, might as well do
 
-**[02:50]** he makes a million bucks left over. Then
+**[03:11]** what you wanted to do originally. Number
 
-**[02:52]** he lives his living expenses, whatever.
+**[03:13]** four, selective
 
-**[02:53]** Maybe he's got a family. Okay, he takes
+**[03:17]** productivity. Productivity comes from
 
-**[02:55]** home 500,000 he can put away. So he's
+**[03:19]** all the things that you choose not to
 
-**[02:57]** getting richer at $500,000 a year
+**[03:21]** do. I'm going to define two more terms
 
-**[02:59]** roughly in terms of his net worth.
+**[03:23]** for you because I think it's important.
 
-**[03:01]** That's a slow way to accumulate cash.
+**[03:24]** I see commitment as the elimination of
 
-**[03:03]** Now, don't be me wrong, $500,000 is a
+**[03:26]** alternatives. So, if I get married, then
 
-**[03:04]** lot of money, but I'm just saying big
+**[03:29]** I eliminate all alternatives to the
 
-**[03:06]** picture. Now this guy, let's call it, so
+**[03:30]** person that I'm married to. Right? That
 
-**[03:08]** we had frustrated Fred and let's call it
+**[03:32]** is commitment, right? Which is very
 
-**[03:10]** wealthy William. M sounds very, you
+**[03:34]** similar to focus. Focus, if you think of
 
-**[03:12]** know, fancy fancy. So this guy has an
+**[03:36]** the hypothetical extreme of focus, is
 
-**[03:15]** entire team that actually runs the
+**[03:38]** that somebody does literally nothing but
 
-**[03:16]** business dayto-day without him. And so
+**[03:40]** one thing. So they don't eat, they don't
 
-**[03:18]** he just owns it like he owns the paper
+**[03:41]** sleep. They would eventually die, but
 
-**[03:19]** stock of a company. And his business
+**[03:43]** they would be 100% focused during the
 
-**[03:22]** right now trades at six times profit,
+**[03:44]** time that they were alive, right?
 
-**[03:25]** meaning somebody would be willing to
+**[03:46]** Obviously, we have to put a couple
 
-**[03:27]** come in and write him a check for six
+**[03:47]** things in. You have to eat food, you
 
-**[03:28]** times $2 million, which is $12 million.
+**[03:48]** have to sleep, right? But the most
 
-**[03:31]** And so of these two guys, this guy adds
+**[03:50]** focused person does the fewest things
 
-**[03:33]** $500,000 to his net worth every year.
+**[03:52]** outside of the thing they're focused on.
 
-**[03:35]** This guy has a business that is worth
+**[03:54]** Focus is about the number of things that
 
-**[03:37]** $12 million. This guy's way richer. But
+**[03:57]** you say no to. Having this framework is,
 
-**[03:40]** check this out. Now, let's say that both
+**[04:01]** in my opinion, more powerful for
 
-**[03:42]** of these guys work, you know, figure out
+**[04:02]** productivity than just about anything
 
-**[03:44]** a way to make the business make an extra
+**[04:04]** else. Right? People are always trying to
 
-**[03:46]** $500,000 a year in profit. So, they go
+**[04:05]** figure out like productivity hacks, but
 
-**[03:48]** from 2 million to two and a half, 2
+**[04:07]** they want to add things to their lives
 
-**[03:50]** million to 2 and a half in profit.
+**[04:08]** to become more productive, which is
 
-**[03:51]** That's what happens here. Now, here's
+**[04:10]** completely counter to what focus even
 
-**[03:53]** where it gets extra sexy. This guy,
+**[04:12]** means. It's getting rid of everything
 
-**[03:56]** after he makes his extra extra 500,000,
+**[04:14]** that's not the thing is how you focus.
 
-**[03:58]** let's say that he pays 50% taxes and
+**[04:16]** Now, part of that also means
 
-**[04:01]** that $250,000 after taxes goes straight
+**[04:17]** environmentally, right? So, if you like
 
-**[04:03]** to him. So, he goes from taking home 500
+**[04:20]** have a window that you look outside of
 
-**[04:05]** to 250. He doesn't change his living
+**[04:21]** and you've got people who walk past your
 
-**[04:07]** styles. All right? So he all the extra
+**[04:22]** office and people can knock on the door
 
-**[04:09]** money he's he just he saves. So he
+**[04:24]** and you've got Slack notifications, of
 
-**[04:11]** starts making $750,000 in savings per
+**[04:25]** course, you're not focused because all
 
-**[04:13]** year. Okay. After taxes. Neat. This guy,
+**[04:26]** of those things are not the work. So,
 
-**[04:17]** the $500,000 that comes in after taxes,
+**[04:28]** I'm going to give you an analogy here.
 
-**[04:20]** he gets a 6x multiple on. And so he
+**[04:30]** So, imagine there's a wall that you have
 
-**[04:22]** actually gets another $3 million added
+**[04:32]** to get over. All right? In order to you
 
-**[04:24]** to his net worth. So his 12 million
+**[04:33]** have to get a critical mass to get above
 
-**[04:26]** becomes 15 million. And this is the game
+**[04:35]** this wall, right? And so you start
 
-**[04:29]** of wealth. This is how you get wealthy.
+**[04:38]** putting up, you know, these
 
-**[04:32]** It's very very inefficient to become
+**[04:40]** ladders against the wall to try and
 
-**[04:34]** wealthy off of regular income because
+**[04:42]** climb over the wall. All right, this
 
-**[04:37]** it's taxed to oblivion. You don't get 10
+**[04:44]** should make some sense. But as you try
 
-**[04:40]** years of work. You get one year divided
+**[04:46]** to build up the the little rungs of the
 
-**[04:42]** by two after taxes. So the difference is
+**[04:48]** ladder, so you put four rungs up. Well,
 
-**[04:44]** like a 20x difference between a valuable
+**[04:51]** you're not going to get the critical
 
-**[04:47]** company that can sell for 10x versus one
+**[04:52]** mass required to get over the hump to
 
-**[04:48]** that can't. Now hopefully I've sold you
+**[04:54]** actually get the success you want. But
 
-**[04:51]** a little bit on the idea of why this is
+**[04:56]** the idea, the fallacy is that, oh, I'll
 
-**[04:53]** worth doing. Now let's walk through the
+**[04:58]** just do all three or four of these
 
-**[04:55]** steps of actually doing it. So the first
+**[05:00]** things and I'll see which one works.
 
-**[04:57]** step of actually taking it from
+**[05:02]** When the reality is that any of them
 
-**[04:59]** frustrated Fred to wealthy William is
+**[05:04]** work, but none of them will work unless
 
-**[05:01]** you do a self-inventory. So what that
+**[05:06]** you work on one. And so, we have to take
 
-**[05:03]** means is that you actually list out
+**[05:08]** these four rungs that we're able to
 
-**[05:05]** everything you do, literally all of it.
+**[05:09]** build and say, you know what, we're not
 
-**[05:07]** All right? And then you turn each of
+**[05:11]** going to do that. We're going to put
 
-**[05:08]** those checklist items into something
+**[05:12]** that rung here because I'm going to take
 
-**[05:11]** that someone else can do. And you want
+**[05:13]** that time that I'm putting for my second
 
-**[05:12]** to get as granular as humanly possible.
+**[05:15]** opportunity, put it here. I'm gonna take
 
-**[05:15]** And this is how you get out of the
+**[05:16]** this rugg and put it right here. And
 
-**[05:16]** day-to-day without breaking the machine.
+**[05:19]** then I'm gonna take this rug and what do
 
-**[05:18]** And so I'd say the step even before
+**[05:20]** you know? I can get over this hump on
 
-**[05:20]** this, if you don't even know what you
+**[05:23]** top and I can get to the other side of
 
-**[05:21]** do, what we have people do is run a time
+**[05:25]** the wall, which of course is where all
 
-**[05:23]** study. So time study, real simple. You
+**[05:26]** the money and all the happiness and all
 
-**[05:25]** don't need any like fancy technology for
+**[05:28]** the, you know, the girls uh with, you
 
-**[05:27]** this. You just take an Excel sheet and
+**[05:30]** know, beautiful, beautiful hair. Look at
 
-**[05:30]** you write times on one side every 15
+**[05:32]** this beautiful hair, right? This
 
-**[05:32]** minutes and you simply put in a timer.
+**[05:33]** beautiful hair. Now she's looks like a
 
-**[05:35]** You turn your timer and every 15 minutes
+**[05:35]** bug. Anyways,
 
-**[05:37]** you just know what you did. It's very
+**[05:36]** uh there you
 
-**[05:39]** simple. Now, some of you might think,
+**[05:38]** [Music]
 
-**[05:40]** "Wow, I could never that sounds like so
+**[05:39]** go. What's crazy is that this literally
 
-**[05:43]** much work. It's like you literally have
+**[05:41]** happens at all levels of business. Like
 
-**[05:44]** a timer and then you write one word down
+**[05:43]** people who are starting out trying to
 
-**[05:46]** every 15 minutes." What's crazy about is
+**[05:44]** start five things, people who are at
 
-**[05:48]** it'll be the most productive week of
+**[05:46]** like their second or fifth year. I
 
-**[05:49]** your life. Every time I do a time study,
+**[05:47]** talked to a guy last night who has a
 
-**[05:50]** I think I should do this every single
+**[05:49]** really good business, really good
 
-**[05:52]** week and I don't. But you certainly will
+**[05:50]** margin, 50% margins, has great revenue
 
-**[05:54]** be really productive because you're
+**[05:52]** retention. He was in cyber uh security.
 
-**[05:55]** going to prove to yourself that you're
+**[05:54]** People stay with him, people pay. He has
 
-**[05:56]** super productive. I'm just telling you
+**[05:56]** no problem getting customers. He has no
 
-**[05:57]** that's what'll happen. You can also, by
+**[05:57]** problem delivering on them. I was like,
 
-**[05:59]** the way, do this with your team. If
+**[05:58]** "What's the problem?" He's like, "Me?"
 
-**[06:00]** you're like, I have a key man risk over
+**[05:59]** He said, "I just I get bored." He's
 
-**[06:02]** here. This person is super valuable to
+**[06:01]** like, "I just want to start more
 
-**[06:04]** the business. I have to have less
+**[06:02]** things." And I'm like, "Yeah, you got to
 
-**[06:05]** dependency on this person. You walk
+**[06:03]** stop that." Like, it's like the thing is
 
-**[06:07]** through this process. So you do a time
+**[06:06]** is think about how much more successful
 
-**[06:08]** study, then you get the list of stuff.
+**[06:08]** you'd be. So, zoom all the way out.
 
-**[06:10]** Great. Now we have this list and we can
+**[06:10]** Think of somebody who gets better every
 
-**[06:11]** break it down to its component parts.
+**[06:12]** single year and works on the same
 
-**[06:13]** This is the kind of list of everything,
+**[06:15]** project for 20 years. You'd be like, "My
 
-**[06:16]** right? And what we want to do is we want
+**[06:17]** god, that guy's probably really [ __ ]
 
-**[06:19]** to start building little processes or in
+**[06:19]** good." And what's interesting about this
 
-**[06:22]** installing people. So it's either a
+**[06:21]** is that it doesn't matter what project
 
-**[06:23]** project, a process or a person that's
+**[06:23]** the person works on. You do 20 years of
 
-**[06:25]** going to installed in each of these
+**[06:25]** reps and you do nothing else, you're
 
-**[06:26]** little slots next to it. So you have all
+**[06:26]** going to be good. And so if you know
 
-**[06:28]** the list of things and then you have all
+**[06:29]** that that's a that's a fact, that's a
 
-**[06:30]** the people or process or project. Okay?
+**[06:31]** certainty that you're going to be good
 
-**[06:33]** So project is a onetime thing which
+**[06:32]** with 20 years of practice, then the
 
-**[06:34]** sometimes creates a process or you have
+**[06:34]** objective is to just get 20 years of
 
-**[06:36]** a person does this thing on a continuous
+**[06:36]** practice in one thing and stick with it.
 
-**[06:38]** basis and you probably have people on
+**[06:38]** So, like your plans aren't working
 
-**[06:40]** your team who are underutilized. Some of
+**[06:41]** because the plans are wrong. The plans
 
-**[06:42]** these slots you can just be like I think
+**[06:42]** aren't working because you're not
 
-**[06:43]** Angela can do this. I think Tommy can do
+**[06:43]** working on the plan. The hard part about
 
-**[06:45]** this and you can start slotting them.
+**[06:46]** the plan is not creating the plan or
 
-**[06:46]** Then you'll have your red, yellow,
+**[06:48]** even following the plan. It's sticking
 
-**[06:47]** green. And so my green is I can give
+**[06:50]** with the plan. That's the hard part. All
 
-**[06:49]** this to somebody. So I'm going to look
+**[06:52]** right. Number five,
 
-**[06:50]** at my team, teach them how to do it.
+**[06:55]** fear versus regret. So, change is scary,
 
-**[06:51]** They get this. My yellow is there's a
+**[06:58]** but so is regret. And so, the life you
 
-**[06:55]** one-time project or process that I have
+**[07:01]** live depends on the one you fear most.
 
-**[06:57]** to install here, but I can do it and I
+**[07:03]** The more successful version of yourself
 
-**[06:59]** know how to do it. The red is where it's
+**[07:05]** also has fear. is that that your fear of
 
-**[07:01]** something that I either don't know how
+**[07:08]** regret is greater than your fear of
 
-**[07:02]** to do or there's a person that I know I
+**[07:11]** rejection. Think about that for a
 
-**[07:04]** need to have, but I don't have. And so I
+**[07:12]** second. I'm going to say it one more
 
-**[07:07]** solve these in green to reds because the
+**[07:13]** time. Your fear of regret must supersede
 
-**[07:09]** greens you can get out quickly. The
+**[07:17]** must be bigger must be greater than your
 
-**[07:10]** yellows is the next level that you can
+**[07:20]** fear of rejection. And so I remember
 
-**[07:12]** do with a little bit more time. And then
+**[07:22]** when I when I when I quit my management
 
-**[07:13]** the reds is like once I've done my
+**[07:23]** consulting job, which took me six
 
-**[07:14]** greens and yellows I can move on. Now
+**[07:24]** months, so I'm not saying this from a
 
-**[07:17]** the way to think through this is in
+**[07:25]** pedestal. It took me six months of I
 
-**[07:19]** addition to this list is like okay these
+**[07:28]** decided I wanted to quit. It took me six
 
-**[07:20]** are the things I'm doing there's also
+**[07:30]** months before I actually quit. By the
 
-**[07:22]** the decisions are deciding on right and
+**[07:31]** way, you can measure how powerful
 
-**[07:24]** so as this time of documentation comes
+**[07:32]** someone is by the distance between when
 
-**[07:26]** up we want to start saying if this then
+**[07:34]** they make a decision and when it happens
 
-**[07:28]** that these are rules of behavior right
+**[07:36]** in reality. So, if you want to feel
 
-**[07:30]** they're decision trees for common
+**[07:38]** impotent, then take as long as you
 
-**[07:31]** scenarios and I'll give you an example
+**[07:40]** possibly can between when you make a
 
-**[07:33]** so prestige labs was the first physical
+**[07:41]** decision and when you act on that
 
-**[07:35]** products business that I started
+**[07:42]** decision. Now, for me, it was 6 months.
 
-**[07:36]** supplement company and I remember the
+**[07:44]** And all I did was I called my friends up
 
-**[07:39]** manager of the support team saying it's
+**[07:46]** every night. I was like, "I'm going to
 
-**[07:40]** really hard to get new people on. And of
+**[07:47]** quit my job. I'm going to start a
 
-**[07:42]** course, I like lost my I was less
+**[07:48]** business." And I, you know, we talk
 
-**[07:44]** patient than I am now and less polite.
+**[07:49]** every night, literally every night. And
 
-**[07:47]** And I was like, "How hard could this
+**[07:50]** I would be pacing in my condo like, "I'm
 
-**[07:49]** be?" I was like, "Change my address,
+**[07:52]** going to do it. I'm gonna do it." And I
 
-**[07:50]** change my card, change my flavor, change
+**[07:53]** wouldn't do it. I was too afraid. I was
 
-**[07:52]** my billing cadence." I was like,
+**[07:55]** too much of a scaredy-cat. But the thing
 
-**[07:53]** "Cancel, refund.
+**[07:57]** that got me over the hump was this.
 
-**[07:55]** What else do we have here?" Right? And
+**[07:59]** Number one, I knew that when I looked
 
-**[07:58]** when I said it like that, you know,
+**[08:01]** back on my life, if I never took the
 
-**[08:00]** Leila pinged me and was like, "Don't be
+**[08:05]** jump, I would have been ashamed of
 
-**[08:01]** rude to people. They're trying to win
+**[08:06]** myself and I would have felt like I was
 
-**[08:03]** and you are making it look really bad
+**[08:08]** a pansy and I was like, I can't die a
 
-**[08:05]** and don't do that." So, I will tell you
+**[08:10]** pansy. I have to be able to make a jump.
 
-**[08:06]** the story because that's what happened.
+**[08:12]** Number two, I played out plan B, which
 
-**[08:08]** But fundamentally it's just if this then
+**[08:14]** is, okay, let's say I actually
 
-**[08:10]** that. Somebody will come in and say I
+**[08:16]** completely fail. What happens? I was
 
-**[08:11]** would like to change my card. This is
+**[08:18]** like, well, I'm not really going to be
 
-**[08:13]** how you change your card. Someone will
+**[08:20]** homeless. I know enough people that I
 
-**[08:14]** say I would like to change my flavor.
+**[08:22]** can get food, right? And I was like,
 
-**[08:15]** This is how you change the flavor. I
+**[08:23]** okay, so I would probably just couch
 
-**[08:16]** would like to change my billing cadence
+**[08:25]** surf. I'd have a little bit of shame,
 
-**[08:17]** from once a month to every two month.
+**[08:26]** but at the end of the day, what would I
 
-**[08:18]** This is how you change the billing. It's
+**[08:28]** really do? Well, I could always apply to
 
-**[08:19]** just if this then that. The more complex
+**[08:29]** get the job that I had back, or I could
 
-**[08:21]** the roles, the more one-off the
+**[08:31]** just go to another place with an
 
-**[08:22]** scenario. The more duplicatable the job,
+**[08:33]** experience or a story that would set me
 
-**[08:25]** the more people you have in a specific
+**[08:35]** up for something cooler later. And so,
 
-**[08:27]** department or function, typically the
+**[08:37]** all of a sudden, I was like, wait, so my
 
-**[08:30]** more standardized the questions become.
+**[08:38]** plan B is that I just have a cool
 
-**[08:32]** All right. And so once we have that,
+**[08:40]** experience that I can talk about at a
 
-**[08:35]** then we can say, "All right, there are
+**[08:42]** job interview or to go to business
 
-**[08:37]** all these questions that come in. Some
+**[08:43]** school. Okay, that's that doesn't
 
-**[08:38]** of these questions require approval.
+**[08:45]** actually sound that bad. And so, there's
 
-**[08:40]** Okay, somebody has a bad night's stay at
+**[08:46]** this huge amorphous fear, but I've just
 
-**[08:43]** our hotel. How much money do I normally
+**[08:49]** noticed in my life that fear only exists
 
-**[08:46]** give them in credit or do I give them a
+**[08:51]** in the vague. It doesn't exist in the
 
-**[08:49]** gift card to our restaurant or something
+**[08:53]** specific. If you're afraid of something,
 
-**[08:51]** like that?" Well, we decide that under
+**[08:55]** try and break it into pieces and spell
 
-**[08:53]** $500 or under $1,000, under $10,000,
+**[08:57]** it out. play out the next two or three
 
-**[08:55]** depends on the size of your company,
+**[08:58]** steps because all of a sudden if you're
 
-**[08:56]** under $100,000 sometimes, this person
+**[09:00]** in the developed western world, the
 
-**[08:58]** can act independently without your
+**[09:03]** downside risk is not really real. Like
 
-**[09:00]** supervision. Now, of course, you still
+**[09:06]** the only real downside risk is the
 
-**[09:02]** have financials and at the end of the
+**[09:08]** opinions of other people who will say
 
-**[09:03]** month something looks out of whack, you
+**[09:10]** that you failed who you don't care about
 
-**[09:04]** can go check it out. Now, underneath of
+**[09:11]** anyways. But like you think you're going
 
-**[09:06]** that,
+**[09:14]** to die, but you're not. You're just
 
-**[09:08]** this is where having kind of clear
+**[09:16]** going to learn some stuff and you'll be
 
-**[09:09]** scorecards and KPIs around these things
+**[09:18]** like, "Oh, maybe next time I'm not going
 
-**[09:12]** help because if we're going to unlock
+**[09:19]** to make that mistake." And that's it.
 
-**[09:13]** some sort of decision tree, we want to
+**[09:20]** And I say this and it's easy for me to
 
-**[09:15]** also make sure that it's unlocking some
+**[09:22]** say, but it took me six months to figure
 
-**[09:16]** sort of value. And so, I'll give you a
+**[09:23]** this out. But I do remember my final
 
-**[09:18]** really powerful frame that you can talk
+**[09:25]** straw was the realization that I had at
 
-**[09:20]** to anybody in the business with. You can
+**[09:27]** the time no girlfriend, no kids, and I
 
-**[09:22]** say, how do you in your role make the
+**[09:31]** had no real, you know, financial
 
-**[09:27]** company money? It sounds like a very
+**[09:32]** responsibilities besides like eating and
 
-**[09:29]** simple question like we should people
+**[09:34]** having a place to live. I said, if I
 
-**[09:31]** should be able to know how the business
+**[09:37]** can't make the decision now because it
 
-**[09:32]** works especially as it relates to their
+**[09:39]** feels too risky, I will never be able to
 
-**[09:34]** job. If you ask this to your team today
+**[09:42]** make the decision because if other
 
-**[09:38]** many of them will not know the answer to
+**[09:43]** people rely on me, now some of you are
 
-**[09:40]** that question and that will frighten
+**[09:45]** in a position where people do rely on
 
-**[09:42]** you. But fundamentally like some of them
+**[09:46]** you and you're like, "Well, Alex, you
 
-**[09:44]** are easy sales people come in and I get
+**[09:48]** know, I've got people who rely on me."
 
-**[09:46]** them to give us money and if they give
+**[09:50]** Yeah, I would say that it makes it
 
-**[09:48]** us money we make more money. Right? That
+**[09:52]** harder and what now? Harder and so what?
 
-**[09:50]** makes sense. Great job. Okay. But then
+**[09:56]** But for me, that was the thing that got
 
-**[09:52]** you have some ancillary roles like what
+**[09:58]** me over the hump. Was like, if I don't
 
-**[09:54]** does finance say? What does tech say?
+**[10:00]** do it now, I'm never going to do it. I'm
 
-**[09:57]** What does media say? What does market?
+**[10:01]** never going to have fewer
 
-**[10:00]** So, of course, marketing is something
+**[10:03]** responsibilities. And to to play this
 
-**[10:02]** that generates money. But you don't do
+**[10:05]** out a little bit more, if you have
 
-**[10:04]** marketing. What do you do? I hold the
+**[10:07]** people who depend on you, their
 
-**[10:06]** camera. Okay. So, then what ways do you
+**[10:08]** dependencies on you might increase. And
 
-**[10:09]** make us money? Not the marketing
+**[10:09]** so, if you can't do it now, you still
 
-**[10:10]** function. This is where it gets more
+**[10:12]** might as well do it, right? Because it's
 
-**[10:12]** interesting. So, if I had this camera
+**[10:13]** only going to go one way. Number six,
 
-**[10:14]** person and he he or she, right, slow
+**[10:17]** persistence creates timing.
 
-**[10:17]** down. He or she holds the camera. I say,
+**[10:21]** So you can time everything perfectly if
 
-**[10:20]** "All right, what does bad camera work
+**[10:24]** your intention is to never stop. I'm
 
-**[10:22]** do?" Well, bad camera work would be a
+**[10:26]** going to say this one more time. You can
 
-**[10:24]** waste of time, right, of the entire
+**[10:29]** time everything perfectly if your
 
-**[10:26]** team. Number two, the media would
+**[10:31]** intention is to never stop. So think
 
-**[10:28]** perform not as well because it would be
+**[10:32]** about this visually. So let's imagine
 
-**[10:31]** offc center or, you know, it would just
+**[10:34]** that this line right here is is the is
 
-**[10:33]** the the lighting would be off, whatever
+**[10:37]** your lifeline. It's life as time passes.
 
-**[10:34]** the hell, right? On top of that, I mean,
+**[10:39]** Right? Now let's say that you have some
 
-**[10:37]** we'd waste the footage. We probably have
+**[10:42]** special thing that's going to happen
 
-**[10:39]** equipment that would be ill-fitted. We
+**[10:43]** here and some special opportunity that
 
-**[10:41]** wouldn't save the stuff that we'd have.
+**[10:45]** happens here and some special
 
-**[10:43]** All the things are are huge cost
+**[10:46]** opportunity that happens here. What most
 
-**[10:45]** centers. And so, you can reverse each of
+**[10:48]** people try and do is they don't want to
 
-**[10:47]** these kind of potential mistakes into
+**[10:50]** take they don't want to work at all and
 
-**[10:49]** these are the things that we have to
+**[10:52]** then they're like, "Oh, I'm just going
 
-**[10:50]** make. What percentage of the time was
+**[10:53]** to work here and then I'm going to work
 
-**[10:52]** everything saved correctly? Was it named
+**[10:54]** here and then I'm going to work here."
 
-**[10:53]** correctly in the system? Saved to the
+**[10:57]** But the likelihood that you're there in
 
-**[10:55]** correct drive, timestamped
+**[10:58]** these three moments is very low if
 
-**[10:56]** appropriately, the lighting and/or
+**[11:00]** you're trying to time it. But if you
 
-**[10:58]** camera was set up correctly, and it was
+**[11:02]** work the whole time, then the timing
 
-**[11:00]** on time so we could start at the time we
+**[11:05]** will always be perfect because you will
 
-**[11:02]** said we're going to. If that's 100% of
+**[11:06]** be ready. And so perfect timing is a
 
-**[11:03]** the time, it's like, dude, you're making
+**[11:08]** complete myth. But perfect preparation
 
-**[11:04]** us money, and here's how. And I think
+**[11:10]** isn't. And that on a long enough time
 
-**[11:06]** that when people have the understanding
+**[11:12]** horizon, your opportunity will come.
 
-**[11:07]** of how what they do relates to how the
+**[11:14]** People think that they need perfect
 
-**[11:09]** company makes money, it gives more
+**[11:15]** conditions to start when in reality
 
-**[11:11]** meaning to like what impact. People are
+**[11:16]** starting is the perfect condition. It
 
-**[11:13]** like, I wish I had more impact. Like if
+**[11:18]** creates the perfect condition for
 
-**[11:14]** you have a job in a company, you have an
+**[11:20]** opportunity to be capitalized on. And I
 
-**[11:16]** impact. You probably just don't know
+**[11:22]** can tell you this from firsthand
 
-**[11:17]** what the impact is. And so decide and
+**[11:24]** experience with me, like the more you
 
-**[11:20]** explaining that to somebody I think is
+**[11:25]** do, the more you see you can do. And so
 
-**[11:21]** is a very big unlock because they see
+**[11:29]** opportunities multiply with skill. And
 
-**[11:23]** the value that their role provides in
+**[11:32]** so the better you get at doing stuff,
 
-**[11:25]** the overall work. All right. Now before
+**[11:34]** the more things you know you would be
 
-**[11:27]** you have this because again we're trying
+**[11:36]** able to do and win at. And so the goal
 
-**[11:28]** to replace ourselves here. We have our
+**[11:39]** is to gain as many skills as possible so
 
-**[11:30]** little scorecard. We have our KPIs.
+**[11:41]** that you have access to the maximum
 
-**[11:31]** Let's say you were the camera guy.
+**[11:43]** number of potential opportunities. A lot
 
-**[11:33]** Right. The next thing is we have to have
+**[11:45]** of people were thinking that oh I'm
 
-**[11:34]** some sort of test to graduate the person
+**[11:46]** going to wait for the right moment. But
 
-**[11:37]** which is can someone 80% as you get 100%
+**[11:48]** when you have unlimited skills like Elon
 
-**[11:40]** of the result. And the key learning that
+**[11:50]** can go do whatever he wants. He could
 
-**[11:42]** I had this is a belief that I had to
+**[11:52]** build a city in the middle of the ocean.
 
-**[11:43]** have broken was that number one no one's
+**[11:54]** And so he could do that. He has the
 
-**[11:46]** going to ever be able to do it as as
+**[11:56]** skills because the world of
 
-**[11:47]** well as you. Not true. No one's going to
+**[11:58]** opportunities open to him. He also spent
 
-**[11:49]** be able to do it as well as you with,
+**[12:00]** all of his younger years just developing
 
-**[11:51]** you know, onetenth of the work, with
+**[12:01]** all these different skills and becoming
 
-**[11:53]** onetenth of the practice or reps. But
+**[12:03]** a polymath across all these different
 
-**[11:56]** every human is replaceable in my
+**[12:04]** things. Independence political stuff.
 
-**[11:57]** opinion. And we know that because humans
+**[12:06]** Put it away. The point is the guy's
 
-**[11:59]** have replaced all humans since the
+**[12:07]** good. All right. And so the goal is to
 
-**[12:00]** beginning of time. But we can know that
+**[12:09]** get good and then you will never have a
 
-**[12:03]** on a shorter time horizon, if they only
+**[12:11]** shortage of opportunities. Number seven,
 
-**[12:05]** learned all the things that you learned
+**[12:15]** envy versus effort. All right. Let me
 
-**[12:06]** the right way without learning all the
+**[12:18]** break this down. If people worked for
 
-**[12:07]** bad mistakes, they might be able to get
+**[12:21]** their goals as hard as they envy others
 
-**[12:08]** to 50% as good as you right off the bat.
+**[12:23]** for achieving them, they would already
 
-**[12:11]** And so a belief that I would like to
+**[12:25]** have achieved them themselves. So think
 
-**[12:13]** switch for you, I'll give you two.
+**[12:28]** about the amount of mental effort that
 
-**[12:15]** Number one is if I can do it right with
+**[12:29]** goes into the hate that people spew out,
 
-**[12:18]** part of my time, someone else can do it
+**[12:31]** the envy for wanting other people's
 
-**[12:20]** better with all of their time. Real
+**[12:33]** stuff. I'll give you a couple hard
 
-**[12:22]** quick, check this out. So, if you aren't
+**[12:34]** truths about this. Number one, no one is
 
-**[12:25]** sure what strategic competitive
+**[12:37]** doing as well as you think they are. So
 
-**[12:27]** advantage you should be doubling down
+**[12:39]** by comparison, you're actually better
 
-**[12:28]** on, um I'd love to invite you out to one
+**[12:40]** off than you think. Number two, you
 
-**[12:30]** of our scaling workshops uh that we have
+**[12:42]** don't win by beating people. You win by
 
-**[12:32]** here in Vegas at our headquarters and my
+**[12:45]** growing into your potential and then
 
-**[12:34]** team can actually work with you on it.
+**[12:46]** allowing them to shrink into irrelevance
 
-**[12:36]** But before you do that, you can download
+**[12:49]** by consequence. Three, and guess what?
 
-**[12:37]** our free $100 million scaling roadmap um
+**[12:52]** Your biggest threat is not your
 
-**[12:40]** where you can plug in information and it
+**[12:54]** competition. It's a mediocre version of
 
-**[12:41]** will give you basically your step where
+**[12:57]** you that never realized what you could
 
-**[12:43]** you're at in the scaling process and
+**[12:59]** become. And as pathy as that may sound,
 
-**[12:45]** ultimately give you the things you can
+**[13:02]** it's also true, right? A lot of people
 
-**[12:46]** help get to the next level. But like I
+**[13:04]** think it's like, oh, you know, that
 
-**[12:48]** said, if you want help from my team, you
+**[13:06]** guy's doing really well. It's like his
 
-**[12:49]** can book a call after you download this.
+**[13:07]** doing well changes nothing about your
 
-**[12:51]** It's free and we'd love to uh see if we
+**[13:10]** reality. Something really ironic that I
 
-**[12:52]** can help you out. Okay, here was the
+**[13:12]** noticed is that the people who get
 
-**[12:53]** second belief I just remembered, which
+**[13:14]** copied the most by their competition are
 
-**[12:55]** is you can outwork anyone in your
+**[13:16]** the people who ignore the competition
 
-**[12:59]** business. You will not be able to
+**[13:18]** who are copying them. Fundamentally, you
 
-**[13:02]** outwork everyone. And this is something
+**[13:21]** start by focusing on the customer. And
 
-**[13:04]** that it took me too long to learn. I
+**[13:23]** if you always put the customer first,
 
-**[13:06]** kept I mean you can imagine me I pride
+**[13:25]** everyone will copy you because you're
 
-**[13:07]** myself in my work ethic. I can outwork
+**[13:26]** actually doing the thing that will work,
 
-**[13:09]** everyone. And so the longer it took me
+**[13:27]** which is focusing on the customer. And
 
-**[13:12]** to realize that the longer it limited my
+**[13:29]** there's a lot of weird things in life
 
-**[13:14]** ability to grow. I can do a mountain of
+**[13:30]** like that where like it's the opposite
 
-**[13:15]** work but I can't do Mount Everest. That
+**[13:32]** is what you what you you'd think like oh
 
-**[13:18]** requires more hands and more shovels.
+**[13:34]** I'm going to look at what everyone else
 
-**[13:20]** Which brings us to number two. So you
+**[13:34]** is. It's like no just do what matters
 
-**[13:22]** want to start trading doing for managing
+**[13:36]** most and then people who don't know how
 
-**[13:25]** and leading. So here's the simple math
+**[13:38]** to think will just copy you. Real threat
 
-**[13:27]** behind this. Like there's actual math
+**[13:40]** is that no one copies you at all because
 
-**[13:28]** here which is let's say you swap 200
+**[13:42]** you're doing nothing. If you take all
 
-**[13:31]** hours a month. So you know roughly 50
+**[13:44]** this effort that you look that you put
 
-**[13:34]** hours a week of work for doing 20 hours
+**[13:45]** into comparing yourself to other people
 
-**[13:38]** of managing. So now you go from 50 to
+**[13:47]** that you look to kind of like tearing
 
-**[13:42]** five. So you have a 10x improvement in
+**[13:49]** them down sometimes even in your mind
 
-**[13:44]** leverage and you replace yourself again
+**[13:50]** let's be real. Maybe you don't say it to
 
-**[13:47]** by hiring a manager the next time and
+**[13:51]** other people, but in your mind you're
 
-**[13:50]** then you trade the four hours for 1
+**[13:52]** like
 
-**[13:52]** hour. Right? And so this is basically
+**[13:53]** me that whatever that is, whatever that
 
-**[13:54]** how leverage occurs through labor,
+**[13:56]** feeling is that just do that towards you
 
-**[13:56]** right? is that you have to turn your
+**[13:59]** not being good enough. What happens is
 
-**[13:59]** effort into an organization that
+**[14:01]** that when you do that, all of that
 
-**[14:01]** produces without you, right? And so
+**[14:02]** effort, all that energy goes into
 
-**[14:04]** employees or AI in the future, right?
+**[14:04]** improving yourself rather than tearing
 
-**[14:06]** Make a fully functioning enterprise that
+**[14:06]** down somebody else. And only one of
 
-**[14:08]** can continue to scale. And that's kind
+**[14:07]** those things will help you. Number
 
-**[14:10]** of my my litmus test is the baseline is
+**[14:09]** eight, hard conversations create
 
-**[14:12]** does it burn down without me. For many
+**[14:11]** opportunities. Hard truth, everything
 
-**[14:14]** of you, if you just get to here, you'd
+**[14:13]** you want is on the other side of a few
 
-**[14:16]** love your business 10 times more. Like I
+**[14:15]** hard conversations that you have been
 
-**[14:17]** can actually leave for a month and come
+**[14:17]** putting off. People either grow into
 
-**[14:18]** back and it didn't burn down. Thank god,
+**[14:18]** their potential or they keep living the
 
-**[14:20]** right? But where it gets really nasty
+**[14:20]** same six months of their life over and
 
-**[14:23]** and really exciting is where you can
+**[14:22]** over again. And the difference is how
 
-**[14:25]** leave for a month and when you come back
+**[14:24]** many hard conversations you're willing
 
-**[14:26]** it's in a better position than it was
+**[14:25]** to have and how fast you have them once
 
-**[14:27]** when you left. That is a business that
+**[14:27]** you realize you need to. If you sherk
 
-**[14:29]** people want to buy because what it
+**[14:29]** away from this, and I get it. I'm
 
-**[14:31]** functions as is essentially a faster
+**[14:30]** somebody who like it for a very long
 
-**[14:33]** growing annuity for an investor which
+**[14:32]** time had a hard time having hard
 
-**[14:35]** gives them a big multiple which is why
+**[14:33]** conversations, right? Like I literally
 
-**[14:36]** they pay you lots of money for it. So
+**[14:35]** traveled across the country before I
 
-**[14:37]** let's walk through what this actually
+**[14:36]** told my dad that I left. All right? Like
 
-**[14:39]** looks like. There's kind of three steps
+**[14:38]** I get it. So if you think having
 
-**[14:40]** to it. So you'll shadow train. So this
+**[14:41]** uncomfortable conversations is hard,
 
-**[14:42]** is where they watch you do it. The next
+**[14:42]** just wait until you see the result of
 
-**[14:45]** is you supervise them doing it. So they
+**[14:44]** not having them. It will be harder.
 
-**[14:48]** do it in front of you. So you do it in
+**[14:47]** Basically, the the struggle is that you
 
-**[14:50]** front of them, they do it in front of
+**[14:48]** have short-term pain versus long-term
 
-**[14:51]** you and then after that you kind of just
+**[14:50]** pain. And long-term pain, I call regret.
 
-**[14:54]** support their independence and you're
+**[14:53]** Comfort is short gain. Regret is long
 
-**[14:55]** available but not involved. So it's like
+**[14:57]** pain. Fear is short pain. Fulfillment is
 
-**[14:57]** I'm fully available, you can hit me up
+**[15:02]** long gain. You want to trade short pains
 
-**[14:59]** whenever you need anything. And then
+**[15:05]** for long gains, not short gains for long
 
-**[15:00]** what happens is in the beginning there
+**[15:08]** pains. It's not the safe bet. It's a
 
-**[15:02]** require a little bit more ad hoc calls,
+**[15:11]** guaranteed loss just later. All right.
 
-**[15:04]** consults, help. And then over time if
+**[15:14]** So, I'm I'm going to spell this out.
 
-**[15:06]** you have a competent employee, those
+**[15:16]** This is short
 
-**[15:08]** decisions get automated back down to
+**[15:19]** pain. This is long
 
-**[15:09]** them, right? And so that's when the full
+**[15:23]** pain. This is
 
-**[15:11]** handoff occurs is that they own it
+**[15:26]** short
 
-**[15:13]** completely. And again, initially I'm
+**[15:28]** gain. This is
 
-**[15:16]** cool with 80% sometimes 60% as good as
+**[15:30]** long
 
-**[15:19]** long as I have a clear path to them
+**[15:33]** gain. You want to trade short pain for
 
-**[15:21]** getting better. And I'll give you a
+**[15:37]** long
 
-**[15:22]** little pro tip. I used to measure
+**[15:39]** gain. That's the goal. It's the best
 
-**[15:24]** employees by how well they started. I
+**[15:41]** trade. Number nine, endure. There's a
 
-**[15:26]** measure employees today on how fast they
+**[15:45]** reason that when I gave instructions to
 
-**[15:29]** improve. Because if you look at two
+**[15:47]** some of the new business owners who were
 
-**[15:31]** employees, right? Let's say somebody
+**[15:48]** going to start, you know, putting a
 
-**[15:33]** starts here and someone starts here. If
+**[15:50]** community on school, one of the sole
 
-**[15:35]** this person's flat and this person's
+**[15:52]** instructions I gave them was learn to
 
-**[15:36]** like this, I know that in 3 months, six
+**[15:54]** endure. And so, the fastest way to
 
-**[15:40]** months, this guy's going to pass this
+**[15:56]** become the person you want to be is to
 
-**[15:41]** guy. But then what happens another 6
+**[15:58]** put yourself in a situation where you
 
-**[15:43]** months, right? And so sometimes it's
+**[15:59]** have no choice but to become them. You'd
 
-**[15:45]** worth taking someone who's a little bit
+**[16:00]** be amazed at what you can endure when
 
-**[15:47]** less experienced or has fewer inherent
+**[16:02]** you have no choice. For me, when I
 
-**[15:49]** skills because they don't have as much
+**[16:04]** signed my lease for my gym, I had $5,000
 
-**[15:50]** time because they're able to learn
+**[16:08]** in my bank account. The rent was $5,000.
 
-**[15:52]** faster. And like so intelligence I
+**[16:11]** I had never really made money before.
 
-**[15:56]** measure as rate of learning. And so I
+**[16:14]** And so I was like, "Oh, wow. How does
 
-**[15:57]** will rather have a more intelligent
+**[16:16]** this work? If I made 100% of the money
 
-**[15:59]** employee who learns faster than a more
+**[16:18]** that I had made in my job, I would have
 
-**[16:01]** experienced employee who learns slower.
+**[16:20]** been able to pay rent and have no food
 
-**[16:03]** Just something that I've learned. And it
+**[16:22]** or anything else." But one of my
 
-**[16:05]** depends on the role obviously, but I
+**[16:24]** favorite flavor texts on Magic cards is
 
-**[16:06]** would say that I've had a big shift in
+**[16:26]** necessity is the mother of invention,
 
-**[16:08]** terms of how I think about talent. Now
+**[16:28]** right? It's the constraints that create
 
-**[16:10]** the goal here is that we want to move
+**[16:31]** the innovation that is required to get
 
-**[16:13]** from doing the work. This is the big
+**[16:33]** you out of the constraint, to get you
 
-**[16:14]** picture of point 2. Move from doing the
+**[16:35]** out of the hard time. And so when I
 
-**[16:16]** work to managing people. Right? We focus
+**[16:37]** think back on like human history,
 
-**[16:19]** on recruiting a players not doing a
+**[16:38]** sometimes we think that things that were
 
-**[16:22]** player work. We focus on the business
+**[16:40]** going through our heart, but they're
 
-**[16:24]** aka strategy prioritization not on the
+**[16:41]** certainly much easier than the things
 
-**[16:27]** tactics of what we need to do next or
+**[16:42]** that other humans have endured. And how
 
-**[16:29]** what we need to do today. And so your
+**[16:44]** did they endure them? Well, when the
 
-**[16:31]** job becomes attracting talent and
+**[16:46]** only choice they had was die or endure,
 
-**[16:33]** aligning incentives. And so the ultimate
+**[16:48]** you tend to endure. Number 10, results.
 
-**[16:35]** test for you is can you take three
+**[16:50]** Excuses. This is not going to be a big
 
-**[16:38]** months off and have the business grow
+**[16:52]** surprise here. The thing with excuses
 
-**[16:40]** anyways? Like this is the easiest
+**[16:54]** that's interesting is that they may be
 
-**[16:41]** especially for those you are brick and
+**[16:57]** valid. And I think that's the part that
 
-**[16:42]** mortar. This is super important. If
+**[16:58]** people struggle with is that they're
 
-**[16:44]** you're brick and mortar, a lot of you
+**[17:00]** like, "Yeah, obviously results matter
 
-**[16:45]** guys want to get my second location,
+**[17:03]** more excuses, but insert special
 
-**[16:47]** want to get your third location. This is
+**[17:05]** snowflake." The thing is is that like
 
-**[16:48]** the simplest LMA test. If you can leave
+**[17:07]** you might be right. And I just like this
 
-**[16:51]** it alone, like your phone doesn't ring,
+**[17:10]** quote from Ila. She says, "It's not your
 
-**[16:53]** and I'll tell you how to do that in a
+**[17:12]** fault, but it is still your problem. You
 
-**[16:54]** second, right? I call it the phone test.
+**[17:15]** still have to do something about it." Or
 
-**[16:56]** I'll tell you later. But 3 months later,
+**[17:16]** you can just wait and say, "You know
 
-**[16:58]** it's bigger. Great. It's the same. We
+**[17:18]** what? I'm going to continue to not live
 
-**[17:01]** have to figure out a way to get it to be
+**[17:20]** the life that I want until I die." And
 
-**[17:02]** able to grow. Unless you're in a super
+**[17:23]** everyone will be like, "Oh yeah, he had
 
-**[17:04]** cap market where there's no way it can
+**[17:25]** an excuse. That's
 
-**[17:05]** grow, fine. But the vast majority of
+**[17:29]** why." Right? Is that what like is that
 
-**[17:07]** businesses can improve, can grow year
+**[17:32]** what you really want? is that people
 
-**[17:08]** over year over year if you have a good
+**[17:33]** were like, "Yeah, he had an
 
-**[17:10]** business. And if it's flat, the thing is
+**[17:36]** excuse." Like that's it. Like, like it's
 
-**[17:12]** is that you still have some sort of
+**[17:39]** a weird thing to want a permission slip
 
-**[17:13]** magic over here. As soon as the eye of
+**[17:43]** for mediocrity, which is fundamentally
 
-**[17:15]** Sauron moves, sometimes if it's flat,
+**[17:45]** what excuses are. You just want
 
-**[17:17]** it's going to go down. Now all of a
+**[17:47]** permission from everyone else to still
 
-**[17:18]** sudden you've got double the liability,
+**[17:48]** get respect without the outcome because
 
-**[17:20]** double the debt, double the overhead,
+**[17:53]** of your extenduating circumstances. And
 
-**[17:21]** half the talent because it's spread, and
+**[17:56]** the thing is is there's a ton of allure,
 
-**[17:23]** now you have more risk and less profit.
+**[17:57]** but the only person who actually
 
-**[17:26]** No bueno. So this is why it's so
+**[17:59]** believes that is you. People might not
 
-**[17:28]** important. You're like, man, that's
+**[18:00]** along. The people who love you might
 
-**[17:29]** never going to happen. It's like right
+**[18:02]** say, "Yeah, you know what? You are
 
-**[17:30]** that that's why a lot of people
+**[18:03]** special. You are a special snowflake.
 
-**[17:31]** shouldn't have second locations for much
+**[18:05]** Your mama might still love you." But
 
-**[17:32]** longer than they think. It's why
+**[18:06]** like, you're not going to earn anyone's
 
-**[17:33]** overexpansion is one of the number one
+**[18:08]** respect. And I think you certainly won't
 
-**[17:34]** reason people go out of business. So
+**[18:10]** earn the respect of the person that
 
-**[17:35]** you're like okay how do I find these
+**[18:12]** matters most, which is you, cuz you'll
 
-**[17:37]** types of a a a players right is we want
+**[18:14]** always know that you could have done
 
-**[17:40]** to look for people who describe their
+**[18:16]** more, that you could have done better.
 
-**[17:42]** role in metrics in as much detail as
+**[18:17]** That's the one that keeps me up. I have
 
-**[17:45]** humanly possible. Right? So I can
+**[18:20]** a saying that I tell myself a lot when
 
-**[17:47]** measure someone's skill in any endeavor
+**[18:21]** I'm doing something that I don't want to
 
-**[17:48]** based on the quality and the quantity of
+**[18:23]** do, and it's I will do what is required.
 
-**[17:50]** metrics they track. And I'll tell you
+**[18:26]** It's not about doing your best. It's
 
-**[17:51]** I'll tell you the first time like a
+**[18:27]** about doing what's required because
 
-**[17:52]** great example of this. So, the first
+**[18:29]** what's required might be better than
 
-**[17:54]** time I hired a really good HR
+**[18:30]** your best is right now. But the good
 
-**[17:55]** professional, and I've had plenty of
+**[18:31]** news is that your best can get better.
 
-**[17:56]** them in my history, but the first time I
+**[18:33]** So number 11, and this is this one's
 
-**[17:58]** hired a good one, she asked me questions
+**[18:35]** real. All right. The hard way is the
 
-**[18:00]** on the interview. She was like, "So,
+**[18:38]** easy way. You're like, how does that
 
-**[18:03]** what's your cost of acquiring talent?"
+**[18:41]** work? The hard way is the easy way
 
-**[18:04]** And I was like, "I don't know. That's a
+**[18:43]** because the easy
 
-**[18:07]** good question. I should know that." She
+**[18:46]** way never gets you there. So think about
 
-**[18:09]** was like, "What's your time to fill?"
+**[18:48]** it. People always are looking for the
 
-**[18:10]** And I was like, "Wow, I didn't I didn't
+**[18:50]** shortcut, but you have to accept a very
 
-**[18:13]** really think about it." She's like,
+**[18:52]** simple truth, which is that the shortcut
 
-**[18:13]** "Okay, what's your two-way fit in terms
+**[18:54]** never actually takes you to the place
 
-**[18:15]** of what percentage of 90 days later do
+**[18:56]** that you're trying to go. And it's
 
-**[18:17]** both the employee and the manager say
+**[18:57]** because it's rarely one big thing. And I
 
-**[18:19]** that it's a 10 out of 10 fit?" And I was
+**[19:00]** would postulate, fancy word, right? That
 
-**[18:20]** like, "Don't know." And so she starts
+**[19:04]** there are a lot of shortcuts that exist
 
-**[18:23]** giving me all these different metrics
+**[19:06]** in life. Wait for it. Wait for it. And
 
-**[18:24]** for for the talent side of the business
+**[19:08]** everyone already uses those. And so
 
-**[18:26]** that I had no idea about. I was kind of
+**[19:09]** whenever an actual shortcut gets found,
 
-**[18:27]** in the internet marketer world of oh if
+**[19:12]** all humans immediately do it and it no
 
-**[18:31]** I have a low refund rate therefore my
+**[19:14]** longer becomes a shortcut. It's just a
 
-**[18:33]** product is good. It's kind of like I had
+**[19:16]** thing that everyone does and it's not
 
-**[18:35]** that on the talent side where I was like
+**[19:17]** really a thing anymore. Like we learned
 
-**[18:36]** oh which by the way that is not how you
+**[19:19]** how to tie knots. That was a big
 
-**[18:38]** know you have a good product. Just FYI.
+**[19:20]** breakthrough. And then everyone ties
 
-**[18:40]** I was on the talent equivalent of that
+**[19:22]** their shoes and they're like, "Oh my
 
-**[18:41]** of like well you know I mean we haven't
+**[19:23]** god, let me show you the shortcut to
 
-**[18:43]** had any lawsuits lately. It's like duh
+**[19:24]** this." It's like, "Oh, you tie." Like,
 
-**[18:46]** you think that's probably not a good way
+**[19:25]** "Oh my god, everyone does it." and it's
 
-**[18:48]** to know if you have a good culture or
+**[19:26]** like not a thing anymore, right? And so
 
-**[18:49]** good team or a good talent management
+**[19:28]** all the things that you want to have
 
-**[18:50]** process. And so again, the quality and
+**[19:30]** that most people don't have don't have
 
-**[18:53]** quantity of metrics. Now, this
+**[19:32]** shortcuts. But thing is is so many
 
-**[18:54]** particular HR professional was a leader
+**[19:33]** people waste so much time. They
 
-**[18:56]** in turnarounds. And so, she knew all
+**[19:34]** literally waste longer than it would
 
-**[18:58]** these different metrics and then
+**[19:36]** have taken the hard way or the only way
 
-**[18:59]** obviously I learned all those things
+**[19:39]** to get there in search of the easy way
 
-**[19:00]** from her and then discarded her. I'm
+**[19:42]** that doesn't exist. And so the reality
 
-**[19:02]** kidding. But I learned those skills so I
+**[19:44]** of this is that it's usually a hundred
 
-**[19:03]** could apply them. And fundamentally,
+**[19:46]** small things that make days, weeks, and
 
-**[19:04]** that's I I try to find people who can
+**[19:49]** months hard. It's the neverending
 
-**[19:06]** teach me things because that's like the
+**[19:51]** onslaught of [ __ ] And then you remember
 
-**[19:07]** best thing in the world. It's like you
+**[19:54]** after going through that onslaught of
 
-**[19:08]** pay someone to say, "Hey, you know way
+**[19:55]** [ __ ] that you signed up for this. But
 
-**[19:09]** more than me. Go do that in here." When
+**[19:57]** then again, you figured that it would be
 
-**[19:10]** you're starting out though, it's hard to
+**[19:59]** hard. And then you're reminded that this
 
-**[19:12]** afford those people because those people
+**[20:01]** is what hard feels like. And so you keep
 
-**[19:13]** don't want to work for you or you can't
+**[20:04]** going because it's the only choice you
 
-**[19:14]** afford them or both. Right now, I'll
+**[20:05]** have. I want to remind you that a lot of
 
-**[19:16]** give you a couple a couple rules of
+**[20:08]** times what we imagine hard to be is
 
-**[19:18]** thumb that that also took me too long to
+**[20:10]** different than how we experience hard
 
-**[19:20]** figure out is that number one, interview
+**[20:13]** because the nature of hard changes too.
 
-**[19:22]** more people than you think you should.
+**[20:15]** And it's more of a limitation in how we
 
-**[19:24]** And I know how costly this is as a
+**[20:17]** describe hardship than it is and I
 
-**[19:25]** business owner. So, you want to stack as
+**[20:20]** actually think there's a big problem
 
-**[19:26]** many as you can. Also, I highly
+**[20:21]** with this. So, just kind of like Eskimos
 
-**[19:28]** encourage group interviews pretty high
+**[20:23]** have like seven different words for
 
-**[19:30]** up once you get into director and
+**[20:24]** snow. I feel like I should have like 25
 
-**[19:32]** executive. It's tough, but like anything
+**[20:27]** different words for hard, right? Like
 
-**[19:34]** that's like frontline to maybe even
+**[20:29]** the amount of things that you go
 
-**[19:35]** manager. You can have group interviews
+**[20:30]** through. There's like lifestyle hard
 
-**[19:37]** because it'll save you time and you'll
+**[20:32]** like, okay, so there's sacrifice hard of
 
-**[19:38]** very quickly be able to to read people's
+**[20:34]** like you're giving up things that you
 
-**[19:39]** vibes. And so the idea here is that I'll
+**[20:36]** enjoy. There's also like effort hard of
 
-**[19:42]** tell you I'll tell you a story for
+**[20:38]** like starting to do things that you hate
 
-**[19:43]** school. Sam interviewed 600
+**[20:39]** doing that you're not good at. There's
 
-**[19:48]** developers. 600
+**[20:41]** risk hard of the the fact that you could
 
-**[19:52]** developers to find our co-founder Daniel
+**[20:43]** lose something that you currently have,
 
-**[19:56]** the CTO.
+**[20:44]** right? That you have the chance of
 
-**[19:57]** 600.
+**[20:46]** losing what you currently have. You have
 
-**[19:59]** So think about one, two, three, four,
+**[20:47]** the uncertainty heart of the fact that
 
-**[20:04]** five. Okay, so that's just me naming
+**[20:49]** you might be doing all of the sacrifice
 
-**[20:05]** numbers. That felt like it took a long
+**[20:51]** for nothing. There's lots of different
 
-**[20:06]** time. Now imagine each of those
+**[20:53]** flavors of heart and each one of them
 
-**[20:08]** represented a 30 to 60 minute
+**[20:55]** presents at different times and for some
 
-**[20:10]** conversation and then imagine that
+**[20:56]** reason when it gets a new kind of heart,
 
-**[20:12]** that's over a year of those
+**[20:58]** it's a new seventh type of snowflake
 
-**[20:14]** conversations. It is brutal. But when
+**[21:01]** heart, then you're like, "Oh, this is
 
-**[20:16]** you do that, what happens is you start
+**[21:02]** different." But it's not. It's just that
 
-**[20:17]** to get a lot of nuance of who's good and
+**[21:04]** the thing that you grow comfortable
 
-**[20:20]** who's not. When you talk to 10 people
+**[21:06]** with, then you conquer and then you're
 
-**[20:22]** who say that they are a sales manager,
+**[21:09]** exposed to a new level. And so, I love
 
-**[20:24]** you're going to get a way better idea
+**[21:11]** this quote from Paul Graham. He said,
 
-**[20:26]** than when you talk to one of who's
+**[21:13]** "If you want to make a million dollars,
 
-**[20:27]** actually legit. When you talk to your
+**[21:15]** you have to endure a million dollars
 
-**[20:29]** 50th person, you already know who's got
+**[21:17]** worth of pain." Fundamentally, in my
 
-**[20:31]** game. And so what happens is it starts
+**[21:19]** opinion, the people who who who end up
 
-**[20:32]** to tune your picker because
+**[21:20]** building building, not inheriting,
 
-**[20:35]** fundamentally the reason I think we've
+**[21:22]** building tremendous wealth, just have
 
-**[20:38]** been able to grow businesses faster and
+**[21:25]** massive concentrations of pain. So,
 
-**[20:39]** faster and faster with each each next
+**[21:27]** don't go looking for the easy way
 
-**[20:41]** company that we start is because pattern
+**[21:28]** because it will never get you there.
 
-**[20:44]** recognition becomes one of your biggest
+**[21:30]** Number 12, don't, this is a big one,
 
-**[20:46]** assets. So like some people call this
+**[21:33]** don't give away your power. Now, this
 
-**[20:47]** wisdom or whatever you want to call it,
+**[21:36]** sounds very like, you know, girl power
 
-**[20:48]** but fundamentally it's just that I've
+**[21:37]** or a little uh little like rahrh, but I
 
-**[20:51]** had a good sales manager. They looked
+**[21:40]** will I will break this down in a little
 
-**[20:53]** like this. You look like that person.
+**[21:41]** bit less raw way. So, what offends you
 
-**[20:55]** Therefore you have a higher likelihood
+**[21:45]** controls you. Whatever you point your
 
-**[20:56]** of working out in this role. But to
+**[21:48]** finger of blame towards is what also you
 
-**[20:58]** figure out which sales manager was good,
+**[21:50]** point your power towards. Meaning, we
 
-**[21:00]** I had to hire five different sales
+**[21:53]** talked about excuses earlier. I can't do
 
-**[21:02]** managers and waste six months or a year
+**[21:55]** it because insert X. Insert X is the
 
-**[21:04]** on each one of these. But Fry finally
+**[21:58]** thing that has power over your life. And
 
-**[21:06]** found somebody who was good. So that's
+**[22:00]** I remember when I realized this was that
 
-**[21:08]** the thing is that if you look at every
+**[22:01]** I had this belief that I would never be
 
-**[21:09]** role in the business, and again, this
+**[22:04]** able to be in a long-term committed
 
-**[21:10]** goes from the ground up. So a frontline
+**[22:05]** relationship because my mother had hurt
 
-**[21:13]** support rep, a frontline sales rep, a
+**[22:08]** me as a child. I didn't get enough hugs.
 
-**[21:14]** frontline media editor, whatever. And
+**[22:09]** Who gives a [ __ ] Whatever. But I
 
-**[21:16]** then all of a sudden it's like, okay,
+**[22:12]** realized that by using that excuse and
 
-**[21:17]** those start to work. And then your
+**[22:15]** by saying it's her fault I'm broken.
 
-**[21:18]** business starts to grow. And then you're
+**[22:18]** It's her fault I can't trust people.
 
-**[21:19]** like, I've never hired my first level of
+**[22:20]** It's her fault I can't love anybody.
 
-**[21:21]** management. So you got to figure out
+**[22:22]** Right? By by saying that over and over
 
-**[21:22]** what a good sales manager, a good media
+**[22:24]** again, all I did was I said, "My mother
 
-**[21:23]** manager, a good all these roles. And
+**[22:27]** controls how my love life will go." Oo,
 
-**[21:25]** then after that, you're like, okay, well
+**[22:32]** heavy real well. I don't want her to
 
-**[21:26]** that starts to grow. Now I've got my
+**[22:35]** have control over how I choose to love
 
-**[21:28]** director level. And so each of these
+**[22:37]** or not love or how how content I get in
 
-**[21:29]** levels, you keep putting these people in
+**[22:40]** a relationship or anything like that.
 
-**[21:30]** until eventually you know what it looks
+**[22:42]** So, I actively had to say, "Maybe all
 
-**[21:32]** like when it's right across an entire
+**[22:44]** these things happened, maybe they
 
-**[21:33]** org. And so what happens is when you
+**[22:45]** didn't. Also, who cares? Me. I care. I'm
 
-**[21:35]** start really building businesses, you're
+**[22:49]** the one who's affected by this." And
 
-**[21:37]** not actually building the business. It
+**[22:50]** what's crazy about this, it's kind of a
 
-**[21:38]** feels much more like assembling the
+**[22:51]** weird thing with like parents is that
 
-**[21:39]** people who then build the business.
+**[22:54]** you think by hurting yourself, you get
 
-**[21:41]** Which leads us naturally into the third
+**[22:57]** back at them for hurting you. And you do
 
-**[21:44]** of our little buckets of what do you do
+**[22:59]** hurt them when you hurt yourself, but
 
-**[21:46]** to remove key man risk? And I'll give
+**[23:01]** you hurt you more at some point. And
 
-**[21:47]** you one more little tip. When you're
+**[23:04]** this is like this is like super
 
-**[21:48]** doing all those interviews, if you
+**[23:06]** real. Let's say that you were parented
 
-**[21:50]** aren't learning from the person,
+**[23:09]** tough, whatever that means for you. You
 
-**[21:53]** especially if it's in a leadership role
+**[23:11]** had lots of bad things happen, okay? And
 
-**[21:54]** or above, waste of time. If you're not
+**[23:13]** it was probably because you were a child
 
-**[21:56]** learning from them, then it means that
+**[23:14]** trying to deal with the world without
 
-**[21:57]** you're gonna have to teach them, which
+**[23:15]** the skills of dealing with the world as
 
-**[21:58]** means that not only do this person like
+**[23:16]** an adult. But you had these things
 
-**[21:59]** it means that you're gonna have a
+**[23:19]** happen, right? And on some level, you
 
-**[22:01]** increased like your life's going to get
+**[23:22]** might believe that you becoming
 
-**[22:02]** worse before it gets better, which
+**[23:24]** successful, you making it work,
 
-**[22:03]** sometimes it's required, but at a
+**[23:26]** validates the way that you were
 
-**[22:06]** leadership role and above, that person
+**[23:29]** parented. And so you have this conflict
 
-**[22:07]** should be teaching you. And so there's
+**[23:31]** where you're like, well, I don't want
 
-**[22:09]** no point in you trying to go in and
+**[23:32]** them to think that they did a good job
 
-**[22:11]** train them. They should be like, "This
+**[23:34]** by me being
 
-**[22:12]** is what we need to do for our financial
+**[23:36]** successful. And so then you want to keep
 
-**[22:13]** function." You're like, "Great, love
+**[23:38]** not being successful to prove to them
 
-**[22:15]** that for us. Go do that." Right? Okay.
+**[23:40]** and to hurt them for hurting
 
-**[22:19]** Brings me to the third point, which is
+**[23:45]** you. and you stay there as long as you
 
-**[22:20]** you want to remove yourself from
+**[23:48]** want them to control
 
-**[22:22]** marketing. Now marketing is a larger
+**[23:50]** you. And so the day that you choose to
 
-**[22:24]** term but fundamentally it's acquisition
+**[23:53]** control yourself is the day that you
 
-**[22:26]** right if the business relies on you to
+**[23:55]** choose to divorce your results from the
 
-**[22:28]** get customers which is very common in
+**[23:59]** very viable reasons that you have to not
 
-**[22:30]** founder companies like you're the bread
+**[24:03]** win. You are right. And so what? Number
 
-**[22:32]** winner you're the promoter you're the
+**[24:07]** 13, rejection versus regret. At some
 
-**[22:33]** one who brings the business in this is
+**[24:11]** point, everyone needs to choose whether
 
-**[22:35]** one of the biggest risk factors in
+**[24:13]** they'd rather risk rejection now or
 
-**[22:36]** business because this is why you can't
+**[24:15]** guarantee regret later. And so, losers
 
-**[22:37]** leave and when you do leave the revenue
+**[24:17]** fear rejection, winners fear regret. And
 
-**[22:39]** goes down and it's very scary because
+**[24:20]** most attempts fail of anything. Failure
 
-**[22:41]** everything relies on you and what's
+**[24:23]** is literally a prerequisite for success.
 
-**[22:42]** tough is that it feels good in the short
+**[24:25]** And one of the one of my favorite quotes
 
-**[22:45]** term to have everyone rely on you right
+**[24:27]** of mine is greatness rejects all
 
-**[22:46]** it feeds your ego it makes you feel
+**[24:32]** first-time applicants. And so, it's kind
 
-**[22:48]** important because you're like I'm in I'm
+**[24:33]** of like that person that just is like,
 
-**[22:50]** irreplaceable I'm a special snowflake I
+**[24:35]** "Oh, I can't get a job." And you're
 
-**[22:52]** am a unique human being with unique
+**[24:37]** like, "Well, what have you done?"
 
-**[22:54]** skills and therefore I am important. But
+**[24:38]** They're like, "Well, I applied
 
-**[22:56]** the idea is that you actually in order
+**[24:38]** somewhere." And you're like, "What do
 
-**[22:58]** to make an important business,
+**[24:40]** you mean?" They're like, "I applied
 
-**[23:00]** you need to become less important.
+**[24:41]** somewhere." And you're like, "And?" And
 
-**[23:03]** Like if you want to help more people,
+**[24:43]** and they're like, "Yeah." And I and I
 
-**[23:05]** you can't help more people.
+**[24:45]** didn't I didn't get the job. They didn't
 
-**[23:08]** And so for me, obviously, like I've had
+**[24:46]** even call me. You're like, "You went to
 
-**[23:11]** plenty of businesses that were face
+**[24:48]** one place." And you're like, and they're
 
-**[23:12]** driven, but if your face gets the
+**[24:50]** like, "Yeah." This is going to be a
 
-**[23:14]** customers, you are the key man. And so
+**[24:51]** really good analogy for somebody who's
 
-**[23:16]** this is kind of the three-step simple
+**[24:53]** listening to this only for people who
 
-**[23:18]** way of kind of getting out of this.
+**[24:54]** don't have a business yet. A lot of
 
-**[23:19]** Well, easier said than done, but
+**[24:56]** starting a business is the number of
 
-**[23:21]** fundamentally this is what we do. There
+**[24:58]** reachouts that you had to do in order to
 
-**[23:23]** are seven different ways that you can
+**[25:00]** get the path, the job, the career that
 
-**[23:26]** install systems into the business to
+**[25:02]** you want right now. So, think about the
 
-**[23:28]** capture media and marketing on your
+**[25:05]** amount of interviews. Think about the
 
-**[23:30]** behalf without it having kind of quote
+**[25:07]** amount of outreach. Think about the
 
-**[23:32]** direct to camera founder ads. Okay? So,
+**[25:08]** amount of job ads. Think about the
 
-**[23:35]** I'll give you a couple of them. So, one
+**[25:09]** amount of resumes that you sent out.
 
-**[23:37]** of them is that you probably have some
+**[25:11]** Think about all of that. And all of that
 
-**[23:39]** sort of place where your customers
+**[25:14]** work got you what I would consider one
 
-**[23:40]** gather, right? Maybe it's an online
+**[25:15]** sale. You got one person to say yes to
 
-**[23:42]** community like a school or whatever. In
+**[25:17]** you and they would give you money for
 
-**[23:45]** those communities, you should have a
+**[25:18]** work. All right. Now, obviously within
 
-**[23:47]** standard process weekly where you
+**[25:20]** the context of an employee relationship,
 
-**[23:49]** screenshot people saying nice things
+**[25:21]** but fundamentally actually works the
 
-**[23:50]** about you. Then all of a sudden, all
+**[25:22]** same way. All you do in a business is
 
-**[23:52]** those screenshots become ads that get
+**[25:25]** the same thing. If you can handle that
 
-**[23:54]** pushed to you every single week. The
+**[25:27]** level of rejection, then you can handle
 
-**[23:55]** next thing is having incentives for
+**[25:29]** the same level of rejection in a
 
-**[23:57]** customers to leave testimonials. So you
+**[25:31]** business. It's not actually that
 
-**[23:59]** could have things that are unlockable.
+**[25:32]** different. The question is whether you
 
-**[24:00]** You can have certain amount of credit.
+**[25:33]** can handle that level of regret years
 
-**[24:01]** You can have tiers of service you can
+**[25:35]** later for not doing it. And I'll say
 
-**[24:02]** give them trials to, which by the way is
+**[25:37]** this, one of the things that I've
 
-**[24:03]** a double whammy. So you give someone a
+**[25:38]** noticed between champions and everyone
 
-**[24:05]** trial of a higher level of service if
+**[25:39]** else is that people everyone else is so
 
-**[24:06]** they provide a testimonial. It allows
+**[25:42]** excited when they win. They're so
 
-**[24:08]** you to ascend customers who love your
+**[25:44]** excited, you know, by the idea of them
 
-**[24:10]** stuff and get more marketing. Bingo
+**[25:46]** getting first place. But there's a
 
-**[24:12]** bingo. The next one is something I call
+**[25:47]** reason that they never get first place.
 
-**[24:13]** life cycle ads which basically you
+**[25:49]** It's because they're excited about it.
 
-**[24:16]** probably already have functions in the
+**[25:51]** The people who always and very
 
-**[24:17]** business that already occur which is you
+**[25:52]** consistently hit first place and win the
 
-**[24:19]** probably record your sales calls
+**[25:54]** championships are relieved because they
 
-**[24:20]** hopefully you record your onboarding
+**[25:56]** tend to hate losing more than they love
 
-**[24:22]** calls for you know a new customer you
+**[25:59]** winning. and they expected to win
 
-**[24:24]** record delivery checkpoints and maybe if
+**[26:01]** because of the level of preparation they
 
-**[24:26]** they have a good experience you would
+**[26:02]** had compared to everyone
 
-**[24:27]** record some sort of testimonial from
+**[26:04]** else. Which brings me very magically to
 
-**[24:28]** them great now the thing is is that
+**[26:07]** number 14. Consistency beats talent. So
 
-**[24:30]** means that all of this stuff already
+**[26:10]** listen to this. You can beat most people
 
-**[24:31]** exists within your business and so when
+**[26:13]** at anything if you just stick with it
 
-**[24:33]** you have a testimonial and someone says
+**[26:15]** for a year. You can become competent at
 
-**[24:35]** I did these guys are great you just say
+**[26:17]** just about any skill in 20 hours. It's
 
-**[24:37]** cool we're going to look back through
+**[26:19]** just that people will wait 10 years to
 
-**[24:38]** our CRM look back through our scheduling
+**[26:21]** get the first 20 hours logged, right?
 
-**[24:39]** and pull the recordings from their sales
+**[26:23]** Like if you want to learn how to play
 
-**[24:42]** call to their onboarding to each of
+**[26:24]** the first few notes of a guitar, you can
 
-**[24:43]** their touch points and then what happens
+**[26:26]** learn in about 20 hours. Now, are you
 
-**[24:45]** you can compress that into a timeline
+**[26:28]** going to be Jimmyi Hendris, which
 
-**[24:46]** that also becomes another advertisement
+**[26:30]** Jenzie, he was a guitarist, Purple Haze,
 
-**[24:48]** pretty sweet because instead of saying I
+**[26:32]** you can look it up. Anyways, the point
 
-**[24:50]** was here and now I'm here show them here
+**[26:34]** is is that people have this huge delay
 
-**[24:53]** of them actually being scared being not
+**[26:36]** before they begin. And what make things
 
-**[24:55]** sure hesitating before signing up and
+**[26:39]** hard isn't complexity, it's consistency.
 
-**[24:57]** then all of a sudden getting this
+**[26:43]** And so, as boring as it is, you just
 
-**[24:58]** amazing outcome. The next thing you
+**[26:45]** have to keep doing it before you get
 
-**[25:00]** probably already do is you have some
+**[26:46]** anything back. So, one of my favorite
 
-**[25:02]** sort of key moments of client
+**[26:48]** quotes from myself is, "The world
 
-**[25:04]** deliverable. Whether that's like you do
+**[26:51]** belongs to those who can keep doing
 
-**[25:05]** a ribbon cutting or you do a reveal of
+**[26:52]** without seeing the result of their
 
-**[25:07]** their new kitchen or they get on the
+**[26:54]** doing." You have to delay how quick you
 
-**[25:09]** scale if they're losing weight or
+**[26:57]** get a reward, how fast you need a cookie
 
-**[25:10]** there's obviously with businesses
+**[27:00]** in order to keep going. I've been told
 
-**[25:12]** there's revenue or there's monthly
+**[27:01]** that I'm decent at presenting and
 
-**[25:13]** financials or whatever. There's always
+**[27:04]** talking on stage in front of people. And
 
-**[25:14]** moments where something can happen that
+**[27:07]** what a lot of people don't see is that
 
-**[25:16]** is has emotive, right? Emotive as in
+**[27:10]** for years I spoke with a microphone in
 
-**[25:19]** emotional. And so what we want to do is
+**[27:13]** front of a group of people and I did it
 
-**[25:21]** just put a a process in place where we
+**[27:15]** like multiple times a day. And I did
 
-**[25:22]** can incentivize the person, document
+**[27:17]** that in the form of a fitness session.
 
-**[25:23]** that moment to then create more cloud
+**[27:20]** And so I had to literally stand on a box
 
-**[25:26]** for us. And so hopefully you're getting
+**[27:23]** and shout around and tell people what
 
-**[25:27]** getting an idea here. Like another
+**[27:24]** they had to do. And I had to do that for
 
-**[25:29]** process you can put in place is that
+**[27:27]** years. And I remember when I had to get
 
-**[25:30]** your customer support if you have a
+**[27:30]** on stage for the first time. And I had
 
-**[25:31]** customer support line is that you can
+**[27:33]** in high school been very nervous to
 
-**[25:33]** pay a customer support person five bucks
+**[27:35]** public speak. And as I was about to get
 
-**[25:35]** for every person that they get like a
+**[27:38]** up on stage, I was like, why am I not
 
-**[25:37]** mini testimonial in chat format from.
+**[27:40]** nervous about this? Like this is weird.
 
-**[25:39]** Right? You resolve something. Oh my god,
+**[27:41]** Like I should I was like, I should be
 
-**[25:41]** these guys are amazing. I love this
+**[27:43]** nervous. Like why am I not nervous? And
 
-**[25:42]** product. It's fantastic. I highly re
+**[27:44]** I was like, I've I've done this so many
 
-**[25:43]** recommend anybody. Great. Screenshot
+**[27:47]** times. Like so many times. And I'm not
 
-**[25:46]** that. Right? And I'll give you five
+**[27:50]** talking about, you know, Civil War
 
-**[25:47]** bucks for every one of them to do. I'll
+**[27:52]** history and Abraham Lincoln. I'm talking
 
-**[25:48]** give you another one. All of you guys
+**[27:55]** about stuff I know. Outwork your
 
-**[25:50]** have Google reviews, Yelp reviews, Trust
+**[27:58]** self-doubt through repetition, not
 
-**[25:52]** Advisor reviews, Amazon reviews. It
+**[28:02]** affirmations. You don't do it through
 
-**[25:55]** depends on where your product sits, but
+**[28:04]** belief. You do it through stimuli
 
-**[25:56]** like you probably have some place where
+**[28:07]** habituation, which is just fancy words
 
-**[25:58]** people have reviewed you, right? And
+**[28:09]** for saying you expose yourself to the
 
-**[26:00]** think here's what's crazy. You probably
+**[28:11]** bad things so many times they get used
 
-**[26:02]** have hundreds, not like one or two. You
+**[28:13]** to and it's no longer a bad thing
 
-**[26:04]** probably have hundreds of like local
+**[28:14]** anymore. It's just life. If you want to
 
-**[26:06]** businesses have a few hundred reviews.
+**[28:16]** get over a fear, the way they do it is
 
-**[26:07]** It's not like uncommon to have that.
+**[28:18]** habituation. So, if I wanted to get
 
-**[26:08]** What's crazy is that those reviews
+**[28:19]** over, you know, being afraid of spiders,
 
-**[26:10]** rarely get made into marketing.
+**[28:21]** I'm not afraid of spiders, but some
 
-**[26:14]** Why? Now, here's an even crazier one.
+**[28:22]** people are afraid of spiders, right? If
 
-**[26:16]** You can take the hilarious one stars and
+**[28:23]** you want to get over that fear, you
 
-**[26:18]** take a page out of Liquid Death's
+**[28:25]** literally lock yourself in a room with a
 
-**[26:20]** marketing book and just say like, "Hey,
+**[28:27]** bunch of spiders, and all you do is you
 
-**[26:22]** if you were one of these people, you
+**[28:29]** just have panic attack after panic
 
-**[26:24]** won't like our stuff. And if it's if it
+**[28:30]** attack, and you pass out, and you wake
 
-**[26:26]** if it clearly casts out the wrong type
+**[28:32]** up again, the little there, you pass
 
-**[26:29]** of person, it will pull in the right
+**[28:33]** out, you keep doing eventually,
 
-**[26:30]** type." And it's also hilarious
+**[28:34]** eventually your nervous system adjusts,
 
-**[26:31]** marketing. And so, I think I just gave
+**[28:36]** and five hours later, eight hours later,
 
-**[26:33]** you six or seven different processes
+**[28:39]** you walk out of the room unafraid
 
-**[26:35]** that you can install in a business that
+**[28:42]** because you have habituated. And so the
 
-**[26:36]** all get ads and marketing to come to
+**[28:45]** point of practice for all of these
 
-**[26:39]** you. If you wanted to go even further,
+**[28:46]** things is to habituate as fast as you
 
-**[26:41]** you could build an affiliate program
+**[28:49]** can. And so we're trying to microwave
 
-**[26:42]** out. You could use Tik Tok shop and sell
+**[28:50]** that period of time. And the thing is,
 
-**[26:43]** widget and then whitelist those ads in
+**[28:52]** let's say it takes let's say it takes
 
-**[26:45]** the modern era and use those as your
+**[28:53]** this many reps. You can have this many
 
-**[26:47]** marketing. Right? All of these are
+**[28:55]** reps take you a year or you can have it
 
-**[26:49]** things that you can do to remove your
+**[28:57]** take you a month depending on how
 
-**[26:51]** face from your market. So the next thing
+**[28:58]** dedicated you are to it. Number 15, have
 
-**[26:55]** that we think through is stress testing
+**[29:02]** no shame. All right. Now, I have told
 
-**[26:57]** this. And so if we're zooming all the
+**[29:05]** this before, but my plan B was that I
 
-**[26:59]** way out, we put our big list together.
+**[29:09]** would drive Uber and strip. Now, I think
 
-**[27:01]** We red, yellow, greened it. We then
+**[29:10]** part of that was because I wanted to,
 
-**[27:03]** created a decision tree. We created a
+**[29:12]** you know, thumb my whatever the the
 
-**[27:05]** box around how much money they're able
+**[29:13]** Shakespearean saying, I bite my thumb at
 
-**[27:06]** to make decisions on. We have our
+**[29:15]** you, uh, to bite my thumb at my my very
 
-**[27:08]** scorecard. We test them to make sure
+**[29:17]** respectable parents, uh, and say like, I
 
-**[27:10]** that they actually pass the KPI. That's
+**[29:19]** would take off my clothes for money.
 
-**[27:12]** step one. The step after that that we
+**[29:20]** Now, of course, they would be horrified
 
-**[27:15]** did is okay. Well, now we need to
+**[29:22]** by that, but I think part of the reason
 
-**[27:16]** increase the amount of people in the
+**[29:23]** I was okay with it was I was like, I'm
 
-**[27:17]** business for all those reds. So, we have
+**[29:25]** going to I'm going to do it my way. I
 
-**[27:19]** to interview more people. We have to
+**[29:27]** want to be crystal clear here. If you
 
-**[27:20]** look for people who have higher skills.
+**[29:29]** have no money and you want to make
 
-**[27:22]** We have to be willing to get taught by
+**[29:30]** money, you should have no shame. Knock,
 
-**[27:24]** these people, which is, by the way, the
+**[29:34]** call, email, text, DM, ask.
 
-**[27:25]** cheapest learning you can do is get
+**[29:36]** Life-changing doors do not open
 
-**[27:27]** people who are way out of your league to
+**[29:38]** themselves. And sometimes I feel like
 
-**[27:28]** teach you about the role. And you learn
+**[29:40]** shame was invented by people who have to
 
-**[27:30]** a ton in the process of also finding
+**[29:42]** prevent people who have not from taking
 
-**[27:32]** great talent. Ask those people how what
+**[29:45]** action. Because all of this is just an
 
-**[27:34]** they do turns into revenue for the
+**[29:47]** illusion. What are you ashamed of?
 
-**[27:36]** business. And then finally actually take
+**[29:50]** Trying. Like let's play it out. Remember
 
-**[27:38]** your 90 days off. And something will
+**[29:53]** I said fear only happens in the
 
-**[27:40]** break, but you continue this process
+**[29:54]** abstract, not in the specific. So if you
 
-**[27:42]** until eventually nothing breaks. And
+**[29:57]** reach out to a stranger, no matter what
 
-**[27:44]** then once nothing breaks, you actually
+**[30:00]** happens, you always come out better than
 
-**[27:45]** have a business that can run without
+**[30:02]** before because you either have a sale or
+
+**[30:04]** you have an
+
+**[30:05]** experience. Both make you better. And so
+
+**[30:08]** the crazy thing about trying is that it
+
+**[30:11]** has an asymmetric riskreward return. So
+
+**[30:13]** worst case is you get a no and you learn
+
+**[30:15]** from it. You get better. Life gives you
+
+**[30:16]** unlimited shots while you're alive. And
+
+**[30:19]** so if you have nothing like you you're
+
+**[30:20]** just basically cashing in lottery
+
+**[30:22]** tickets and saying, "Oh my god, I lost.
+
+**[30:23]** But what you're paying with is time."
+
+**[30:25]** Fine. Pay more time. Get more tickets.
+
+**[30:26]** Keep scratching. So do you know the
+
+**[30:28]** difference between shame and
+
+**[30:29]** guilt? Guilt is when you break your own
+
+**[30:33]** rules. Shame is when you break other
+
+**[30:36]** people's rules.
+
+**[30:38]** So if you are gay and you're in a
+
+**[30:43]** religious community, you would probably
+
+**[30:45]** feel shame. If you also share that
+
+**[30:48]** religious community's rule set, you
+
+**[30:50]** would also feel guilt. If, let's say,
+
+**[30:53]** you were in a very liberal progressive
+
+**[30:55]** environment, you might feel neither
+
+**[30:57]** shame nor guilt. And so the question is,
+
+**[31:00]** whose rules are you following? If you
+
+**[31:03]** have this feeling, this fear of being
+
+**[31:06]** ashamed, then the question is, who's the
+
+**[31:09]** one who wrote the rules that you're
+
+**[31:10]** choosing to
+
+**[31:12]** follow? And I can promise you it's not
+
+**[31:14]** the people who are successful because
+
+**[31:16]** they're the ones shouting on the
+
+**[31:17]** rooftops telling you that it's totally
+
+**[31:19]** different once you get in the pool. It's
+
+**[31:22]** very different. It's kind of like you
+
+**[31:23]** have the lights of the world turn on and
+
+**[31:24]** like you're living in this mirage when
+
+**[31:27]** you're not succeeding where there's all
+
+**[31:29]** this all this uncertainty. There's all
+
+**[31:32]** this ambiguity. There's this fog of the
+
+**[31:35]** unknown in front of you. But as soon as
+
+**[31:37]** you start taking action, things become
+
+**[31:39]** very crystal clear. I think there's
+
+**[31:40]** there's I'm sure some stoic analogy that
+
+**[31:42]** said this, but basically like if you've
+
+**[31:44]** ever walked through very dense fog, you
+
+**[31:46]** can only see a couple steps in front of
+
+**[31:47]** you. The only thing that you can do in
+
+**[31:49]** fog is just start walking. And as you
+
+**[31:52]** walk, more steps become available to
+
+**[31:55]** you. And so there's this misconception
+
+**[31:58]** that you're going to be able to see the
+
+**[31:59]** entire path ahead of you. But it has two
+
+**[32:01]** fundamental fallacies in front of it.
+
+**[32:03]** Number one is that you have the right
+
+**[32:05]** vision to be able to see that far with
+
+**[32:08]** your current skill set and resources,
+
+**[32:10]** which you don't. Because imagine today
+
+**[32:12]** all of your conditions changed. you had
+
+**[32:14]** more skills, which is hard to imagine
+
+**[32:16]** because you can't imagine what it's like
+
+**[32:17]** to have the skill, but maybe let's say
+
+**[32:19]** you have resources that you didn't have
+
+**[32:20]** before. Well, that would probably change
+
+**[32:22]** the way you play the game. So, trying to
+
+**[32:24]** play out and try and play 17 steps in
+
+**[32:26]** advance when the game itself is going to
+
+**[32:29]** change and you as a player are going to
+
+**[32:31]** change. The only thing that you can boil
+
+**[32:34]** all of this down to is to take the steps
+
+**[32:38]** that you can see in front of you one at
+
+**[32:40]** a time. And I would write this down of
+
+**[32:42]** like what are the things that are
+
+**[32:45]** stopping me? And more specifically,
+
+**[32:47]** whose voice do I hear? Whose voice or
+
+**[32:50]** judgment am I afraid of? Because usually
+
+**[32:52]** it's people. It's society is what we
+
+**[32:54]** say. But it's usually like two people.
+
+**[32:57]** And I remember when I had this big
+
+**[32:59]** decision that I had to make when I was
+
+**[33:00]** considering selling gym lunch. I thought
+
+**[33:03]** that $46 million was not a lot of money
+
+**[33:05]** for the business. Now, some of you may
+
+**[33:06]** hear this and be like, "Oh my god,
+
+**[33:07]** that's amazing." But believe it or not,
+
+**[33:09]** at before we before COVID happened, uh,
+
+**[33:11]** gym lunch was valid 150 million. And so
+
+**[33:13]** for me going from 150 to 50 or, you
+
+**[33:16]** know, 46, it felt small, right? It felt
+
+**[33:18]** like a really small number. And I
+
+**[33:20]** remember there was a particular person,
+
+**[33:22]** we'll call it a friend of me, if you
+
+**[33:24]** will, that I thought would think that
+
+**[33:26]** they were better than me if I sold for
+
+**[33:29]** this small number.
+
+**[33:31]** And when I was able to narrow it down to
+
+**[33:33]** just that one person's voice, I thought
+
+**[33:36]** to
+
+**[33:36]** myself, am I going to give that person
+
+**[33:39]** power over my entire life, which is
+
+**[33:42]** literally what it was. I was choosing
+
+**[33:44]** not to make a decision because of
+
+**[33:45]** someone else. That person has complete
+
+**[33:47]** power over me. And I was like, well,
+
+**[33:50]** that's a terrible reason not to do this.
+
+**[33:52]** And the crazier part is that even if
+
+**[33:56]** you're right and that person does say
+
+**[33:59]** that you
+
+**[34:00]** suck, so what? Most people don't want
+
+**[34:04]** you to win. And even if you do win, they
+
+**[34:06]** will try and do a reverse excuse, which
+
+**[34:08]** is called a justification for why you
+
+**[34:10]** should be excused of the respect that
+
+**[34:12]** you should earn for having won. He just
+
+**[34:14]** has good genetics. He has great parents.
+
+**[34:17]** He uh, you know, inherited his wealth.
+
+**[34:20]** He had connect good connections. She was
+
+**[34:22]** born in America. He speaks English. He's
+
+**[34:23]** a man. He's white. He's whatever you
+
+**[34:30]** want. But giving the person
+
+**[34:32]** justifications in no way helps you. You
+
+**[34:34]** might be right and so what? Like it's
+
+**[34:36]** it's so funny. It's like let's say you
+
+**[34:38]** have some advantage, whatever it is,
+
+**[34:40]** right? Whatever whatever advantage
+
+**[34:41]** you're born with, right? You might have
+
+**[34:43]** one. It's kind of the thing same thing
+
+**[34:45]** as the parent thing. It's like, well, I
+
+**[34:47]** don't want to be successful because I
+
+**[34:48]** don't want to prove that I had this
+
+**[34:49]** advantage. It's like, would you prefer
+
+**[34:51]** to prove everyone wrong by saying I had
+
+**[34:54]** this advantage and I also wasted it? I
+
+**[34:57]** remember I'll tell you a story and I
+
+**[34:58]** think it'll probably that'll that'll
+
+**[34:59]** round this off well. So, when I was
+
+**[35:01]** younger, I didn't want to be a doctor,
+
+**[35:02]** but that was pretty much the path that
+
+**[35:03]** was laid out in front of me. And so, my
+
+**[35:05]** father's a successful doctor and I I was
+
+**[35:08]** like, it's it's it's cheating, you know,
+
+**[35:10]** to to, you know, just assume your
+
+**[35:13]** practice and just like immediately have
+
+**[35:14]** a practice that makes a lot of money.
+
+**[35:17]** and he said, "Do you think Shaq, when he
+
+**[35:21]** was 7 feet tall, was like,"It wouldn't
+
+**[35:22]** be fair for me to play basketball. Other
+
+**[35:24]** people aren't as tall as me." And I
+
+**[35:27]** always remembered that. He's like, "You
+
+**[35:28]** play the cards you're dealt. These are
+
+**[35:30]** the cards you have. Play them." And I
+
+**[35:32]** remember thinking that as now,
+
+**[35:34]** obviously, I didn't decide to be a
+
+**[35:35]** doctor, but the reason that I didn't
+
+**[35:37]** want to do it was because I thought
+
+**[35:39]** other people would say that I would they
+
+**[35:40]** would disqualify away my success as not
+
+**[35:43]** earned by
+
+**[35:45]** me. when the reality is that they're all
+
+**[35:47]** going to disqualify your sex no matter
+
+**[35:48]** what because it makes them feel bad and
+
+**[35:52]** so [ __ ] them. But if you have some
+
+**[35:54]** cards, for the love of God, play them.
+
+**[35:57]** Hey, if any of these messages resonated
+
+**[35:59]** with you and you're like, "Man, I'm too,
+
+**[36:00]** you know, I'm a few months behind from
+
+**[36:02]** my goals." I made what I would consider
+
+**[36:03]** a counterintuitive video on goal
+
+**[36:05]** setting, which sounds so overused, but I
+
+**[36:07]** don't know, it's got like a couple
+
+**[36:09]** million views or whatever it is. So,
+
+**[36:11]** people seem to have liked it. Uh, and so
+
+**[36:12]** if you want that, you can check this
+
+**[36:14]** video out. Um, so far it's I think it's
+
+**[36:15]** the top video viewed this year.
 

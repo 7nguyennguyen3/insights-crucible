@@ -27,7 +27,8 @@
       "mcp__playwright__browser_wait_for",
       "Bash(copy:*)",
       "Bash(findstr:*)",
-      "WebFetch(domain:www.helloatlas.io)"
+      "WebFetch(domain:www.helloatlas.io)",
+      "WebFetch(domain:vercel.com)"
     ],
     "deny": [],
     "ask": []
