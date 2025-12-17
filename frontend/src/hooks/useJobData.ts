@@ -8,6 +8,7 @@ import apiClient from "@/lib/apiClient";
 import {
   ActionableTakeaway,
   AnalysisSection,
+  DeepDiveSection,
   Contradiction,
   LessonConcept,
   NotableQuote,
@@ -200,7 +201,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section) {
             (section as any)[field] = value;
           }
@@ -214,7 +215,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section) {
           const arrayField = (section as any)[field];
           if (Array.isArray(arrayField)) {
@@ -238,7 +239,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section) {
             const arrayField = (section as any)[field];
             if (Array.isArray(arrayField)) {
@@ -256,7 +257,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section) {
             const arrayField = (section as any)[field];
             if (Array.isArray(arrayField)) {
@@ -279,7 +280,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId) as any;
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId) as any;
           if (section?.questions_and_answers) {
             section.questions_and_answers[index][field] = value;
           }
@@ -458,7 +459,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section?.entities) {
             section.entities[index][field] = value;
           }
@@ -472,7 +473,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section) {
           if (!section.entities) {
             section.entities = [];
@@ -490,7 +491,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section?.entities) {
           section.entities.splice(index, 1);
         }
@@ -509,7 +510,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section && 'lessons_and_concepts' in section && section.lessons_and_concepts) {
             (section.lessons_and_concepts[index] as any)[field] = value;
           }
@@ -523,7 +524,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section && 'lessons_and_concepts' in section) {
           if (!section.lessons_and_concepts) {
             section.lessons_and_concepts = [];
@@ -543,7 +544,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section && 'lessons_and_concepts' in section && section.lessons_and_concepts) {
           section.lessons_and_concepts.splice(index, 1);
         }
@@ -562,7 +563,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section && 'actionable_takeaways' in section && section.actionable_takeaways) {
             (section.actionable_takeaways[index] as any)[field] = value;
           } else if (section && 'lessons_and_concepts' in section && section.lessons_and_concepts) {
@@ -580,7 +581,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section && 'actionable_takeaways' in section) {
           if (!section.actionable_takeaways) {
             section.actionable_takeaways = [];
@@ -611,7 +612,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section && 'actionable_takeaways' in section && section.actionable_takeaways) {
           section.actionable_takeaways.splice(index, 1);
         } else if (section && 'lessons_and_concepts' in section) {
@@ -635,7 +636,7 @@ export const useJobData = (jobId: string) => {
       setDraftData(
         produce((draft) => {
           if (!draft) return;
-          const section = draft.results.find((s) => s.id === sectionId);
+          const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
           if (section && 'notable_quotes' in section) {
             const legacySection = section as any;
             if (legacySection.notable_quotes && legacySection.notable_quotes[index]) {
@@ -652,7 +653,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section && 'notable_quotes' in section) {
           if (!section.notable_quotes) {
             section.notable_quotes = [];
@@ -672,7 +673,7 @@ export const useJobData = (jobId: string) => {
     setDraftData(
       produce((draft) => {
         if (!draft) return;
-        const section = draft.results.find((s) => s.id === sectionId);
+        const section = (draft.results as DeepDiveSection[]).find((s) => s.id === sectionId);
         if (section && 'notable_quotes' in section) {
           const legacySection = section as any;
           if (legacySection.notable_quotes) {

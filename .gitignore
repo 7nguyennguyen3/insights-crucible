@@ -106,3 +106,6 @@ frontend/src/app/api/temp-debug-job/
 
 # Local development
 /references
+
+# Mock/prototype files
+mock_design/

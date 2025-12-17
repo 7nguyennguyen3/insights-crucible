@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import apiClient from "@/lib/apiClient";
 import { Loader2, ChevronUp } from "lucide-react";
-import { JobData } from "@/app/_global/interface";
+import { JobData, DeepDiveSection } from "@/app/_global/interface";
 import { useMarkdownExport } from "@/hooks/useMarkdownExport";
 import { useSaveAnalysis } from "@/hooks/useSaveAnalysis";
 import { UnifiedQuizDisplay } from "@/components/analysis/UnifiedQuizDisplay";
@@ -248,7 +248,7 @@ const PublicSharePage = () => {
 
               {/* Deep Dive View */}
               <DeepDiveView
-                results={data.results}
+                results={data.results as DeepDiveSection[]}
                 isEditMode={false}
                 onFieldChange={emptyFunction}
                 onTakeawayChange={emptyFunction}
