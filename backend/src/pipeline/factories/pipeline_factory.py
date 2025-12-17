@@ -19,6 +19,7 @@ from ..services.analysis import (
     ConsultantSynthesizer,
     GeneralSynthesizer,
     DeepDiveSynthesizer,
+    PodcasterSynthesizer,
 )
 from ..services.enrichment import (
     EntityEnricher,
@@ -114,11 +115,13 @@ class PipelineFactory:
     def _create_meta_analyzer(self, persona: str):
         """Create meta-analyzer based on persona."""
         llm_client = self._get_llm_client("best-lite")
-        
+
         if persona == "consultant":
             return ConsultantSynthesizer(llm_client)
         elif persona == "deep_dive":
             return DeepDiveSynthesizer(llm_client)
+        elif persona == "podcaster":
+            return PodcasterSynthesizer(llm_client)
         else:
             return GeneralSynthesizer(llm_client)
     

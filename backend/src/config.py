@@ -40,7 +40,7 @@ class AppConfig:
     # A dictionary makes it easy to manage and swap models
     LLM_MODELS = {
         "best": "gemini-2.5-flash",
-        "best-lite": "gemini-2.5-flash-lite-preview-06-17",
+        "best-lite": "gemini-2.5-flash-lite",
         "main": "gemini-2.0-flash-001",
         "main-lite": "gemini-2.0-flash-lite",
         "default": "gemini-1.5-flash",

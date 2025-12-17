@@ -60,6 +60,8 @@ export async function GET(
       generated_quiz_questions: jobData.generated_quiz_questions || null,
       quiz_results: jobData.quiz_results || null,
       open_ended_results: jobData.open_ended_results || null,
+      show_notes: jobData.show_notes || null, // Podcaster persona show notes
+      section_analyses: jobData.section_analyses || null, // Podcaster persona section analyses
     };
 
     return NextResponse.json(publicData);

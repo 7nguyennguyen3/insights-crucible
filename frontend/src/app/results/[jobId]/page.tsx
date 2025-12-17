@@ -23,9 +23,11 @@ import { Check, ChevronUp, Copy, Loader2 } from "lucide-react";
 
 // Interfaces
 import { DeepDiveSection } from "@/app/_global/interface";
+import { PodcasterSection } from "@/types/analysis";
 
 // Custom Hooks
 import DeepDiveView from "@/app/components/analysis/DeepDiveView";
+import { PodcasterAnalysisView } from "@/app/components/podcaster/PodcasterAnalysisView";
 import { UnifiedQuizDisplay } from "@/components/analysis/UnifiedQuizDisplay";
 import { useDocxExport } from "@/hooks/useDocxExport";
 import { useJobData } from "@/hooks/useJobData";
@@ -174,82 +176,91 @@ const ResultsPage = () => {
         }
       >
         <div id="analysis-report-content">
-          {/* Learning Assessment - Quiz Questions */}
-          {jobData.generated_quiz_questions &&
-            (jobData.generated_quiz_questions.questions?.length > 0 ||
-              (jobData.generated_quiz_questions.open_ended_questions?.length ||
-                0) > 0) && (
-              <div className="mb-12">
-                {/* Learning Philosophy Note */}
-                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
-                    The difficulty is where the learning happens. These
-                    questions help your brain actively process and connect
-                    information.
-                  </p>
-                  <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
-                    "Difficulties in learning are desirable when they trigger
-                    processes that support learning and remembering." — Robert
-                    Bjork
-                  </blockquote>
-                </div>
-
-                <UnifiedQuizDisplay
-                  multipleChoiceQuestions={
-                    jobData.generated_quiz_questions.questions || []
-                  }
-                  openEndedQuestions={
-                    jobData.generated_quiz_questions.open_ended_questions || []
-                  }
-                  mcqEstimatedTimeMinutes={
-                    jobData.generated_quiz_questions.questions?.length
-                      ? jobData.generated_quiz_questions.questions.length * 1
-                      : undefined
-                  }
-                  oeEstimatedTimeMinutes={
-                    jobData.generated_quiz_questions.quiz_metadata
-                      ?.total_open_ended_questions
-                      ? jobData.generated_quiz_questions.quiz_metadata
-                          .total_open_ended_questions * 4
-                      : undefined
-                  }
-                  isEditMode={isEditMode}
-                  onMcqQuestionChange={handleQuizQuestionChange}
-                  onMcqAddQuestion={handleAddQuizQuestion}
-                  onMcqDeleteQuestion={handleDeleteQuizQuestion}
-                  onOeQuestionChange={handleOpenEndedQuestionChange}
-                  onOeAddQuestion={handleAddOpenEndedQuestion}
-                  onOeDeleteQuestion={handleDeleteOpenEndedQuestion}
-                  userId={user?.uid || ""}
-                  jobId={jobId}
-                  existingQuizResults={jobData.quiz_results || null}
-                  existingOpenEndedResults={jobData.open_ended_results || null}
-                />
-              </div>
-            )}
-
-          {/* Analysis Sections */}
-          <div className="my-12">
-            <h2
-              className="text-2xl font-bold text-slate-700 
-            dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
-            >
-              {jobData?.request_data?.config?.analysis_persona === "deep_dive"
-                ? "Analysis Sections"
-                : "Learning Sections"}
-            </h2>
-          </div>
-
-          {/* Conditional View based on Persona */}
-          {jobData?.request_data?.config?.analysis_persona === "deep_dive" && (
-            <DeepDiveView
-              results={jobData.results as DeepDiveSection[]}
-              isEditMode={isEditMode}
-              onFieldChange={handleFieldChange as any}
-              onTakeawayChange={handleTakeawayChange as any}
-              onAddTakeaway={handleAddTakeaway}
-              onDeleteTakeaway={handleDeleteTakeaway}
+          {/* Podcaster View - Show Notes */}
+          {jobData?.request_data?.config?.analysis_persona === "podcaster" && jobData.show_notes && (
+            <PodcasterAnalysisView
+              showNotes={jobData.show_notes}
+              sectionAnalyses={jobData.section_analyses}
             />
+          )}
+
+          {/* Deep Dive View - Learning Assessment */}
+          {jobData?.request_data?.config?.analysis_persona === "deep_dive" && (
+            <>
+              {/* Learning Assessment - Quiz Questions */}
+              {jobData.generated_quiz_questions &&
+                (jobData.generated_quiz_questions.questions?.length > 0 ||
+                  (jobData.generated_quiz_questions.open_ended_questions?.length ||
+                    0) > 0) && (
+                  <div className="mb-12">
+                    {/* Learning Philosophy Note */}
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
+                        The difficulty is where the learning happens. These
+                        questions help your brain actively process and connect
+                        information.
+                      </p>
+                      <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
+                        "Difficulties in learning are desirable when they trigger
+                        processes that support learning and remembering." — Robert
+                        Bjork
+                      </blockquote>
+                    </div>
+
+                    <UnifiedQuizDisplay
+                      multipleChoiceQuestions={
+                        jobData.generated_quiz_questions.questions || []
+                      }
+                      openEndedQuestions={
+                        jobData.generated_quiz_questions.open_ended_questions || []
+                      }
+                      mcqEstimatedTimeMinutes={
+                        jobData.generated_quiz_questions.questions?.length
+                          ? jobData.generated_quiz_questions.questions.length * 1
+                          : undefined
+                      }
+                      oeEstimatedTimeMinutes={
+                        jobData.generated_quiz_questions.quiz_metadata
+                          ?.total_open_ended_questions
+                          ? jobData.generated_quiz_questions.quiz_metadata
+                              .total_open_ended_questions * 4
+                          : undefined
+                      }
+                      isEditMode={isEditMode}
+                      onMcqQuestionChange={handleQuizQuestionChange}
+                      onMcqAddQuestion={handleAddQuizQuestion}
+                      onMcqDeleteQuestion={handleDeleteQuizQuestion}
+                      onOeQuestionChange={handleOpenEndedQuestionChange}
+                      onOeAddQuestion={handleAddOpenEndedQuestion}
+                      onOeDeleteQuestion={handleDeleteOpenEndedQuestion}
+                      userId={user?.uid || ""}
+                      jobId={jobId}
+                      existingQuizResults={jobData.quiz_results || null}
+                      existingOpenEndedResults={jobData.open_ended_results || null}
+                    />
+                  </div>
+                )}
+
+              {/* Analysis Sections */}
+              <div className="my-12">
+                <h2
+                  className="text-2xl font-bold text-slate-700
+                dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
+                >
+                  Analysis Sections
+                </h2>
+              </div>
+
+              {/* Deep Dive View */}
+              <DeepDiveView
+                results={jobData.results as DeepDiveSection[]}
+                isEditMode={isEditMode}
+                onFieldChange={handleFieldChange as any}
+                onTakeawayChange={handleTakeawayChange as any}
+                onAddTakeaway={handleAddTakeaway}
+                onDeleteTakeaway={handleDeleteTakeaway}
+              />
+            </>
           )}
         </div>
       </AnalysisPageLayout>

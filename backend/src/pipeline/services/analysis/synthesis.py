@@ -166,9 +166,554 @@ class GeneralSynthesizer(MetaAnalyzer):
 
 
 
+class PodcasterSynthesizer(MetaAnalyzer):
+    """Meta-analyzer for podcaster persona - generates show notes for podcast production."""
+
+    def __init__(self, llm_client):
+        self.llm = llm_client
+
+    async def perform_synthesis(
+        self,
+        section_analyses: List[SectionAnalysis],
+        runnable_config: RunnableConfig,
+        original_transcript: str = None
+    ) -> Dict[str, Any]:
+        """
+        Generate production-ready show notes and launch assets from podcast sections.
+        """
+        print(
+            Panel(
+                "[bold blue]Podcaster Launch Assets Generation[/bold blue]\n"
+                "   - Extracting key points and notable quotes...\n"
+                "   - Generating episode description and chapters...\n"
+                "   - Creating title variations and social content...",
+                title="[bold]Pass 2: Launch Assets Generation[/bold]",
+                border_style="blue",
+                expand=False,
+            )
+        )
+
+        try:
+            print(f"[blue]Starting launch assets generation with {len(section_analyses)} sections[/blue]")
+
+            # Convert section analyses to structured JSON for show notes generation
+            section_data = []
+            all_key_points = []
+            all_notable_quotes = []
+
+            for i, analysis in enumerate(section_analyses):
+                # Extract key_points from additional_data (set by section analysis)
+                key_points = analysis.additional_data.get("key_points", [])
+
+                # Extract notable quotes - they're in the quotes field based on persona config
+                notable_quotes = []
+                for quote_obj in analysis.quotes:
+                    if isinstance(quote_obj, dict):
+                        notable_quotes.append({
+                            "quote": quote_obj.get("quote", ""),
+                            "context": quote_obj.get("context", ""),
+                            "timestamp": analysis.start_time
+                        })
+
+                section_info = {
+                    "section_number": i + 1,
+                    "title": analysis.title,
+                    "timestamp": analysis.start_time,
+                    "summary": analysis.summary,
+                    "key_points": key_points,
+                    "notable_quotes": notable_quotes
+                }
+                section_data.append(section_info)
+
+                # Collect all key points and quotes
+                all_key_points.extend(key_points)
+                all_notable_quotes.extend(notable_quotes)
+
+            # Generate all assets concurrently for better performance
+            from asyncio import gather
+
+            print("[blue]Generating all launch assets in parallel...[/blue]")
+
+            # Run all generation tasks concurrently
+            results = await gather(
+                self._generate_title_variations(section_data, runnable_config),
+                self._generate_episode_description(section_data, runnable_config),
+                self._generate_linkedin_post(section_data, runnable_config),
+                self._generate_twitter_thread(section_data, runnable_config),
+                self._generate_youtube_description(section_data, runnable_config),
+                return_exceptions=True
+            )
+
+            # Unpack results
+            title_variations = results[0] if not isinstance(results[0], Exception) else {}
+            episode_description = results[1] if not isinstance(results[1], Exception) else ""
+            linkedin_post = results[2] if not isinstance(results[2], Exception) else ""
+            twitter_thread = results[3] if not isinstance(results[3], Exception) else []
+            youtube_description = results[4] if not isinstance(results[4], Exception) else ""
+
+            # Compile chapter markers
+            chapters = [
+                {
+                    "timestamp": section["timestamp"],
+                    "title": section["title"],
+                    "summary": section["summary"]
+                }
+                for section in section_data
+            ]
+
+            # Select best notable quotes (limit to top 5-8)
+            best_quotes = self._select_best_quotes(all_notable_quotes, limit=8)
+
+            show_notes = {
+                "title_variations": title_variations,
+                "episode_description": episode_description,
+                "key_points": all_key_points[:10],  # Top 10 key points
+                "notable_quotes": best_quotes,
+                "chapters": chapters,
+                "social_content": {
+                    "linkedin_post": linkedin_post,
+                    "twitter_thread": twitter_thread,
+                    "youtube_description": youtube_description
+                },
+                "total_sections": len(section_analyses)
+            }
+
+            print(f"[green]Launch assets generation complete. Generated {len(title_variations)} title variations, description, {len(show_notes['key_points'])} key points, {len(best_quotes)} quotes, {len(chapters)} chapters, and social content.[/green]")
+
+            return show_notes
+
+        except Exception as e:
+            print(f"[bold red]Error during launch assets generation: {str(e)}[/bold red]")
+            import traceback
+            print(f"[red]Traceback: {traceback.format_exc()}[/red]")
+            return {
+                "error": f"Launch assets generation failed: {str(e)}",
+                "title_variations": {},
+                "episode_description": "",
+                "key_points": [],
+                "notable_quotes": [],
+                "chapters": [],
+                "social_content": {}
+            }
+
+    async def generate_argument_structure(
+        self,
+        section_analyses: List[SectionAnalysis],
+        runnable_config: RunnableConfig
+    ) -> Dict[str, Any]:
+        """Not used for podcaster persona."""
+        return {}
+
+    async def _generate_episode_description(
+        self,
+        section_data: List[Dict],
+        runnable_config: RunnableConfig
+    ) -> str:
+        """Generate SEO-optimized episode description from section summaries."""
+
+        # Compile section summaries for context
+        section_summaries = json.dumps([
+            {
+                "title": section["title"],
+                "summary": section["summary"],
+                "key_points": section.get("key_points", [])[:2]  # Top 2 per section
+            }
+            for section in section_data[:8]  # Limit to first 8 sections
+        ], indent=2)
+
+        parser = JsonOutputParser()
+
+        prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """You are an expert podcast show notes writer. Your task is to create a compelling episode description that helps listeners discover the content and understand what they'll learn.
+
+Your output must be a JSON object with the following key:
+
+- 'description': A 2-3 paragraph SEO-optimized episode description (120-200 words).
+  - First paragraph: Hook the listener with the most compelling insight or topic
+  - Second paragraph: Overview of 3-5 main topics covered
+  - Optional third paragraph: Who this episode is for or what listeners will gain
+
+Guidelines:
+- Write in second person ("you'll discover", "you'll learn")
+- Be specific about topics, not vague
+- Use keywords naturally for SEO
+- Make it scannable (can use bullet points in paragraph 2)
+- Focus on value and discovery
+
+{format_instructions}""",
+            ),
+            (
+                "human",
+                """Based on the following podcast sections, create an episode description.
+
+--- SECTION SUMMARIES ---
+{section_summaries}
+--- END SECTION SUMMARIES ---""",
+            ),
+        ])
+
+        chain = prompt | self.llm | parser
+
+        try:
+            result = await chain.ainvoke({
+                "section_summaries": section_summaries,
+                "format_instructions": parser.get_format_instructions(),
+            }, config=runnable_config)
+
+            return result.get("description", "")
+
+        except Exception as e:
+            print(f"[yellow]Warning: Could not generate episode description: {e}[/yellow]")
+            # Fallback: concatenate first 3 section summaries
+            fallback = " ".join([
+                section["summary"]
+                for section in section_data[:3]
+            ])
+            return fallback
+
+    def _select_best_quotes(self, all_quotes: List[Dict], limit: int = 8) -> List[Dict]:
+        """Select the most compelling quotes, removing duplicates and prioritizing variety."""
+
+        if not all_quotes:
+            return []
+
+        # Remove duplicates based on quote text
+        seen_quotes = set()
+        unique_quotes = []
+
+        for quote_obj in all_quotes:
+            quote_text = quote_obj.get("quote", "").strip()
+            if quote_text and quote_text not in seen_quotes:
+                seen_quotes.add(quote_text)
+                unique_quotes.append(quote_obj)
+
+        # Prioritize longer, more substantial quotes (30+ words tend to be more complete thoughts)
+        scored_quotes = []
+        for quote_obj in unique_quotes:
+            quote_text = quote_obj.get("quote", "")
+            word_count = len(quote_text.split())
+
+            # Score based on word count (prefer 30-100 word range)
+            if 30 <= word_count <= 100:
+                score = 10
+            elif 20 <= word_count < 30:
+                score = 7
+            elif 10 <= word_count < 20:
+                score = 4
+            else:
+                score = 2
+
+            scored_quotes.append((score, quote_obj))
+
+        # Sort by score (descending) and take top N
+        scored_quotes.sort(key=lambda x: x[0], reverse=True)
+        best_quotes = [quote for score, quote in scored_quotes[:limit]]
+
+        return best_quotes
+
+    async def _generate_title_variations(
+        self,
+        section_data: List[Dict],
+        runnable_config: RunnableConfig
+    ) -> Dict[str, str]:
+        """Generate 4 distinct title variations with different marketing angles."""
+
+        # Compile section summaries for context
+        episode_overview = json.dumps([
+            {
+                "title": section["title"],
+                "summary": section["summary"],
+                "key_points": section.get("key_points", [])[:2]
+            }
+            for section in section_data[:8]
+        ], indent=2)
+
+        parser = JsonOutputParser()
+
+        prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """You are an expert podcast marketing strategist. Your task is to create 4 distinct episode titles with different marketing angles.
+
+Your output must be a JSON object with the following keys:
+
+- 'curiosity_gap': A title that creates intrigue by hinting at a surprising insight without revealing it.
+  Example: "Why Your 'Comfort Zone' is Actually Dangerous"
+
+- 'benefit_driven': A title that clearly states the practical benefit or outcome.
+  Example: "How to Use Mortality to Stop Fearing Judgment"
+
+- 'contrarian': A title that challenges conventional wisdom or common beliefs.
+  Example: "Stop Pursuing Happiness: Why You Should Chase Regret Instead"
+
+- 'direct': A straightforward title that clearly lists what's covered.
+  Example: "Mastering Decisions, Anxiety Cost, and The 3-Generation Rule"
+
+Guidelines:
+- Each title should be 6-12 words
+- Capitalize Important Words
+- Be specific, not generic
+- Make them shareable and click-worthy
+- Match the actual content (don't oversell)
+
+{format_instructions}""",
+            ),
+            (
+                "human",
+                """Based on the following podcast episode content, create 4 title variations.
+
+--- EPISODE CONTENT ---
+{episode_overview}
+--- END EPISODE CONTENT ---""",
+            ),
+        ])
+
+        chain = prompt | self.llm | parser
+
+        try:
+            result = await chain.ainvoke({
+                "episode_overview": episode_overview,
+                "format_instructions": parser.get_format_instructions(),
+            }, config=runnable_config)
+
+            print(f"[green]Generated {len(result)} title variations[/green]")
+            return result
+
+        except Exception as e:
+            print(f"[yellow]Warning: Could not generate title variations: {e}[/yellow]")
+            # Fallback: simple titles based on first section
+            first_section = section_data[0] if section_data else {}
+            fallback_title = first_section.get("title", "Episode")
+
+            return {
+                "curiosity_gap": f"Why {fallback_title} Matters More Than You Think",
+                "benefit_driven": f"How to Master {fallback_title}",
+                "contrarian": f"Stop Believing These Myths About {fallback_title}",
+                "direct": fallback_title
+            }
+
+    async def _generate_linkedin_post(
+        self,
+        section_data: List[Dict],
+        runnable_config: RunnableConfig
+    ) -> str:
+        """Generate a LinkedIn-native post that extracts one story/insight."""
+
+        # Compile section summaries and key points
+        episode_content = json.dumps([
+            {
+                "title": section["title"],
+                "summary": section["summary"],
+                "key_points": section.get("key_points", [])
+            }
+            for section in section_data
+        ], indent=2)
+
+        parser = JsonOutputParser()
+
+        prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """You are an expert LinkedIn content strategist. Your task is to create a LinkedIn-native post that tells ONE compelling story or shares ONE powerful insight from a podcast episode.
+
+Your output must be a JSON object with the following key:
+
+- 'post': A LinkedIn post (200-300 words) following the "bro-etry" storytelling format.
+
+Structure:
+1. HOOK (1-2 lines): Start with a punchy, relatable observation or question
+2. STORY/CONTEXT (2-3 short paragraphs): Tell the story or explain the insight with concrete details
+3. THE LESSON (1-2 paragraphs): What this means and why it matters
+4. CTA (1 line): Soft call-to-action like "What's your take?" or "Link to full episode in comments"
+
+LinkedIn Style Guidelines:
+- Use short paragraphs (1-3 sentences each)
+- Add line breaks between paragraphs for readability
+- Use casual, conversational tone
+- Avoid corporate jargon
+- Be authentic and human
+- DON'T use hashtags or emojis
+- Make it feel like a genuine insight share, not a promotion
+
+{format_instructions}""",
+            ),
+            (
+                "human",
+                """Based on the following podcast episode content, create a LinkedIn post.
+
+--- EPISODE CONTENT ---
+{episode_content}
+--- END EPISODE CONTENT ---""",
+            ),
+        ])
+
+        chain = prompt | self.llm | parser
+
+        try:
+            result = await chain.ainvoke({
+                "episode_content": episode_content,
+                "format_instructions": parser.get_format_instructions(),
+            }, config=runnable_config)
+
+            print("[green]Generated LinkedIn post[/green]")
+            return result.get("post", "")
+
+        except Exception as e:
+            print(f"[yellow]Warning: Could not generate LinkedIn post: {e}[/yellow]")
+            return ""
+
+    async def _generate_twitter_thread(
+        self,
+        section_data: List[Dict],
+        runnable_config: RunnableConfig
+    ) -> List[str]:
+        """Generate a Twitter/X thread that breaks down one complex concept."""
+
+        # Compile section summaries and key points
+        episode_content = json.dumps([
+            {
+                "title": section["title"],
+                "summary": section["summary"],
+                "key_points": section.get("key_points", [])
+            }
+            for section in section_data
+        ], indent=2)
+
+        parser = JsonOutputParser()
+
+        prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """You are an expert Twitter/X content strategist. Your task is to create an educational thread that breaks down ONE complex concept from a podcast episode.
+
+Your output must be a JSON object with the following key:
+
+- 'tweets': A list of 5-7 tweet texts (each under 280 characters).
+
+Thread Structure:
+1. Tweet 1 (HOOK): Counter-intuitive fact or surprising statement that makes people want to read more
+2. Tweets 2-5 (THE BREAKDOWN): Break down the concept into digestible pieces
+   - Each tweet should make ONE clear point
+   - Use numbered format (2/7, 3/7, etc.) or not - your choice
+   - Be educational, not promotional
+3. Tweet 6-7 (THE CTA): Tie it together and invite them to listen to the full episode
+
+Twitter Style Guidelines:
+- Each tweet must be under 280 characters
+- Use short, punchy sentences
+- One idea per tweet
+- Can use line breaks within tweets
+- Conversational but informative tone
+- Use numbers/stats when available
+- Make each tweet valuable on its own
+
+{format_instructions}""",
+            ),
+            (
+                "human",
+                """Based on the following podcast episode content, create a Twitter thread.
+
+--- EPISODE CONTENT ---
+{episode_content}
+--- END EPISODE CONTENT ---""",
+            ),
+        ])
+
+        chain = prompt | self.llm | parser
+
+        try:
+            result = await chain.ainvoke({
+                "episode_content": episode_content,
+                "format_instructions": parser.get_format_instructions(),
+            }, config=runnable_config)
+
+            tweets = result.get("tweets", [])
+            print(f"[green]Generated Twitter thread with {len(tweets)} tweets[/green]")
+            return tweets
+
+        except Exception as e:
+            print(f"[yellow]Warning: Could not generate Twitter thread: {e}[/yellow]")
+            return []
+
+    async def _generate_youtube_description(
+        self,
+        section_data: List[Dict],
+        runnable_config: RunnableConfig
+    ) -> str:
+        """Generate a YouTube description with SEO optimization and timestamp chapters."""
+
+        # Compile all chapter information
+        chapters_info = [
+            {
+                "timestamp": section["timestamp"],
+                "title": section["title"],
+                "summary": section["summary"]
+            }
+            for section in section_data
+        ]
+
+        parser = JsonOutputParser()
+
+        prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                """You are an expert YouTube SEO specialist. Your task is to create a YouTube video description that maximizes discoverability and viewer engagement.
+
+Your output must be a JSON object with the following key:
+
+- 'description': A YouTube description (150-250 words) with the following structure:
+
+1. INTRO (2-3 sentences): Compelling hook that explains what viewers will learn/discover
+2. OVERVIEW (2-4 bullet points): Key topics covered - use emojis for each bullet
+3. TIMESTAMPS: Add a "CHAPTERS:" section with all timestamps listed
+4. ABOUT (1-2 sentences): Brief context about the content or creator
+5. CTA: Standard YouTube CTAs (subscribe, like, comment)
+
+SEO Guidelines:
+- Front-load important keywords in first 2 sentences
+- Use natural keyword variations throughout
+- Include relevant search terms
+- Make it scannable with emojis and formatting
+- Timestamps must use YouTube format (0:00, 1:23, 12:45)
+
+{format_instructions}""",
+            ),
+            (
+                "human",
+                """Based on the following podcast chapter information, create a YouTube description.
+
+--- CHAPTERS ---
+{chapters_info}
+--- END CHAPTERS ---""",
+            ),
+        ])
+
+        chain = prompt | self.llm | parser
+
+        try:
+            result = await chain.ainvoke({
+                "chapters_info": json.dumps(chapters_info, indent=2),
+                "format_instructions": parser.get_format_instructions(),
+            }, config=runnable_config)
+
+            print("[green]Generated YouTube description[/green]")
+            return result.get("description", "")
+
+        except Exception as e:
+            print(f"[yellow]Warning: Could not generate YouTube description: {e}[/yellow]")
+            # Fallback: basic description with chapters
+            chapters_text = "\n".join([
+                f"{ch['timestamp']} - {ch['title']}"
+                for ch in chapters_info
+            ])
+            return f"CHAPTERS:\n{chapters_text}"
+
+
 class DeepDiveSynthesizer(MetaAnalyzer):
     """Meta-analyzer for deep_dive persona - generates quizzes for simplified analysis."""
-    
+
     def __init__(self, llm_client):
         self.llm = llm_client
         # Import here to avoid circular imports

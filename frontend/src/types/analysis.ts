@@ -121,5 +121,56 @@ export interface DeepDiveSection extends BaseAnalysisSection {
 // Discriminated union for all analysis section types
 export type AnalysisSection = DeepDiveSection;
 
+// Podcaster-specific types
+export interface TitleVariations {
+  curiosity_gap: string;
+  benefit_driven: string;
+  contrarian: string;
+  direct: string;
+}
+
+export interface ShowNotesQuote {
+  quote: string;
+  context: string;
+  timestamp: string;
+}
+
+export interface ShowNotesChapter {
+  timestamp: string;
+  title: string;
+  summary: string;
+}
+
+export interface SocialContent {
+  linkedin_post: string;
+  twitter_thread: string[];
+  youtube_description: string;
+}
+
+export interface ShowNotes {
+  title_variations: TitleVariations;
+  episode_description: string;
+  key_points: string[];
+  notable_quotes: ShowNotesQuote[];
+  chapters: ShowNotesChapter[];
+  social_content: SocialContent;
+  total_sections: number;
+}
+
+export interface PodcasterSection extends BaseAnalysisSection {
+  section_number: number;
+  timestamp_start: string;
+  timestamp_end: string;
+  section_title: string;
+  key_points: string[];
+  notable_quotes: {
+    quote: string;
+    context: string;
+    timestamp: string;
+    word_count: number;
+  }[];
+  summary: string;
+}
+
 // Analysis persona type
-export type AnalysisPersona = "deep_dive" | "neural_synthesis" | "insight_engine";
+export type AnalysisPersona = "deep_dive" | "neural_synthesis" | "insight_engine" | "podcaster";

@@ -1,6 +1,6 @@
 // Job and data types consolidated from _global/interface.ts
 
-import { AnalysisSection, SynthesisResults, ArgumentStructure, Slide, QuizQuestion, OpenEndedQuestion } from './analysis';
+import { AnalysisSection, SynthesisResults, ArgumentStructure, Slide, QuizQuestion, OpenEndedQuestion, ShowNotes, PodcasterSection } from './analysis';
 import { LibraryMeta } from './library';
 
 export type JobStatus = "COMPLETED" | "PROCESSING" | "FAILED" | "QUEUED";
@@ -40,12 +40,12 @@ export interface JobData {
   job_title: string;
   structured_transcript?: Utterance[];
   transcript?: any[]; // Raw transcript data in various formats
-  results: AnalysisSection[];
+  results: AnalysisSection[] | PodcasterSection[];
   synthesis_results?: SynthesisResults;
   argument_structure?: ArgumentStructure;
   request_data: {
     config: {
-      analysis_persona: "deep_dive";
+      analysis_persona: "deep_dive" | "podcaster";
     };
     source_type?: string; // e.g., "youtube", "upload", "paste"
   };
@@ -72,6 +72,8 @@ export interface JobData {
   };
   quiz_results?: QuizResults;
   open_ended_results?: OpenEndedResults | null;
+  show_notes?: ShowNotes; // Podcaster persona output
+  section_analyses?: PodcasterSection[]; // Podcaster persona section-by-section output
 }
 
 export interface JobDataWithShare extends JobData {

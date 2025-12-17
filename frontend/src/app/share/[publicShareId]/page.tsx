@@ -23,6 +23,7 @@ import { AnalysisHeader } from "@/app/components/analysis/AnalysisHeader";
 import { AnalysisActionButtons } from "@/app/components/analysis/AnalysisActionButtons";
 import { SlideDeckDisplay } from "@/app/components/analysis/SlideDeckDisplay";
 import DeepDiveView from "@/app/components/analysis/DeepDiveView";
+import { PodcasterAnalysisView } from "@/app/components/podcaster/PodcasterAnalysisView";
 import { ExecutiveSynthesisView } from "@/app/components/analysis/synthesis-display/ExecutiveSynthesisView";
 import { ArgumentStructureCard } from "@/app/components/analysis/ArgumentStructureCard";
 
@@ -170,82 +171,91 @@ const PublicSharePage = () => {
         }
       >
         <div id="analysis-report-content">
-          {/* Learning Assessment - Quiz Questions */}
-          {data.generated_quiz_questions &&
-            (data.generated_quiz_questions.questions?.length > 0 ||
-              (data.generated_quiz_questions.open_ended_questions?.length ||
-                0) > 0) && (
-              <div className="mb-12">
-                {/* Learning Philosophy Note */}
-                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
-                    The difficulty is where the learning happens. These
-                    questions help your brain actively process and connect
-                    information.
-                  </p>
-                  <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
-                    "Difficulties in learning are desirable when they trigger
-                    processes that support learning and remembering." — Robert
-                    Bjork
-                  </blockquote>
-                </div>
-
-                <UnifiedQuizDisplay
-                  multipleChoiceQuestions={
-                    data.generated_quiz_questions.questions || []
-                  }
-                  openEndedQuestions={
-                    data.generated_quiz_questions.open_ended_questions || []
-                  }
-                  mcqEstimatedTimeMinutes={
-                    data.generated_quiz_questions.questions?.length
-                      ? data.generated_quiz_questions.questions.length * 1
-                      : undefined
-                  }
-                  oeEstimatedTimeMinutes={
-                    data.generated_quiz_questions.quiz_metadata
-                      ?.total_open_ended_questions
-                      ? data.generated_quiz_questions.quiz_metadata
-                          .total_open_ended_questions * 4
-                      : undefined
-                  }
-                  isEditMode={false}
-                  onMcqQuestionChange={emptyFunction}
-                  onMcqAddQuestion={emptyFunction}
-                  onMcqDeleteQuestion={emptyFunction}
-                  onOeQuestionChange={emptyFunction}
-                  onOeAddQuestion={emptyFunction}
-                  onOeDeleteQuestion={emptyFunction}
-                  userId="" // Empty for public users
-                  jobId={publicShareId}
-                  existingQuizResults={null}
-                  existingOpenEndedResults={null}
-                />
-              </div>
-            )}
-
-          {/* Analysis Sections */}
-          <div className="my-12">
-            <h2
-              className="text-2xl font-bold text-slate-700
-          dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
-            >
-              {data?.request_data?.config?.analysis_persona === "deep_dive"
-                ? "Analysis Sections"
-                : "Learning Sections"}
-            </h2>
-          </div>
-
-          {/* Conditional View based on Persona */}
-          {data?.request_data?.config?.analysis_persona === "deep_dive" && (
-            <DeepDiveView
-              results={data.results}
-              isEditMode={false}
-              onFieldChange={emptyFunction}
-              onTakeawayChange={emptyFunction}
-              onAddTakeaway={emptyFunction}
-              onDeleteTakeaway={emptyFunction}
+          {/* Podcaster View - Show Notes */}
+          {data?.request_data?.config?.analysis_persona === "podcaster" && data.show_notes && (
+            <PodcasterAnalysisView
+              showNotes={data.show_notes}
+              sectionAnalyses={data.section_analyses}
             />
+          )}
+
+          {/* Deep Dive View */}
+          {data?.request_data?.config?.analysis_persona === "deep_dive" && (
+            <>
+              {/* Learning Assessment - Quiz Questions */}
+              {data.generated_quiz_questions &&
+                (data.generated_quiz_questions.questions?.length > 0 ||
+                  (data.generated_quiz_questions.open_ended_questions?.length ||
+                    0) > 0) && (
+                  <div className="mb-12">
+                    {/* Learning Philosophy Note */}
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <p className="text-sm text-gray-800 dark:text-gray-200 mb-2">
+                        The difficulty is where the learning happens. These
+                        questions help your brain actively process and connect
+                        information.
+                      </p>
+                      <blockquote className="text-sm text-gray-700 dark:text-gray-300 border-l-2 border-gray-400 dark:border-gray-500 pl-3 italic">
+                        "Difficulties in learning are desirable when they trigger
+                        processes that support learning and remembering." — Robert
+                        Bjork
+                      </blockquote>
+                    </div>
+
+                    <UnifiedQuizDisplay
+                      multipleChoiceQuestions={
+                        data.generated_quiz_questions.questions || []
+                      }
+                      openEndedQuestions={
+                        data.generated_quiz_questions.open_ended_questions || []
+                      }
+                      mcqEstimatedTimeMinutes={
+                        data.generated_quiz_questions.questions?.length
+                          ? data.generated_quiz_questions.questions.length * 1
+                          : undefined
+                      }
+                      oeEstimatedTimeMinutes={
+                        data.generated_quiz_questions.quiz_metadata
+                          ?.total_open_ended_questions
+                          ? data.generated_quiz_questions.quiz_metadata
+                              .total_open_ended_questions * 4
+                          : undefined
+                      }
+                      isEditMode={false}
+                      onMcqQuestionChange={emptyFunction}
+                      onMcqAddQuestion={emptyFunction}
+                      onMcqDeleteQuestion={emptyFunction}
+                      onOeQuestionChange={emptyFunction}
+                      onOeAddQuestion={emptyFunction}
+                      onOeDeleteQuestion={emptyFunction}
+                      userId="" // Empty for public users
+                      jobId={publicShareId}
+                      existingQuizResults={null}
+                      existingOpenEndedResults={null}
+                    />
+                  </div>
+                )}
+
+              {/* Analysis Sections */}
+              <div className="my-12">
+                <h2
+                  className="text-2xl font-bold text-slate-700
+              dark:text-slate-300 mb-2 border-b-2 border-slate-200 dark:border-slate-700 pb-2"
+                >
+                  Analysis Sections
+                </h2>
+              </div>
+
+              {/* Deep Dive View */}
+              <DeepDiveView
+                results={data.results}
+                isEditMode={false}
+                onFieldChange={emptyFunction}
+                onTakeawayChange={emptyFunction}
+                onAddTakeaway={emptyFunction}
+                onDeleteTakeaway={emptyFunction}
+              />
+            </>
           )}
         </div>
       </AnalysisPageLayout>

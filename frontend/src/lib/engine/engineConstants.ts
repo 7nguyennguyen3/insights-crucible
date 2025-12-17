@@ -88,6 +88,20 @@ export const ANALYSIS_PERSONA_OPTIONS = {
       "Multiple choice & open-ended quizzes",
     ],
   },
+  PODCASTER: {
+    id: "podcaster" as AnalysisPersona,
+    title: "Podcaster",
+    description:
+      "Transform your podcast episodes into production-ready assets. Get show notes with multiple title variations, SEO-optimized descriptions, chapters with timestamps, notable quotes, and platform-native social content for LinkedIn, Twitter/X, and YouTube.",
+    category: "CONTENT PRODUCTION",
+    features: [
+      "4 title variations (Curiosity Gap, Benefit-Driven, Contrarian, Direct)",
+      "SEO-optimized episode description & key points",
+      "Chapters & timestamps for navigation",
+      "Notable quotes with timestamps for clips",
+      "Platform-native social content (LinkedIn, Twitter/X, YouTube)",
+    ],
+  },
   NEURAL_SYNTHESIS: {
     id: "neural_synthesis" as AnalysisPersona,
     title: "Neural Synthesis",

@@ -16,3 +16,9 @@ rich==14.0.0
 pydantic-settings==2.10.1
 youtube_transcript_api==1.2.1
 httpx==0.28.1
+
+# Fuzzy string matching
+thefuzz==0.22.1
+python-levenshtein==0.27.1
+rapidfuzz==3.14.1
+Levenshtein==0.27.1

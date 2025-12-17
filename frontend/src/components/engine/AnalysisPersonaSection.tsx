@@ -1,4 +1,4 @@
-import { GraduationCap, Brain, Info, Network, Zap } from "lucide-react";
+import { GraduationCap, Brain, Info, Network, Zap, Mic } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -44,7 +44,7 @@ export const AnalysisPersonaSection = ({
         <RadioGroup
           value={analysisPersona}
           onValueChange={(value) => onPersonaChange(value as AnalysisPersona)}
-          className="grid grid-cols-1 md:grid-cols-3 gap-3"
+          className="grid grid-cols-1 md:grid-cols-2 gap-3"
           disabled={!canInteract}
         >
           {/* Deep Dive - Available */}
@@ -71,6 +71,32 @@ export const AnalysisPersonaSection = ({
               </Tooltip>
             </Label>
             <RadioGroupItem value="deep_dive" id="deep_dive" className="sr-only" />
+          </div>
+
+          {/* Podcaster - Available */}
+          <div className="relative">
+            <Label
+              htmlFor="podcaster"
+              className={`flex items-center p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                analysisPersona === "podcaster"
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "border-border hover:border-border/80 hover:bg-muted/50"
+              }`}
+            >
+              <Mic className="w-5 h-5 mr-3 text-green-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium">{ANALYSIS_PERSONA_OPTIONS.PODCASTER.title}</div>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4 text-muted-foreground hover:text-foreground ml-2 shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <p>{ANALYSIS_PERSONA_OPTIONS.PODCASTER.description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </Label>
+            <RadioGroupItem value="podcaster" id="podcaster" className="sr-only" />
           </div>
 
           {/* Neural Synthesis - Coming Soon */}

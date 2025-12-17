@@ -783,30 +783,59 @@ class AnalysisPipeline:
                 )
                 return {}
 
+        elif request.persona == "podcaster":
+            try:
+                # Pass original transcript to the synthesizer for timestamp matching
+                show_notes_results = await self.meta_analyzer.perform_synthesis(
+                    all_sections, runnable_config, original_transcript
+                )
+
+                if not show_notes_results or show_notes_results.get("error"):
+                    print("[bold yellow]Warning: Empty or error in show notes results for podcaster persona[/bold yellow]")
+                    self.db_manager.log_progress(
+                        request.user_id, request.job_id,
+                        "Warning: Show notes generation had issues"
+                    )
+
+                self.db_manager.db.collection(
+                    f"saas_users/{request.user_id}/jobs"
+                ).document(request.job_id).update({"show_notes": show_notes_results})
+
+                print(f"[green]✓ Saved podcaster show notes with {len(show_notes_results.get('chapters', []))} chapters[/green]")
+                timing_metrics["show_notes_generation_s"] = time.monotonic() - start_time
+                return show_notes_results
+            except Exception as e:
+                print(f"[bold red]Error in podcaster show notes generation: {e}[/bold red]")
+                self.db_manager.log_progress(
+                    request.user_id, request.job_id,
+                    f"Error in podcaster show notes generation: {e}"
+                )
+                return {}
+
         elif request.persona == "general":
             try:
                 argument_results = await self.meta_analyzer.generate_argument_structure(
                     all_sections, runnable_config
                 )
-                
+
                 if not argument_results:
                     print("[bold yellow]Warning: Empty argument structure results for general persona[/bold yellow]")
                     self.db_manager.log_progress(
-                        request.user_id, request.job_id, 
+                        request.user_id, request.job_id,
                         "Warning: Empty argument structure results"
                     )
 
                 self.db_manager.db.collection(
                     f"saas_users/{request.user_id}/jobs"
                 ).document(request.job_id).update({"argument_structure": argument_results})
-                
+
                 print(f"[green]✓ Saved general persona argument structure with {len(argument_results)} keys[/green]")
                 timing_metrics["argument_analysis_s"] = time.monotonic() - start_time
                 return argument_results
             except Exception as e:
                 print(f"[bold red]Error in general persona argument analysis: {e}[/bold red]")
                 self.db_manager.log_progress(
-                    request.user_id, request.job_id, 
+                    request.user_id, request.job_id,
                     f"Error in general persona argument analysis: {e}"
                 )
                 return {}

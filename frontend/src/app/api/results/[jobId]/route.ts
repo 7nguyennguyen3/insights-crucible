@@ -100,6 +100,10 @@ export async function GET(
       // Open-ended question results for showing previous open-ended completion
       open_ended_results: openEndedResults,
 
+      // Podcaster persona specific fields
+      show_notes: jobData?.show_notes || null,
+      section_analyses: jobData?.section_analyses || null,
+
       // Library sharing fields
       isPublic: jobData?.isPublic || false,
       publicShareId: jobData?.publicShareId || null,
