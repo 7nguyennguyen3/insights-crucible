@@ -618,8 +618,8 @@ class AnalysisPipeline:
 
         start_time = time.monotonic()
 
-        # Set appropriate transcript for timestamp extraction (deep dive persona only)
-        if hasattr(self.section_processor, 'persona') and self.section_processor.persona == "deep_dive":
+        # Set appropriate transcript for timestamp extraction (deep_dive and podcaster personas)
+        if hasattr(self.section_processor, 'persona') and self.section_processor.persona in ["deep_dive", "podcaster"]:
             try:
                 # Get the job document to retrieve transcript data and source type
                 job_doc = self.db_manager.get_job_status(request.user_id, request.job_id)

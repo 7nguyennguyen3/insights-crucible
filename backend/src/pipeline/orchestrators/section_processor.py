@@ -287,6 +287,74 @@ class SectionProcessor:
 
     def _convert_to_dict(self, analysis: SectionAnalysis) -> Dict:
         """Convert SectionAnalysis to dictionary for database storage."""
+        
+        # --- Timestamp Enrichment Logic ---
+        # We update the analysis object directly so that the returned SectionProcessingResult
+        # contains the enriched data (timestamps) for downstream processing (e.g. synthesis).
+        
+        if self.persona == "deep_dive":
+            # Deep dive timestamp enrichment for actionable takeaways
+            print(f"[blue]Deep dive persona: Adding timestamps to actionable takeaways...[/blue]")
+            
+            if (add_timestamps_to_actionable_takeaways is not None and 
+                self.structured_transcript and 
+                "actionable_takeaways" in analysis.additional_data):
+                
+                try:
+                    # Show debug info
+                    print(f"[blue]  - Actionable takeaways count: {len(analysis.additional_data['actionable_takeaways'])}[/blue]")
+                    
+                    enhanced_takeaways = add_timestamps_to_actionable_takeaways(
+                        analysis.additional_data["actionable_takeaways"], 
+                        self.structured_transcript
+                    )
+                    
+                    # Update the analysis object in place
+                    analysis.additional_data["actionable_takeaways"] = enhanced_takeaways
+                    
+                    # Verify timestamps were added
+                    timestamps_added = sum(1 for takeaway in enhanced_takeaways if takeaway.get('quote_timestamp'))
+                    print(f"[green][+] Successfully added timestamps to {timestamps_added}/{len(enhanced_takeaways)} actionable takeaways[/green]")
+                        
+                except Exception as e:
+                    print(f"[red]Error: Failed to add timestamps: {e}[/red]")
+                    import traceback
+                    print(f"[red]Full traceback: {traceback.format_exc()}[/red]")
+            elif not self.structured_transcript:
+                 print(f"[yellow]Skipping timestamp extraction - no structured transcript available[/yellow]")
+
+        else:
+            # Other personas (podcaster, etc.) timestamp enrichment for notable quotes
+            print(f"[blue]{self.persona} persona: Adding timestamps to notable quotes...[/blue]")
+            
+            if (add_timestamps_to_notable_quotes is not None and
+                self.structured_transcript and
+                analysis.quotes):
+
+                try:
+                    print(f"[blue]Adding precise timestamps to {len(analysis.quotes)} notable quotes...[/blue]")
+                    
+                    enhanced_quotes = add_timestamps_to_notable_quotes(
+                        analysis.quotes,
+                        self.structured_transcript
+                    )
+                    
+                    # Update the analysis object in place
+                    analysis.quotes = enhanced_quotes
+
+                    # Verify timestamps were added
+                    timestamps_added = sum(1 for quote in enhanced_quotes
+                                         if isinstance(quote, dict) and quote.get('timestamp') not in ['00:00', None])
+                    print(f"[green][+] Successfully added precise timestamps to {timestamps_added}/{len(enhanced_quotes)} notable quotes[/green]")
+
+                except Exception as e:
+                    print(f"[red]Error: Failed to add timestamps to notable quotes: {e}[/red]")
+                    import traceback
+                    print(f"[red]Full traceback: {traceback.format_exc()}[/red]")
+            elif not self.structured_transcript:
+                print(f"[yellow]Skipping notable quote timestamp extraction - no structured transcript available[/yellow]")
+
+        # --- Dictionary Construction ---
         base_dict = {
             "start_time": analysis.start_time,
             "end_time": analysis.end_time,
@@ -297,107 +365,15 @@ class SectionProcessor:
         # Handle persona-specific fields
         if self.persona == "deep_dive":
             # For deep_dive persona, exclude notable_quotes and entities
-            # Include actionable_takeaways from additional_data
+            # Include actionable_takeaways from additional_data (now enriched)
             base_dict.update(analysis.additional_data)
-            
-            # Add timestamps to actionable_takeaways if available
-            print(f"[blue]Deep dive persona: Adding timestamps to actionable takeaways...[/blue]")
-            print(f"[blue]  - Structured transcript available: {self.structured_transcript is not None}[/blue]")
-            print(f"[blue]  - Actionable takeaways in result: {'actionable_takeaways' in base_dict}[/blue]")
-            
-            if self.structured_transcript:
-                print(f"[blue]  - Structured transcript entries count: {len(self.structured_transcript)}[/blue]")
-                # Show first few entries for debugging
-                sample_entries = self.structured_transcript[:3] if len(self.structured_transcript) > 0 else []
-                print(f"[blue]  - Sample structured transcript entries: {sample_entries}[/blue]")
-            
-            if "actionable_takeaways" in base_dict:
-                print(f"[blue]  - Actionable takeaways count: {len(base_dict['actionable_takeaways'])}[/blue]")
-                # Show first takeaway for debugging
-                if base_dict['actionable_takeaways']:
-                    first_takeaway = base_dict['actionable_takeaways'][0]
-                    print(f"[blue]  - First takeaway keys: {list(first_takeaway.keys()) if isinstance(first_takeaway, dict) else 'Not a dict'}[/blue]")
-            
-            # Add timestamps using structured transcript (all source types now use this format)
-            if (add_timestamps_to_actionable_takeaways is not None and 
-                self.structured_transcript and 
-                "actionable_takeaways" in base_dict):
-                
-                try:
-                    print(f"[blue]Adding timestamps using structured transcript to {len(base_dict['actionable_takeaways'])} actionable takeaways...[/blue]")
-                    enhanced_takeaways = add_timestamps_to_actionable_takeaways(
-                        base_dict["actionable_takeaways"], 
-                        self.structured_transcript
-                    )
-                    base_dict["actionable_takeaways"] = enhanced_takeaways
-                    
-                    # Verify timestamps were added
-                    timestamps_added = sum(1 for takeaway in enhanced_takeaways if takeaway.get('quote_timestamp'))
-                    print(f"[green][+] Successfully added timestamps to {timestamps_added}/{len(enhanced_takeaways)} actionable takeaways[/green]")
-                    
-                    # Show sample results
-                    if enhanced_takeaways:
-                        sample_takeaway = enhanced_takeaways[0]
-                        print(f"[green]  - Sample enhanced takeaway keys: {list(sample_takeaway.keys())}[/green]")
-                        if 'quote_timestamp' in sample_takeaway:
-                            timestamp_data = sample_takeaway['quote_timestamp']
-                            if isinstance(timestamp_data, dict):
-                                print(f"[green]  - Sample timestamp range: {timestamp_data.get('start', '?')} - {timestamp_data.get('end', '?')} (duration: {timestamp_data.get('duration', '?')})[/green]")
-                            else:
-                                print(f"[green]  - Sample timestamp: {timestamp_data}[/green]")
-                        
-                except Exception as e:
-                    print(f"[red]Error: Failed to add timestamps: {e}[/red]")
-                    import traceback
-                    print(f"[red]Full traceback: {traceback.format_exc()}[/red]")
-            else:
-                print(f"[yellow]Skipping timestamp extraction - no structured transcript available[/yellow]")
         else:
             # For other personas, include quotes and entities
-            base_dict["notable_quotes"] = analysis.quotes
+            base_dict["notable_quotes"] = analysis.quotes # Now enriched
             base_dict["entities"] = [
                 {"name": e.name, "explanation": e.explanation}
                 for e in analysis.entities
             ]
-
-            # Add precise timestamps to notable quotes for podcaster and other personas
-            print(f"[blue]{self.persona} persona: Adding timestamps to notable quotes...[/blue]")
-            print(f"[blue]  - Structured transcript available: {self.structured_transcript is not None}[/blue]")
-            print(f"[blue]  - Notable quotes in result: {len(base_dict.get('notable_quotes', []))}[/blue]")
-
-            if self.structured_transcript:
-                print(f"[blue]  - Structured transcript entries count: {len(self.structured_transcript)}[/blue]")
-
-            # Add timestamps using structured transcript
-            if (add_timestamps_to_notable_quotes is not None and
-                self.structured_transcript and
-                base_dict.get("notable_quotes")):
-
-                try:
-                    print(f"[blue]Adding precise timestamps to {len(base_dict['notable_quotes'])} notable quotes...[/blue]")
-                    enhanced_quotes = add_timestamps_to_notable_quotes(
-                        base_dict["notable_quotes"],
-                        self.structured_transcript
-                    )
-                    base_dict["notable_quotes"] = enhanced_quotes
-
-                    # Verify timestamps were added
-                    timestamps_added = sum(1 for quote in enhanced_quotes
-                                         if isinstance(quote, dict) and quote.get('timestamp') not in ['00:00', None])
-                    print(f"[green][+] Successfully added precise timestamps to {timestamps_added}/{len(enhanced_quotes)} notable quotes[/green]")
-
-                    # Show sample results
-                    if enhanced_quotes:
-                        sample_quote = enhanced_quotes[0]
-                        if isinstance(sample_quote, dict):
-                            print(f"[green]  - Sample quote timestamp: {sample_quote.get('timestamp', 'N/A')}[/green]")
-
-                except Exception as e:
-                    print(f"[red]Error: Failed to add timestamps to notable quotes: {e}[/red]")
-                    import traceback
-                    print(f"[red]Full traceback: {traceback.format_exc()}[/red]")
-            else:
-                print(f"[yellow]Skipping notable quote timestamp extraction - no structured transcript available[/yellow]")
 
             # For other personas, include contextual_briefing and all additional data
             base_dict["contextual_briefing"] = analysis.contextual_briefing
