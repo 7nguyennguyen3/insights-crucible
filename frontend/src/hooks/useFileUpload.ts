@@ -3,7 +3,6 @@ import { ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "@/lib/firebaseClient";
 import { createStoragePath } from "@/lib/engine/engineHelpers";
 import { UI_MESSAGES } from "@/lib/engine/engineConstants";
-import { compressAudioFile, CompressionProgress } from "@/lib/audioCompression";
 
 interface UseFileUploadProps {
   user: any;
@@ -29,70 +28,32 @@ export const useFileUpload = ({
         throw new Error(UI_MESSAGES.SIGN_IN_REQUIRED);
       }
 
-      // Compress file if needed (files > 50MB)
-      const originalFileName = file.name;
-      let fileToUpload = file;
-
-      try {
-        const isVideo = file.type.startsWith("video/");
-
-        // Show compression/extraction progress (0-50% of total progress)
-        fileToUpload = await compressAudioFile(file, {
-          targetBitrate: 128, // 128 kbps MP3
-          minFileSizeForCompression: isVideo ? 0 : 50 * 1024 * 1024, // Always extract from video, compress audio >50MB
-          onProgress: (compressionProgress: CompressionProgress) => {
-            // Map compression progress to 0-50% of upload progress
-            const progressPercent = Math.floor(compressionProgress.percent / 2);
-            const action = isVideo ? "Extracting audio from" : "Compressing";
-            console.log(
-              `${action} ${file.name}: ${compressionProgress.stage} - ${progressPercent}%`
-            );
-            onUploadProgress(file.name, progressPercent);
-          },
-        });
-
-        if (fileToUpload !== file) {
-          console.log(`File compressed: ${file.name} → ${fileToUpload.name}`);
-          console.log(
-            `Size reduction: ${(((file.size - fileToUpload.size) / file.size) * 100).toFixed(1)}%`
-          );
-        }
-      } catch (compressionError) {
-        console.error(
-          "Compression failed, uploading original file:",
-          compressionError
-        );
-        fileToUpload = file;
-      }
-
-      // Upload the file (compressed or original)
+      // Upload the file directly to Firebase Storage
       return new Promise((resolve, reject) => {
-        const filePath = createStoragePath(user.uid, fileToUpload.name);
+        const filePath = createStoragePath(user.uid, file.name);
         const storageRef = ref(storage, filePath);
-        const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+        const uploadTask = uploadBytesResumable(storageRef, file);
 
         uploadTask.on(
           "state_changed",
           (snapshot) => {
-            // Upload progress maps to 50-100% of total progress
             const uploadPercent = Math.round(
               (snapshot.bytesTransferred / snapshot.totalBytes) * 100
             );
-            const totalPercent = 50 + Math.floor(uploadPercent / 2);
             console.log(
-              `Upload progress for ${fileToUpload.name}: ${uploadPercent}% (total: ${totalPercent}%)`
+              `Upload progress for ${file.name}: ${uploadPercent}%`
             );
-            onUploadProgress(originalFileName, totalPercent);
+            onUploadProgress(file.name, uploadPercent);
           },
           (error) => {
-            console.error(`Upload failed for ${fileToUpload.name}:`, error);
-            reject(new Error(`Upload failed for ${fileToUpload.name}.`));
+            console.error(`Upload failed for ${file.name}:`, error);
+            reject(new Error(`Upload failed for ${file.name}.`));
           },
           () => {
             onFileUploaded();
             resolve({
               storagePath: filePath,
-              client_provided_id: originalFileName,
+              client_provided_id: file.name,
               duration_seconds: fileDuration,
             });
           }

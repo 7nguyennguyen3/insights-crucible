@@ -321,7 +321,7 @@ class AnalysisPipeline:
             )
 
             # Step 2: Input acquisition and normalization
-            canonical_transcript = await self._process_input(
+            canonical_transcript, assembly_words = await self._process_input(
                 request, final_cost_metrics, timing_metrics, total_start_time
             )
 
@@ -330,7 +330,7 @@ class AnalysisPipeline:
 
             # Step 3: Segmentation
             sections = await self._segment_transcript(
-                canonical_transcript, request, timing_metrics
+                canonical_transcript, request, timing_metrics, assembly_words=assembly_words
             )
 
             # Step 4: Section analysis
@@ -404,8 +404,11 @@ class AnalysisPipeline:
         cost_metrics: Dict[str, int],
         timing_metrics: Dict[str, float],
         start_time: float,
-    ) -> List[TranscriptUtterance]:
-        """Process input and normalize to canonical format."""
+    ) -> tuple[List[TranscriptUtterance], Optional[List[Dict[str, Any]]]]:
+        """
+        Process input and normalize to canonical format.
+        Returns: (transcript, assembly_words)
+        """
 
         if request.transcript_id:
             # YouTube transcript processing
@@ -442,11 +445,11 @@ class AnalysisPipeline:
                 )
 
             if isinstance(raw_youtube_transcript, list):
-                return await self.youtube_normalizer.normalize(raw_youtube_transcript)
+                return await self.youtube_normalizer.normalize(raw_youtube_transcript), None
             elif isinstance(raw_youtube_transcript, str):
                 return await self.transcript_normalizer.normalize(
                     raw_youtube_transcript
-                )
+                ), None
             else:
                 raise ValueError("Invalid cached transcript format")
 
@@ -481,22 +484,22 @@ class AnalysisPipeline:
                 transcript=simple_transcript
             )
 
-            # Convert AssemblyAI format to canonical
-            utterances = transcription_result.get("utterances", [])
+            # Convert AssemblyAI format to canonical using the split simple_transcript
             canonical_transcript = []
 
-            for utt in utterances:
+            for utt in simple_transcript:
                 canonical_transcript.append(
                     TranscriptUtterance(
                         speaker_id=f"Speaker {utt.get('speaker', 'A')}",
-                        start_seconds=utt.get("start", 0) // 1000,
-                        end_seconds=utt.get("end", 0) // 1000,
+                        start_seconds=utt.get("start", 0),
+                        end_seconds=utt.get("start", 0) + utt.get("duration", 0),
                         text=utt.get("text", ""),
                     )
                 )
 
             timing_metrics["transcription_s"] = time.monotonic() - start_time
-            return canonical_transcript
+            # Return both transcript and words
+            return canonical_transcript, transcription_result.get("words")
 
         else:
             # Text input processing
@@ -547,7 +550,7 @@ class AnalysisPipeline:
                     # Use YouTube normalizer for structured transcript with timing data
                     print(f"[INFO] Processing structured transcript with timing data ({len(request.raw_transcript)} entries)")
                     print("[cyan]Routing paste content through YouTube normalizer for timestamp preservation[/cyan]")
-                    return await self.youtube_normalizer.normalize(request.raw_transcript)
+                    return await self.youtube_normalizer.normalize(request.raw_transcript), None
                 else:
                     # If it's a structured transcript without timing, extract text content
                     print(f"[INFO] Processing structured transcript without timing data ({len(request.raw_transcript)} entries)")
@@ -571,13 +574,14 @@ class AnalysisPipeline:
                 print(f"[ERROR] {error_msg}")
                 raise ValueError("No valid text content found in transcript")
 
-            return await self.transcript_normalizer.normalize(corrected_text)
+            return await self.transcript_normalizer.normalize(corrected_text), None
 
     async def _segment_transcript(
         self,
         transcript: List[TranscriptUtterance],
         request: AnalysisRequest,
         timing_metrics: Dict[str, float],
+        assembly_words: Optional[List[Dict[str, Any]]] = None,
     ):
         """Segment the normalized transcript."""
         start_time = time.monotonic()
@@ -587,7 +591,7 @@ class AnalysisPipeline:
         )
 
         # Determine segmentation strategy
-        sections = self.segmenter.segment(transcript)
+        sections = self.segmenter.segment(transcript, assembly_words=assembly_words)
 
         timing_metrics["segmentation_s"] = time.monotonic() - start_time
         self.db_manager.log_progress(

@@ -47,8 +47,9 @@ def parse_and_normalize_time(time_str: str) -> Optional[int]:
         return None
 
 
-def format_seconds_to_timestamp(seconds: int) -> str:
+def format_seconds_to_timestamp(seconds: float) -> str:
     """Convert seconds to MM:SS format."""
     if seconds < 0:
         return "N/A"
+    seconds = int(seconds)
     return f"{seconds // 60:02d}:{seconds % 60:02d}"

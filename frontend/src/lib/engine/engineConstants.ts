@@ -10,11 +10,15 @@ export const DEFAULT_TAB: TabType = "youtube";
 export const ACCEPTED_FILE_TYPES = {
   "audio/mpeg": [".mp3"],
   "audio/wav": [".wav"],
-  "audio/mp4": [".m4a", ".mp4"],
+  "audio/mp4": [".m4a"],
+  "audio/x-m4a": [".m4a"],
 };
 
+// Max file size: 200MB (larger files will take longer to process)
+export const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024; // 200MB
+
 export const FILE_VALIDATION_ERROR =
-  "One or more files were invalid. Please upload only MP3, MP4, M4A, or WAV files.";
+  "Invalid file. Please upload only audio files (MP3, M4A, or WAV) under 200MB.";
 
 // UI Messages
 export const UI_MESSAGES = {
@@ -23,7 +27,7 @@ export const UI_MESSAGES = {
   TRANSCRIPT_PLACEHOLDER_AUTHENTICATED:
     "Paste your full transcript here, or fetch one from a YouTube URL...",
   TRANSCRIPT_PLACEHOLDER_UNAUTHENTICATED: "Please sign in to enable.",
-  UPLOAD_PLACEHOLDER_AUTHENTICATED: "MP3, MP4, M4A, WAV supported",
+  UPLOAD_PLACEHOLDER_AUTHENTICATED: "MP3, M4A, WAV supported (larger files take longer)",
   UPLOAD_PLACEHOLDER_UNAUTHENTICATED: "Please sign in to upload.",
 
   CHECKING_YOUTUBE:

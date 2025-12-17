@@ -11,8 +11,8 @@ from dataclasses import dataclass
 class TranscriptUtterance:
     """Canonical transcript utterance format."""
     speaker_id: str
-    start_seconds: int
-    end_seconds: int
+    start_seconds: float
+    end_seconds: float
     text: str
 
 
@@ -20,11 +20,11 @@ class TranscriptUtterance:
 class TranscriptSection:
     """A section of transcript utterances."""
     utterances: List[TranscriptUtterance]
-    start_time: int
-    end_time: int
+    start_time: float
+    end_time: float
     
     @property
-    def duration_seconds(self) -> int:
+    def duration_seconds(self) -> float:
         return self.end_time - self.start_time
     
     @property

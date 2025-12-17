@@ -34,7 +34,7 @@ const faqData = [
       },
       {
         q: "What file formats do you support?",
-        a: "We currently support MP3, MP4, M4A, and WAV for audio uploads. You can also process any text by pasting it directly.",
+        a: "We currently support MP3, M4A, and WAV audio files (up to 200MB). For video content, use the YouTube URL option. You can also process any text by pasting it directly.",
       },
     ],
   },
