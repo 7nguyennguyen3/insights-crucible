@@ -171,11 +171,21 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800">
-          <p className="text-base text-slate-500 dark:text-slate-400 text-center">
-            &copy; {currentYear ? currentYear : ""} Insights Crucible. All
-            rights reserved.
-            {/* Added a conditional render for currentYear */}
-          </p>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <p className="text-base text-slate-500 dark:text-slate-400">
+                &copy; {currentYear ? currentYear : ""} Embercore LLC. All rights
+                reserved.
+              </p>
+              <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+                Insights Crucible is a product of Embercore LLC.
+              </p>
+            </div>
+            <address className="text-sm text-slate-400 dark:text-slate-500 not-italic text-center sm:text-right">
+              1401 21st ST #5866<br />
+              Sacramento, CA 95811, US
+            </address>
+          </div>
         </div>
       </div>
 

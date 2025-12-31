@@ -86,13 +86,13 @@ const ContactUsPage = () => {
             Get in Touch
           </h1>
           <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            We’d love to hear from you. Whether you have a question, feedback,
+            We'd love to hear from you. Whether you have a question, feedback,
             or just want to say hello, please don't hesitate to reach out.
           </p>
         </header>
 
-        {/* Centered Content Layout */}
-        <div className="max-w-xl mx-auto space-y-12">
+        {/* Two Column Layout */}
+        <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form Card */}
           <Card className="shadow-xl dark:bg-slate-900/70 w-full">
             <CardHeader>
@@ -155,6 +155,60 @@ const ContactUsPage = () => {
               </form>
             </CardContent>
           </Card>
+
+          {/* Company Information Card */}
+          <div className="space-y-6">
+            <Card className="shadow-xl dark:bg-slate-900/70">
+              <CardHeader>
+                <CardTitle className="text-2xl">About Embercore LLC</CardTitle>
+                <CardDescription>
+                  Building intelligent tools for content analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Who We Are
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Embercore LLC is the company behind Insights Crucible, an
+                    AI-powered content analysis platform designed to transform
+                    passive content consumption into actionable intelligence.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Our Mission
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    We empower professionals, researchers, and lifelong learners
+                    to extract maximum value from podcasts, videos, and long-form
+                    content through advanced AI analysis.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Company Address
+                  </h3>
+                  <address className="text-slate-600 dark:text-slate-400 not-italic">
+                    Embercore LLC<br />
+                    1401 21st ST #5866<br />
+                    Sacramento, CA 95811<br />
+                    United States
+                  </address>
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    For business inquiries, partnership opportunities, or support
+                    questions, please use the contact form or reach out directly.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
         </div>
       </div>

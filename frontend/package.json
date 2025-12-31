@@ -2,6 +2,8 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "author": "Embercore LLC",
+  "description": "Insights Crucible - AI-powered content analysis platform by Embercore LLC",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

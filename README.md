@@ -1,5 +1,7 @@
 # Insights Crucible
 
+**A product of [Embercore LLC](https://www.insightscrucible.com)**
+
 > Transform podcasts, videos, and long-form content into structured learning materials and actionable insights using advanced AI analysis.
 
 ![Insights Crucible](https://img.shields.io/badge/Next.js-15-black?logo=next.js) ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green?logo=fastapi) ![Google AI](https://img.shields.io/badge/Google%20AI-Gemini-blue?logo=google) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript) ![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)

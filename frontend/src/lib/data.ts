@@ -267,7 +267,7 @@ export const PRIVACY_POLICY_JSON = {
     introduction: {
       heading: "1. Introduction",
       content:
-        'Welcome to Insights Crucible ("we," "us," or "our"). We are committed to protecting your privacy and handling your data in an open and transparent manner. This Privacy Policy explains how we collect, use, process, and share your information when you use our website and services (collectively, the "Services"). This policy applies to all users of our Services. By using our Services, you agree to the collection and use of information in accordance with this policy.',
+        'Welcome to Insights Crucible ("we," "us," or "our"), operated by Embercore LLC. We are committed to protecting your privacy and handling your data in an open and transparent manner. This Privacy Policy explains how we collect, use, process, and share your information when you use our website and services (collectively, the "Services"). This policy applies to all users of our Services. By using our Services, you agree to the collection and use of information in accordance with this policy.',
     },
     informationWeCollect: {
       heading: "2. Information We Collect",
